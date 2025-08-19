@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ccs-backend
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 8082
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ccs_db
+      DATABASE_USER: ccs_user
+      DATABASE_PASSWORD: ccs_password
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ccs-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: ccs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ccs_db
+      POSTGRES_USER: ccs_user
+      POSTGRES_PASSWORD: ccs_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ccs-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ccs-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ccs-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  ccs-network:
+    driver: bridge 

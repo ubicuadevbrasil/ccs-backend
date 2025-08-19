@@ -1,0 +1,2 @@
+export * from './tabulation.interface';
+
