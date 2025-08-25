@@ -26,7 +26,7 @@ interface OperatorAuth {
 
 @WebSocketGateway({
   cors: {
-    origin: ['http://10.20.20.103:8083', 'https://vm103-8083.ubicuacloud.com.br'],
+    origin: ['http://10.20.20.103:8083', 'http://10.85.170.15:8099', 'https://vm103-8083.ubicuacloud.com.br', 'https://ccs.unidasgestaodeterceiros.com.br'],
     credentials: true,
   },
   namespace: '/socket',

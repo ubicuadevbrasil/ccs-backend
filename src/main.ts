@@ -8,7 +8,7 @@ async function bootstrap() {
 
   // Enable CORS for development
   app.enableCors({
-    origin: ['http://10.20.20.103:8083', 'https://vm103-8083.ubicuacloud.com.br'],
+    origin: ['http://10.20.20.103:8083', 'http://10.85.170.15:8099', 'https://vm103-8083.ubicuacloud.com.br', 'https://ccs.unidasgestaodeterceiros.com.br'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -38,7 +38,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 8082;
   await app.listen(port, '0.0.0.0');
-  console.log(`Application is running on: https://vm103-8082.ubicuacloud.com.br`);
-  console.log(`Swagger documentation is available at: https://vm103-8082.ubicuacloud.com.br/swagger`);
+  console.log(`Application is running on: https://ccs-backend.unidasgestaodeterceiros.com.br`);
+  console.log(`Swagger documentation is available at: https://ccs-backend.unidasgestaodeterceiros.com.br/swagger`);
 }
 bootstrap();

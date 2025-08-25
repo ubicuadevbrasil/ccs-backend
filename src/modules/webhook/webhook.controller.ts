@@ -49,7 +49,7 @@ export class WebhookController {
     return { 
       status: 'accessible', 
       timestamp: new Date().toISOString(),
-      url: 'https://vm103-8082.ubicuacloud.com.br/webhook/evolution',
+      url: 'https://ccs-backend.unidasgestaodeterceiros.com.br/webhook/evolution',
       message: 'Webhook endpoint is ready to receive Evolution API calls'
     };
   }
