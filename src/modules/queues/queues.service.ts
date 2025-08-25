@@ -1374,4 +1374,19 @@ export class QueuesService {
       return [];
     }
   }
+
+  async findWaitingQueuesOlderThan(date: Date): Promise<Queue[]> {
+    try {
+      // Find queues that are in waiting status and have been created before the specified date
+      const waitingQueues = await this.knex('queues')
+        .where('status', QueueStatus.WAITING)
+        .where('createdAt', '<', date)
+        .select('*');
+
+      return waitingQueues;
+    } catch (error) {
+      this.logger.error('Error finding waiting queues older than specified date:', error);
+      return [];
+    }
+  }
 } 

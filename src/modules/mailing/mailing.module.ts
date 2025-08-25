@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
+import { BullModule } from '@nestjs/bullmq';
 import { MailingService } from './mailing.service';
 import { MailingController } from './mailing.controller';
 import { MailingQueueService } from './mailing-queue.service';
@@ -12,6 +12,10 @@ import { EvolutionModule } from '../evolution/evolution.module';
   imports: [
     BullModule.registerQueue({
       name: 'mailing',
+      defaultJobOptions: {
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
     }),
     CustomerModule,
     EvolutionModule,

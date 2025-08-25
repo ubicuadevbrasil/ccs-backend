@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef, Logger } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { QueuesService } from '../queues/queues.service';
 import { SocketService } from '../socket/socket.service';
@@ -19,6 +19,8 @@ import { QueueUpdate } from '../socket/interfaces/socket.interface';
 
 @Injectable()
 export class TypebotService {
+  private readonly logger = new Logger(TypebotService.name);
+
   constructor(
     private readonly usersService: UsersService,
     @Inject(forwardRef(() => QueuesService))
@@ -97,7 +99,7 @@ export class TypebotService {
 
     operatorsWithStatus.forEach((operator, index) => {
       const position = index + 1;
-      message += `\n**${position} – ${operator.name}** `;
+      message += `\n**${position} – ${operator.name}** ${operator.profile === UserProfile.SUPERVISOR ? '(Coordenador(a))' : ''}`;
     });
 
     return {
@@ -129,7 +131,7 @@ export class TypebotService {
   async updateSessionStatus(dto: UpdateSessionStatusDto): Promise<TypebotSessionStatus> {
     let queue;
 
-    console.log('updateSessionStatus', dto);
+    this.logger.log('updateSessionStatus', dto);
     // Find queue by session ID or remoteJid
     if (dto.sessionId) {
       queue = await this.queuesService.findQueueBySessionId(dto.sessionId);
@@ -160,7 +162,7 @@ export class TypebotService {
             status: 'paused'
           });
         } catch (error) {
-          console.error('Failed to pause typebot:', error);
+          this.logger.error('Failed to pause typebot:', error);
         }
         break;
       case 'waiting':
@@ -175,7 +177,7 @@ export class TypebotService {
               status: 'paused'
             });
           } catch (error) {
-            console.error('Failed to pause typebot:', error);
+            this.logger.error('Failed to pause typebot:', error);
           }
         }
         break;
@@ -250,7 +252,7 @@ export class TypebotService {
         }
       }
     } catch (error) {
-      console.error('Failed to send event to operators:', error);
+      this.logger.error('Failed to send event to operators:', error);
       // Don't fail the main operation if event emission fails
     }
 
@@ -422,5 +424,139 @@ export class TypebotService {
       hasActiveQueue,
       queue: hasActiveQueue ? queue : undefined
     };
+  }
+
+  async handleWaitingQueueTimeout(): Promise<void> {
+    try {
+      const now = new Date();
+      const twentyMinutesAgo = new Date(now.getTime() - 20 * 60 * 1000);
+
+      // Find queues in waiting status that have been waiting for more than 20 minutes
+      const waitingQueues = await this.queuesService.findWaitingQueuesOlderThan(twentyMinutesAgo);
+
+      for (const queue of waitingQueues) {
+        await this.handleSingleWaitingQueueTimeout(queue);
+      }
+    } catch (error) {
+      this.logger.error('Error handling waiting queue timeouts:', error);
+    }
+  }
+
+  private async handleSingleWaitingQueueTimeout(queue: any): Promise<void> {
+    try {
+      // Skip if no customer information
+      if (!queue.customerId) {
+        this.logger.warn(`Queue ${queue.id} has no customerId`);
+        return;
+      }
+
+      // Get customer information to get the proper remoteJid
+      const customer = await this.queuesService.findQueueWithCustomer(queue.id);
+
+      if (!customer || !customer.customer?.remoteJid) {
+        this.logger.warn(`No customer or remoteJid found for queue ${queue.id}`);
+        return;
+      }
+
+      const remoteJid = customer.customer.remoteJid;
+
+      this.logger.log(`Handling waiting queue timeout ${queue.id} for ${remoteJid} (created: ${queue.createdAt})`);
+
+      // Check for and close any existing typebot sessions for this customer
+      await this.closeCustomerTypebotSessions(queue.evolutionInstance, remoteJid);
+
+      // Send timeout message if we have an evolution instance
+      if (queue.evolutionInstance) {
+        await this.sendTimeoutMessage(queue.evolutionInstance, remoteJid);
+      }
+
+      // Update queue status to cancelled
+      await this.queuesService.updateQueue(queue.id, {
+        status: 'cancelled' as any,
+        metadata: {
+          ...queue.metadata,
+          cancelledAt: new Date().toISOString(),
+          cancellationReason: 'waiting_timeout',
+          lastActivity: queue.createdAt,
+        }
+      });
+
+      this.logger.log(`Successfully cancelled waiting queue ${queue.id} for ${remoteJid} due to timeout`);
+    } catch (error) {
+      this.logger.error(`Error handling waiting queue timeout ${queue.id}:`, error);
+    }
+  }
+
+  private async closeCustomerTypebotSessions(instance: string, remoteJid: string): Promise<void> {
+    try {
+      if (!instance) {
+        this.logger.warn(`No evolution instance available to close sessions for ${remoteJid}`);
+        return;
+      }
+
+      // Find all typebots for this instance
+      const typebots = await this.evolutionService.findTypebots(instance);
+
+      if (!typebots || typebots.length === 0) {
+        this.logger.debug(`No typebots found for instance ${instance}`);
+        return;
+      }
+
+      let sessionsClosed = 0;
+
+      // Check each typebot for sessions with this customer
+      for (const typebot of typebots) {
+        try {
+          const sessions = await this.evolutionService.fetchSessions(instance, typebot.id);
+
+          if (sessions && sessions.length > 0) {
+            // Find sessions for this specific customer
+            const customerSessions = sessions.filter(session =>
+              session.remoteJid === remoteJid &&
+              ['opened', 'paused'].includes(session.status)
+            );
+
+            // Close any active/paused sessions for this customer
+            for (const session of customerSessions) {
+              try {
+                await this.evolutionService.changeSessionStatus(instance, {
+                  remoteJid,
+                  status: 'closed'
+                });
+
+                sessionsClosed++;
+                this.logger.log(`Closed typebot session ${session.sessionId} for ${remoteJid} in typebot ${typebot.id}`);
+              } catch (sessionError) {
+                this.logger.error(`Error closing session ${session.sessionId} for ${remoteJid}:`, sessionError);
+              }
+            }
+          }
+        } catch (typebotError) {
+          this.logger.error(`Error checking sessions for typebot ${typebot.id}:`, typebotError);
+        }
+      }
+
+      if (sessionsClosed > 0) {
+        this.logger.log(`Successfully closed ${sessionsClosed} typebot sessions for ${remoteJid}`);
+      } else {
+        this.logger.debug(`No active typebot sessions found to close for ${remoteJid}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error closing typebot sessions for ${remoteJid}:`, error);
+    }
+  }
+
+  private async sendTimeoutMessage(instance: string, remoteJid: string): Promise<void> {
+    try {
+      // Send the timeout message using Evolution API
+      await this.evolutionService.sendText(instance, {
+        number: remoteJid,
+        text: 'Tempo de atendimento excedido, por favor entre em contato novamente'
+      });
+
+      this.logger.log(`Sent timeout message to ${remoteJid} via instance ${instance}`);
+    } catch (error) {
+      this.logger.error(`Error sending timeout message to ${remoteJid}:`, error);
+    }
   }
 } 

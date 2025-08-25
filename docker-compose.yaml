@@ -19,6 +19,8 @@ services:
       DATABASE_NAME: ccs_db
       DATABASE_USER: ccs_user
       DATABASE_PASSWORD: ccs_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       REDIS_URL: redis://redis:6379
     depends_on:
       - postgres

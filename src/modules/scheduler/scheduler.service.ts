@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { EvolutionService } from '../evolution/evolution.service';
 import { QueuesService } from '../queues/queues.service';
 import { MessagesService } from '../messages/messages.service';
+import { TypebotService } from '../typebot/typebot.service';
 
 @Injectable()
 export class SchedulerService {
@@ -14,6 +15,7 @@ export class SchedulerService {
     private readonly evolutionService: EvolutionService,
     private readonly queuesService: QueuesService,
     private readonly messagesService: MessagesService,
+    private readonly typebotService: TypebotService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -199,6 +201,19 @@ export class SchedulerService {
       this.logger.log(`Processed ${inactiveQueues.length} inactive queues without sessions`);
     } catch (error) {
       this.logger.error('Error during inactive queues cleanup:', error);
+    }
+  }
+
+  // New method to handle waiting queue timeouts
+  @Cron(CronExpression.EVERY_MINUTE)
+  async handleWaitingQueueTimeouts() {
+    this.logger.log('Starting waiting queue timeout cleanup...');
+    
+    try {
+      await this.typebotService.handleWaitingQueueTimeout();
+      this.logger.log('Waiting queue timeout cleanup completed');
+    } catch (error) {
+      this.logger.error('Error during waiting queue timeout cleanup:', error);
     }
   }
 
