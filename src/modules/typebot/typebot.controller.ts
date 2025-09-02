@@ -29,7 +29,8 @@ import type {
   CheckOperatorStatusDto,
   UpdateSessionStatusDto,
   ProcessChosenOperatorDto,
-  CheckActiveQueueDto
+  CheckActiveQueueDto,
+  BusinessHoursCheckResponse
 } from './interfaces/typebot.interface';
 
 @Controller('typebot')
@@ -277,5 +278,26 @@ export class TypebotController {
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid API key' })
   async triggerInactiveSessionsCleanup() {
     return this.schedulerService.handleInactiveTypebotSessions();
+  }
+
+  @Get('business-hours')
+  @UseGuards(TypebotAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('Typebot-API-Key')
+  @ApiOperation({ summary: 'Check if business is currently open and get welcome message' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Business hours status checked successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        isOpen: { type: 'boolean', description: 'Whether the business is currently open' },
+        message: { type: 'string', description: 'Welcome message with business hours information' }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid API key' })
+  async checkBusinessHours(): Promise<BusinessHoursCheckResponse> {
+    return this.typebotService.checkBusinessHours();
   }
 } 

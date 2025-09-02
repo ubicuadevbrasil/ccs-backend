@@ -56,4 +56,12 @@ export interface TypebotAuthPayload {
   typebotId: string;
   sessionId: string;
   timestamp: number;
+}
+
+export interface BusinessHoursCheckResponse {
+  isOpen: boolean;
+  message: string;
+  currentTime: number;
+  startTime: number;
+  endTime: number;
 } 

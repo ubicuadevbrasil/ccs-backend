@@ -11,7 +11,8 @@ import {
   CheckOperatorStatusDto,
   UpdateSessionStatusDto,
   ProcessChosenOperatorDto,
-  CheckActiveQueueDto
+  CheckActiveQueueDto,
+  BusinessHoursCheckResponse
 } from './interfaces/typebot.interface';
 import { UserProfile, UserStatus } from '../users/interfaces/user.interface';
 import { QueueStatus, Department } from '../queues/interfaces/queue.interface';
@@ -577,5 +578,49 @@ export class TypebotService {
     } catch (error) {
       this.logger.error(`Error sending timeout message to ${remoteJid}:`, error);
     }
+  }
+
+  async checkBusinessHours(): Promise<BusinessHoursCheckResponse> {
+    // Use Brasília timezone (UTC-3)
+    const now = new Date();
+    const brasiliaTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+    
+    const currentDay = brasiliaTime.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const currentHour = brasiliaTime.getHours();
+    const currentMinute = brasiliaTime.getMinutes();
+    const currentTime = currentHour * 60 + currentMinute; // Convert to minutes for easier comparison
+    
+    this.logger.log(`Business hours check - Day: ${currentDay}, Time: ${currentHour}:${currentMinute}, CurrentTime in minutes: ${currentTime}`);
+    
+    let startTime = 0;
+    let endTime = 0;
+    let isOpen = false;
+
+    // Check if it's a weekday (Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5)
+    if (currentDay >= 1 && currentDay <= 5) {
+      if (currentDay >= 1 && currentDay <= 4) {
+        // Monday to Thursday: 7:00 AM to 5:00 PM
+        startTime = 7 * 60; // 7:00 AM in minutes
+        endTime = 17 * 60; // 5:00 PM in minutes
+        isOpen = currentTime >= startTime && currentTime < endTime;
+      } else if (currentDay === 5) {
+        // Friday: 8:00 AM to 3:00 PM
+        startTime = 8 * 60; // 8:00 AM in minutes
+        endTime = 15 * 60; // 3:00 PM in minutes
+        isOpen = currentTime >= startTime && currentTime < endTime;
+      }
+    }
+
+    const message = "Olá, seja bem-vindo a Unidas Contabilidade. Contabilidade consultiva faz toda diferença!!! Nosso horário de atendimento é de segunda a quinta feira, das 07:00 às 17:00 horas e sexta feira das 08:00 às 15:00 horas Agradecemos sua mensagem e pedimos que nos retornem";
+
+    this.logger.log(`Business hours result - isOpen: ${isOpen}, currentTime: ${currentTime}, startTime: ${startTime}, endTime: ${endTime}`);
+
+    return {
+      isOpen,
+      message,
+      currentTime,
+      startTime,
+      endTime
+    };
   }
 } 
