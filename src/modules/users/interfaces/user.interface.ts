@@ -28,6 +28,7 @@ export interface User {
   profile: UserProfile;
   department: UserDepartment;
   active: boolean;
+  list: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +44,7 @@ export interface CreateUserDto {
   profile: UserProfile;
   department: UserDepartment;
   active?: boolean;
+  list?: boolean;
 }
 
 export interface UpdateUserDto {
@@ -56,6 +58,7 @@ export interface UpdateUserDto {
   profile?: UserProfile;
   department?: UserDepartment;
   active?: boolean;
+  list?: boolean;
 }
 
 export interface UserResponse {
@@ -69,6 +72,7 @@ export interface UserResponse {
   profile: UserProfile;
   department: UserDepartment;
   active: boolean;
+  list: boolean;
   createdAt: Date;
   updatedAt: Date;
 } 

@@ -54,7 +54,8 @@ export class TypebotService {
     // Filter only operators and active users
     const filteredOperators = operators.filter(user =>
       user.profile !== UserProfile.ADMIN &&
-      user.active === true
+      user.active === true &&
+      user.list === true
     );
 
     // Get department supervisor based on the same logic as getDepartmentSupervisor
@@ -71,7 +72,8 @@ export class TypebotService {
     const supervisor = allUsers.find(user =>
       user.name === supervisorName &&
       user.profile === UserProfile.SUPERVISOR &&
-      user.active === true
+      user.active === true &&
+      user.list === true
     );
 
     // Add supervisor to the operators list if found and not already present
@@ -286,7 +288,8 @@ export class TypebotService {
     const operators = await this.usersService.findByDepartment(queue.department);
     const filteredOperators = operators.filter(user =>
       user.profile !== UserProfile.ADMIN &&
-      user.active === true
+      user.active === true &&
+      user.list === true
     );
 
     // Get department supervisor based on the same logic
@@ -303,7 +306,8 @@ export class TypebotService {
     const supervisor = allUsers.find(user =>
       user.name === supervisorName &&
       user.profile === UserProfile.SUPERVISOR &&
-      user.active === true
+      user.active === true &&
+      user.list === true
     );
 
     // Create final operators list (same as getOperatorsByDepartment)
@@ -403,7 +407,8 @@ export class TypebotService {
     const supervisor = operators.find(user =>
       user.name === supervisorName &&
       user.profile === UserProfile.SUPERVISOR &&
-      user.active === true
+      user.active === true &&
+      user.list === true
     );
 
     return supervisor || null;
@@ -429,10 +434,10 @@ export class TypebotService {
   async handleWaitingQueueTimeout(): Promise<void> {
     try {
       const now = new Date();
-      const twentyMinutesAgo = new Date(now.getTime() - 20 * 60 * 1000);
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
-      // Find queues in waiting status that have been waiting for more than 20 minutes
-      const waitingQueues = await this.queuesService.findWaitingQueuesOlderThan(twentyMinutesAgo);
+      // Find queues in waiting status that have been waiting for more than 5 minutes
+      const waitingQueues = await this.queuesService.findWaitingQueuesOlderThan(fiveMinutesAgo);
 
       for (const queue of waitingQueues) {
         await this.handleSingleWaitingQueueTimeout(queue);
@@ -463,10 +468,16 @@ export class TypebotService {
       this.logger.log(`Handling waiting queue timeout ${queue.id} for ${remoteJid} (created: ${queue.createdAt})`);
 
       // Check for and close any existing typebot sessions for this customer
-      await this.closeCustomerTypebotSessions(queue.evolutionInstance, remoteJid);
+      if (queue.evolutionInstance) {
+        this.logger.log(`Attempting to close typebot sessions for ${remoteJid} on instance ${queue.evolutionInstance}`);
+        await this.closeCustomerTypebotSessions(queue.evolutionInstance, remoteJid);
+      } else {
+        this.logger.warn(`No evolution instance found for queue ${queue.id}`);
+      }
 
       // Send timeout message if we have an evolution instance
       if (queue.evolutionInstance) {
+        this.logger.log(`Sending timeout message to ${remoteJid} via instance ${queue.evolutionInstance}`);
         await this.sendTimeoutMessage(queue.evolutionInstance, remoteJid);
       }
 
@@ -511,25 +522,30 @@ export class TypebotService {
 
           if (sessions && sessions.length > 0) {
             // Find sessions for this specific customer
+            // Handle both formats: with and without @s.whatsapp.net
+            const customerPhone = remoteJid.replace('@s.whatsapp.net', '');
             const customerSessions = sessions.filter(session =>
-              session.remoteJid === remoteJid &&
+              (session.remoteJid === remoteJid || 
+               session.remoteJid === customerPhone ||
+               session.remoteJid === `${customerPhone}@s.whatsapp.net`) &&
               ['opened', 'paused'].includes(session.status)
             );
 
-            // Close any active/paused sessions for this customer
-            for (const session of customerSessions) {
-              try {
-                await this.evolutionService.changeSessionStatus(instance, {
-                  remoteJid,
-                  status: 'closed'
-                });
+                          // Close any active/paused sessions for this customer
+              for (const session of customerSessions) {
+                try {
+                  // Use the exact remoteJid from the session for closing
+                  await this.evolutionService.changeSessionStatus(instance, {
+                    remoteJid: session.remoteJid,
+                    status: 'closed'
+                  });
 
-                sessionsClosed++;
-                this.logger.log(`Closed typebot session ${session.sessionId} for ${remoteJid} in typebot ${typebot.id}`);
-              } catch (sessionError) {
-                this.logger.error(`Error closing session ${session.sessionId} for ${remoteJid}:`, sessionError);
+                  sessionsClosed++;
+                  this.logger.log(`Closed typebot session ${session.sessionId} for ${session.remoteJid} in typebot ${typebot.id}`);
+                } catch (sessionError) {
+                  this.logger.error(`Error closing session ${session.sessionId} for ${session.remoteJid}:`, sessionError);
+                }
               }
-            }
           }
         } catch (typebotError) {
           this.logger.error(`Error checking sessions for typebot ${typebot.id}:`, typebotError);
@@ -548,13 +564,16 @@ export class TypebotService {
 
   private async sendTimeoutMessage(instance: string, remoteJid: string): Promise<void> {
     try {
+      // Extract phone number from remoteJid (remove @s.whatsapp.net if present)
+      const phoneNumber = remoteJid.replace('@s.whatsapp.net', '');
+      
       // Send the timeout message using Evolution API
       await this.evolutionService.sendText(instance, {
-        number: remoteJid,
+        number: phoneNumber,
         text: 'Tempo de atendimento excedido, por favor entre em contato novamente'
       });
 
-      this.logger.log(`Sent timeout message to ${remoteJid} via instance ${instance}`);
+      this.logger.log(`Sent timeout message to ${phoneNumber} via instance ${instance}`);
     } catch (error) {
       this.logger.error(`Error sending timeout message to ${remoteJid}:`, error);
     }

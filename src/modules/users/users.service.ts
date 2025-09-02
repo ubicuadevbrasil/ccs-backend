@@ -17,6 +17,7 @@ export class UsersService {
         password: hashedPassword,
         status: createUserDto.status || 'Active',
         active: createUserDto.active !== undefined ? createUserDto.active : true,
+        list: createUserDto.list !== undefined ? createUserDto.list : true,
       })
       .returning('*');
 

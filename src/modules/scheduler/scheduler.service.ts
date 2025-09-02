@@ -93,7 +93,7 @@ export class SchedulerService {
       }
 
       const now = new Date();
-      const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
       for (const session of sessions) {
         // Skip group messages (@g.us)
@@ -102,11 +102,11 @@ export class SchedulerService {
           continue;
         }
 
-        // Check if session is opened and has been inactive for more than 15 minutes
+        // Check if session is opened and has been inactive for more than 5 minutes
         if (session.status === 'opened' && session.updatedAt) {
           const sessionUpdatedAt = new Date(session.updatedAt);
           
-          if (sessionUpdatedAt < fifteenMinutesAgo) {
+          if (sessionUpdatedAt < fiveMinutesAgo) {
             await this.handleInactiveSession(instance, session, typebotId);
           }
         }
@@ -169,15 +169,82 @@ export class SchedulerService {
 
   private async sendInactivityMessage(instance: string, remoteJid: string) {
     try {
+      // Extract phone number from remoteJid (remove @s.whatsapp.net if present)
+      const phoneNumber = remoteJid.replace('@s.whatsapp.net', '');
+      
       // Send the inactivity message using Evolution API
       await this.evolutionService.sendText(instance, {
-        number: remoteJid,
+        number: phoneNumber,
         text: 'Atendimento encerrado por inatividade'
       });
       
-      this.logger.log(`Sent inactivity message to ${remoteJid} via instance ${instance}`);
+      this.logger.log(`Sent inactivity message to ${phoneNumber} via instance ${instance}`);
     } catch (error) {
       this.logger.error(`Error sending inactivity message to ${remoteJid}:`, error);
+    }
+  }
+
+  private async closeCustomerTypebotSessions(instance: string, remoteJid: string): Promise<void> {
+    try {
+      if (!instance) {
+        this.logger.warn(`No evolution instance available to close sessions for ${remoteJid}`);
+        return;
+      }
+
+      // Find all typebots for this instance
+      const typebots = await this.evolutionService.findTypebots(instance);
+
+      if (!typebots || typebots.length === 0) {
+        this.logger.debug(`No typebots found for instance ${instance}`);
+        return;
+      }
+
+      let sessionsClosed = 0;
+
+      // Check each typebot for sessions with this customer
+      for (const typebot of typebots) {
+        try {
+          const sessions = await this.evolutionService.fetchSessions(instance, typebot.id);
+
+          if (sessions && sessions.length > 0) {
+            // Find sessions for this specific customer
+            // Handle both formats: with and without @s.whatsapp.net
+            const customerPhone = remoteJid.replace('@s.whatsapp.net', '');
+            const customerSessions = sessions.filter(session =>
+              (session.remoteJid === remoteJid || 
+               session.remoteJid === customerPhone ||
+               session.remoteJid === `${customerPhone}@s.whatsapp.net`) &&
+              ['opened', 'paused'].includes(session.status)
+            );
+
+                          // Close any active/paused sessions for this customer
+              for (const session of customerSessions) {
+                try {
+                  // Use the exact remoteJid from the session for closing
+                  await this.evolutionService.changeSessionStatus(instance, {
+                    remoteJid: session.remoteJid,
+                    status: 'closed'
+                  });
+
+                  sessionsClosed++;
+                  this.logger.log(`Closed typebot session ${session.sessionId} for ${session.remoteJid} in typebot ${typebot.id}`);
+                } catch (sessionError) {
+                  this.logger.error(`Error closing session ${session.sessionId} for ${session.remoteJid}:`, sessionError);
+                }
+              }
+          }
+        } catch (typebotError) {
+          this.logger.error(`Error checking sessions for typebot ${typebot.id}:`, typebotError);
+        }
+      }
+
+      if (sessionsClosed > 0) {
+        this.logger.log(`Successfully closed ${sessionsClosed} typebot sessions for ${remoteJid}`);
+      } else {
+        this.logger.debug(`No active or paused typebot sessions found for ${remoteJid}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error closing typebot sessions for ${remoteJid}:`, error);
     }
   }
 
@@ -188,11 +255,11 @@ export class SchedulerService {
     
     try {
       const now = new Date();
-      const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
       // Find queues that are in typebot status but have no active typebot session
-      // and have been created more than 15 minutes ago
-      const inactiveQueues = await this.queuesService.findInactiveQueuesWithoutSessions(fifteenMinutesAgo);
+      // and have been created more than 5 minutes ago
+      const inactiveQueues = await this.queuesService.findInactiveQueuesWithoutSessions(fiveMinutesAgo);
       
       for (const queue of inactiveQueues) {
         await this.handleInactiveQueueWithoutSession(queue);
@@ -237,9 +304,12 @@ export class SchedulerService {
 
       this.logger.log(`Handling inactive queue ${queue.id} for ${remoteJid} (created: ${queue.createdAt})`);
 
-      // Send inactivity message if we have an evolution instance
+      // Close any existing typebot sessions for this customer if we have an evolution instance
       if (queue.evolutionInstance) {
-        await this.sendInactivityMessage(queue.evolutionInstance, remoteJid);
+        this.logger.log(`Attempting to close typebot sessions for ${remoteJid} on instance ${queue.evolutionInstance}`);
+        await this.closeCustomerTypebotSessions(queue.evolutionInstance, remoteJid);
+      } else {
+        this.logger.warn(`No evolution instance found for queue ${queue.id}`);
       }
 
       // Update queue status to cancelled
@@ -252,6 +322,12 @@ export class SchedulerService {
           lastActivity: queue.createdAt,
         }
       });
+
+      // Send inactivity message if we have an evolution instance
+      if (queue.evolutionInstance) {
+        this.logger.log(`Sending inactivity message to ${remoteJid} via instance ${queue.evolutionInstance}`);
+        await this.sendInactivityMessage(queue.evolutionInstance, remoteJid);
+      }
 
       this.logger.log(`Successfully cancelled inactive queue ${queue.id} for ${remoteJid}`);
     } catch (error) {
