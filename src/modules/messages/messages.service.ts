@@ -96,8 +96,9 @@ export class MessagesService {
 
     let queue: any = null;
     let sessionId: string | null;
-
-    if (isGroupMessage) {
+    
+    
+    if (isGroupMessage || evolutionMessage.isOpen === false) {
       // For group messages, use a special sessionId and don't create/find a queue
       sessionId = null
       this.logger.log(`Processing group message with sessionId: ${sessionId}`);

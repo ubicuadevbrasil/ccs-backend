@@ -140,6 +140,7 @@ export interface EvolutionApiMessage {
   date_time: string;
   sender: string;
   apikey?: string;
+  isOpen?: boolean;
 }
 
 export interface MessageFilters {

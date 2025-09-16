@@ -31,6 +31,7 @@ import {
 import { MessageFrom, MessageDirection, MessageStatus } from '../messages/interfaces/message.interface';
 import { QueueStatus, Department } from '../queues/interfaces/queue.interface';
 import { GroupService } from '../group/group.service';
+import { TypebotService } from '../typebot/typebot.service';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -43,6 +44,7 @@ export class WebhookService {
     private readonly evolutionService: EvolutionService,
     private readonly socketService: SocketService,
     private readonly groupService: GroupService,
+    private readonly typebotService: TypebotService,
   ) { }
 
   async processEvolutionMessage(webhookData: EvolutionWebhookDto): Promise<WebhookResponseDto> {
@@ -140,6 +142,9 @@ export class WebhookService {
     this.logger.log(`Processing messages.upsert from ${customerPhone}, fromMe: ${isFromMe}, isGroup: ${isGroupMessage}`);
 
     try {
+
+      const { isOpen } = await this.typebotService.checkBusinessHours();
+
       // Process the message through MessagesService for all messages (including group messages)
       const message = await this.messagesService.processEvolutionApiMessage({
         event: webhookData.event,
@@ -157,6 +162,7 @@ export class WebhookService {
         date_time: webhookData.date_time || new Date().toISOString(),
         sender: webhookData.sender || '',
         apikey: webhookData.apikey || '',
+        isOpen,
       });
 
       if (!message) {
@@ -164,8 +170,9 @@ export class WebhookService {
         return { success: false, message: 'Message processing failed' };
       }
 
+
       // Handle queue management and business logic only for non-group messages
-      if (!isFromMe && !isGroupMessage) {
+      if (!isFromMe && !isGroupMessage && isOpen) {
         await this.handleQueueManagement(customerPhone, data, instance, message);
         await this.handleBusinessLogic(customerPhone, data, instance, message);
 
