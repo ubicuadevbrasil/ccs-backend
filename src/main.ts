@@ -24,7 +24,7 @@ async function bootstrap() {
   // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('CCS Backend API')
-    .setDescription('Backend API for CCS v3 - Integrated chat with WhatsApp and dashboard for metrics')
+    .setDescription('Multi platform CRM API for customer service')
     .setVersion('1.0')
     .addBearerAuth()
     .addApiKey(
@@ -38,7 +38,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 8082;
   await app.listen(port, '0.0.0.0');
-  console.log(`Application is running on: https://ccs-backend.unidasgestaodeterceiros.com.br`);
-  console.log(`Swagger documentation is available at: https://ccs-backend.unidasgestaodeterceiros.com.br/swagger`);
+  
+  console.log(process.env.NODE_ENV === 'production' ? `Application is running on: ${process.env.APPLICATION_URL} 🚀` : `Application is running on: http://localhost:${port} ⚙️`);
 }
 bootstrap();

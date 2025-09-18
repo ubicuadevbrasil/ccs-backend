@@ -1,0 +1,22 @@
+import { Knex } from 'knex';
+
+export async function up(knex: Knex): Promise<void> {
+  return knex.schema.createTable('tabulationSub', (table) => {
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.uuid('tabulationId').references('id').inTable('tabulation').onDelete('CASCADE');
+    table.text('name').notNullable();
+    table.text('description');
+    table.timestamp('createdAt').defaultTo(knex.fn.now());
+    table.timestamp('updatedAt').defaultTo(knex.fn.now());
+    
+    // Indexes for better performance
+    table.index(['tabulationId']);
+    table.index(['name']);
+    table.index(['status']);
+    table.index(['createdAt']);
+  });
+}
+
+export async function down(knex: Knex): Promise<void> {
+  return knex.schema.dropTable('tabulationSub');
+}

@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
+import { KnexModule } from 'nestjs-knex';
 import { MessagesService } from './messages.service';
-import { MessagesController } from './messages.controller';
-import { CustomerModule } from '../customer/customer.module';
 
 @Module({
-  imports: [CustomerModule],
+  imports: [KnexModule],
   providers: [MessagesService],
-  controllers: [MessagesController],
   exports: [MessagesService],
 })
-export class MessagesModule {} 
+export class MessagesModule {}

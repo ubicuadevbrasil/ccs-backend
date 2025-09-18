@@ -7,11 +7,11 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { TypebotAuthGuard } from './guards/typebot-auth.guard';
-import { UsersModule } from '../users/users.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
-    UsersModule,
+    UserModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

@@ -1,327 +1,513 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { InjectKnex } from 'nestjs-knex';
 import { Knex } from 'knex';
-import { InjectConnection } from 'nestjs-knex';
-import { Customer, CreateCustomerData, UpdateCustomerData } from './interfaces/customer.interface';
-import { CreateCustomerDto } from './dto/create-customer.dto';
-import { UpdateCustomerDto } from './dto/update-customer.dto';
-import { EvolutionService } from '../evolution/evolution.service';
+import { Customer, CustomerEntity, CustomerStatus, CustomerType, CustomerPlatform } from './entities/customer.entity';
+import { CustomerTag } from './entities/customer-tag.entity';
+import { CreateCustomerDto, UpdateCustomerDto, CustomerQueryDto } from './dto/customer.dto';
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 @Injectable()
 export class CustomerService {
-  constructor(
-    @InjectConnection() private readonly knex: Knex,
-    private readonly evolutionService: EvolutionService
-  ) {}
-
-  async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
-    const [customer] = await this.knex('customers')
-      .insert({
-        ...createCustomerDto,
-        priority: createCustomerDto.priority || 0,
-        isGroup: createCustomerDto.isGroup || false,
-        isSaved: createCustomerDto.isSaved || false,
-        type: createCustomerDto.type || 'contact',
-        status: createCustomerDto.status || 'active',
-      })
-      .returning('*');
-
-    return customer;
-  }
-
-  async createFromWhatsAppContact(contactData: any): Promise<Customer> {
-    // Skip groups and group members as requested
-    if (contactData.isGroup || contactData.type === 'group' || contactData.type === 'group_member') {
-      throw new Error('Groups and group members are not allowed in customer creation');
-    }
-
-    // Extract all available data from WhatsApp contact
-    const customerData = this.extractCustomerDataFromWhatsApp(contactData);
-
-    return this.create(customerData as CreateCustomerDto);
-  }
+  constructor(@InjectKnex() private readonly knex: Knex) {}
 
   /**
-   * Create or update customer with all available WhatsApp data
-   * This is the centralized method for customer creation from any WhatsApp source
+   * Create a new customer with tags
    */
-  async createOrUpdateFromWhatsAppData(contactData: any): Promise<Customer> {
-    // Skip groups and group members as requested
-    if (contactData.isGroup || contactData.type === 'group' || contactData.type === 'group_member') {
-      throw new Error('Groups and group members are not allowed in customer creation');
-    }
-
-    // Extract all available data
-    const customerData = this.extractCustomerDataFromWhatsApp(contactData);
+  async createCustomer(createCustomerDto: CreateCustomerDto): Promise<Customer> {
+    const { tags, ...customerData } = createCustomerDto;
     
-    // Try to fetch profile picture if we have instance and remoteJid
-    if (contactData.instance && customerData.remoteJid) {
-      try {
-        const profilePictureResponse = await this.evolutionService.fetchProfilePicture(
-          contactData.instance,
-          { number: customerData.remoteJid }
-        );
-
-        if (profilePictureResponse?.profilePictureUrl) {
-          customerData.profilePicUrl = profilePictureResponse.profilePictureUrl;
-        }
-      } catch (error) {
-        // Log error but don't fail customer creation
-        console.error(`Failed to fetch profile picture for ${customerData.remoteJid}:`, error.message);
-      }
-    }
-    
-    // Check if customer already exists
-    const existingCustomer = await this.findByRemoteJid(customerData.remoteJid);
+    // Check if platformId already exists for this platform
+    const existingCustomer = await this.knex('customer')
+      .where('platformId', customerData.platformId)
+      .where('platform', customerData.platform || CustomerPlatform.WHATSAPP)
+      .first();
     
     if (existingCustomer) {
-      // Update existing customer with new data (only if new data is provided)
-      const updateData: UpdateCustomerData = {};
+      throw new ConflictException('Customer with this platformId already exists for this platform');
+    }
+
+    // Validate email uniqueness if provided
+    if (customerData.email) {
+      const existingEmail = await this.knex('customer')
+        .where('email', customerData.email)
+        .first();
       
-      if (customerData.pushName && customerData.pushName !== existingCustomer.pushName) {
-        updateData.pushName = customerData.pushName;
+      if (existingEmail) {
+        throw new ConflictException('Email already exists');
       }
+    }
+
+    // Validate CPF uniqueness if provided
+    if (customerData.cpf) {
+      const existingCpf = await this.knex('customer')
+        .where('cpf', customerData.cpf)
+        .first();
       
-      if (customerData.profilePicUrl && customerData.profilePicUrl !== existingCustomer.profilePicUrl) {
-        updateData.profilePicUrl = customerData.profilePicUrl;
+      if (existingCpf) {
+        throw new ConflictException('CPF already exists');
       }
+    }
+
+    // Validate CNPJ uniqueness if provided
+    if (customerData.cnpj) {
+      const existingCnpj = await this.knex('customer')
+        .where('cnpj', customerData.cnpj)
+        .first();
       
-      if (customerData.email && customerData.email !== existingCustomer.email) {
-        updateData.email = customerData.email;
+      if (existingCnpj) {
+        throw new ConflictException('CNPJ already exists');
       }
-      
-      if (customerData.cpf && customerData.cpf !== existingCustomer.cpf) {
-        updateData.cpf = customerData.cpf;
+    }
+
+    // Start transaction
+    const trx = await this.knex.transaction();
+
+    try {
+      // Insert customer
+      const [newCustomer] = await trx('customer')
+        .insert({
+          ...customerData,
+          priority: customerData.priority || 0,
+          isGroup: customerData.isGroup || false,
+          type: customerData.type || CustomerType.CONTACT,
+          status: customerData.status || CustomerStatus.ACTIVE,
+          platform: customerData.platform || CustomerPlatform.WHATSAPP,
+          createdAt: this.knex.fn.now(),
+          updatedAt: this.knex.fn.now(),
+        })
+        .returning('*');
+
+      // Insert tags if provided
+      if (tags && tags.length > 0) {
+        const tagInserts = tags.map(tag => ({
+          customerId: newCustomer.id,
+          tag: tag.trim(),
+          createdAt: this.knex.fn.now(),
+          updatedAt: this.knex.fn.now(),
+        }));
+
+        await trx('customerTags').insert(tagInserts);
       }
-      
-      if (customerData.cnpj && customerData.cnpj !== existingCustomer.cnpj) {
-        updateData.cnpj = customerData.cnpj;
-      }
-      
-      if (customerData.priority !== existingCustomer.priority) {
-        updateData.priority = customerData.priority;
-      }
-      
-      // Only update if there are changes
-      if (Object.keys(updateData).length > 0) {
-        return this.update(existingCustomer.id, updateData);
-      }
-      
-      return existingCustomer;
-    } else {
-      // Create new customer
-      return this.create(customerData as CreateCustomerDto);
+
+      await trx.commit();
+
+      // Fetch customer with tags
+      const customerWithTags = await this.findCustomerByIdWithTags(newCustomer.id);
+      return customerWithTags;
+
+    } catch (error) {
+      await trx.rollback();
+      throw error;
     }
   }
 
   /**
-   * Centralized function to extract all available customer data from WhatsApp contact
-   * Handles different data sources: messages, webhooks, contact lists, etc.
+   * Find all customers with pagination and filtering
    */
-  private extractCustomerDataFromWhatsApp(contactData: any): CreateCustomerData {
-    // Standardize remoteJid (remove @s.whatsapp.net if present)
-    const remoteJid = contactData.remoteJid?.replace('@s.whatsapp.net', '') || 
-                      contactData.key?.remoteJid?.replace('@s.whatsapp.net', '') || '';
+  async findAllCustomers(query: CustomerQueryDto): Promise<PaginatedResult<Customer>> {
+    const page = parseInt(query.page || '1');
+    const limit = parseInt(query.limit || '10');
+    const offset = (page - 1) * limit;
 
-    // Extract pushName from various possible sources
-    const pushName = contactData.pushName || 
-                    contactData.key?.pushName || 
-                    contactData.name || 
-                    null;
+    let queryBuilder = this.knex('customer');
 
-    // Extract profilePicUrl from various possible sources
-    const profilePicUrl = contactData.profilePicUrl || 
-                         contactData.profilePictureUrl || 
-                         contactData.pictureUrl || 
-                         null;
-
-    // Extract all available fields with proper fallbacks
-    const customerData: CreateCustomerData = {
-      remoteJid,
-      pushName,
-      profilePicUrl,
-      email: contactData.email || null,
-      cpf: contactData.cpf || null,
-      cnpj: contactData.cnpj || null,
-      priority: contactData.priority || 0,
-      isGroup: false, // Always false for customers
-      isSaved: contactData.isSaved || contactData.saved || false,
-      type: 'contact', // Always contact for customers
-      status: 'active', // Default to active
-    };
-
-    return customerData;
-  }
-
-  async findAll(query?: {
-    type?: string;
-    status?: string;
-    isGroup?: boolean;
-    limit?: number;
-    offset?: number;
-  }): Promise<Customer[]> {
-    let queryBuilder = this.knex('customers').select('*');
-
-    // Always filter out groups by default
-    queryBuilder = queryBuilder.where('isGroup', false);
-
-    if (query?.type) {
-      queryBuilder = queryBuilder.where('type', query.type);
+    // Apply search filter
+    if (query.search) {
+      queryBuilder = queryBuilder.where((builder) => {
+        builder
+          .whereILike('name', `%${query.search}%`)
+          .orWhereILike('email', `%${query.search}%`)
+          .orWhereILike('contact', `%${query.search}%`)
+          .orWhereILike('platformId', `%${query.search}%`)
+          .orWhereILike('pushName', `%${query.search}%`);
+      });
     }
 
-    if (query?.status) {
+    // Apply status filter
+    if (query.status) {
       queryBuilder = queryBuilder.where('status', query.status);
     }
 
-    if (query?.isGroup !== undefined) {
+    // Apply type filter
+    if (query.type) {
+      queryBuilder = queryBuilder.where('type', query.type);
+    }
+
+    // Apply platform filter
+    if (query.platform) {
+      queryBuilder = queryBuilder.where('platform', query.platform);
+    }
+
+    // Apply priority filter
+    if (query.priority !== undefined) {
+      queryBuilder = queryBuilder.where('priority', query.priority);
+    }
+
+    // Apply isGroup filter
+    if (query.isGroup !== undefined) {
       queryBuilder = queryBuilder.where('isGroup', query.isGroup);
     }
 
-    if (query?.limit) {
-      queryBuilder = queryBuilder.limit(query.limit);
-    }
-
-    if (query?.offset) {
-      queryBuilder = queryBuilder.offset(query.offset);
-    }
-
-    return queryBuilder.orderBy('createdAt', 'desc');
-  }
-
-  async findOne(id: string): Promise<Customer> {
-    const customer = await this.knex('customers')
-      .where('id', id)
-      .first();
-
-    if (!customer) {
-      throw new NotFoundException(`Customer with ID ${id} not found`);
-    }
-
-    return customer;
-  }
-
-  async findByRemoteJid(remoteJid: string): Promise<Customer | null> {
-    return this.knex('customers')
-      .where('remoteJid', remoteJid)
-      .first();
-  }
-
-  async searchCustomers(searchTerm: string, instanceId?: string): Promise<Customer[]> {
-    let query = this.knex('customers')
-      .where(function() {
-        this.where('pushName', 'ilike', `%${searchTerm}%`)
-          .orWhere('remoteJid', 'ilike', `%${searchTerm}%`)
-          .orWhere('email', 'ilike', `%${searchTerm}%`)
-          .orWhere('cpf', 'ilike', `%${searchTerm}%`)
-          .orWhere('cnpj', 'ilike', `%${searchTerm}%`);
-      });
-
-    return query.orderBy('priority', 'desc').orderBy('createdAt', 'desc');
-  }
-
-  async update(id: string, updateCustomerDto: UpdateCustomerDto): Promise<Customer> {
-    const [customer] = await this.knex('customers')
-      .where('id', id)
-      .update({
-        ...updateCustomerDto,
-        updatedAt: this.knex.fn.now(),
-      })
-      .returning('*');
-
-    if (!customer) {
-      throw new NotFoundException(`Customer with ID ${id} not found`);
-    }
-
-    return customer;
-  }
-
-  async updateByRemoteJid(remoteJid: string, updateData: UpdateCustomerData): Promise<Customer> {
-    const [customer] = await this.knex('customers')
-      .where('remoteJid', remoteJid)
-      .update({
-        ...updateData,
-        updatedAt: this.knex.fn.now(),
-      })
-      .returning('*');
-
-    if (!customer) {
-      throw new NotFoundException(`Customer with remoteJid ${remoteJid} not found`);
-    }
-
-    return customer;
-  }
-
-  async remove(id: string): Promise<void> {
-    const deletedCount = await this.knex('customers')
-      .where('id', id)
-      .del();
-
-    if (deletedCount === 0) {
-      throw new NotFoundException(`Customer with ID ${id} not found`);
-    }
-  }
-
-  async bulkUpsert(customersData: CreateCustomerData[]): Promise<Customer[]> {
-    const customers: Customer[] = [];
-
-    for (const data of customersData) {
-      try {
-        // Try to find existing customer by remoteJid
-        const existing = await this.findByRemoteJid(data.remoteJid);
-        
-        if (existing) {
-          // Update existing customer
-          const updated = await this.update(existing.id, data);
-          customers.push(updated);
-        } else {
-          // Create new customer
-          const created = await this.create(data as CreateCustomerDto);
-          customers.push(created);
-        }
-      } catch (error) {
-        console.error(`Error upserting customer ${data.remoteJid}:`, error);
-        // Continue with other customers even if one fails
+    // Apply tags filter
+    if (query.tags) {
+      const tagList = query.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      if (tagList.length > 0) {
+        queryBuilder = queryBuilder.whereExists((builder) => {
+          builder
+            .select('*')
+            .from('customerTags')
+            .whereRaw('customerTags.customerId = customer.id')
+            .whereIn('customerTags.tag', tagList);
+        });
       }
     }
 
-    return customers;
+    // Get total count
+    const totalQuery = queryBuilder.clone();
+    const [{ count }] = await totalQuery.count('* as count');
+    const total = parseInt(count as string);
+
+    // Get paginated results
+    const customers = await queryBuilder
+      .select('*')
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .offset(offset);
+
+    // Fetch tags for each customer
+    const customersWithTags = await Promise.all(
+      customers.map(async (customer) => {
+        const tags = await this.knex('customerTags')
+          .where('customerId', customer.id)
+          .select('tag');
+        
+        return {
+          ...customer,
+          tags: tags.map(t => t.tag),
+        };
+      })
+    );
+
+    const customerEntities = customersWithTags.map(customer => new Customer(customer));
+
+    return {
+      data: customerEntities,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async getCustomersByPriority(remoteJid: string): Promise<Customer[]> {
-    let query = this.knex('customers')
-      .where('priority', '>', 0)
-      .orderBy('priority', 'desc');
-
-    if (remoteJid) {
-      query = query.where('remoteJid', remoteJid);
-    }
-
-    return query;
-  }
-
-  async getActiveCustomers(remoteJid?: string): Promise<Customer[]> {
-    let query = this.knex('customers')
-      .where('status', 'active')
-      .where('isGroup', false)
-      .orderBy('priority', 'desc')
-      .orderBy('createdAt', 'desc');
-
-    if (remoteJid) {
-      query = query.where('remoteJid', remoteJid);
-    }
-
-    return query;
-  }
-
-  async countByRemoteJid(remoteJid: string): Promise<number> {
-    const result = await this.knex('customers')
-      .where('remoteJid', remoteJid)
-      .count('* as count')
+  /**
+   * Find customer by ID with tags
+   */
+  async findCustomerById(id: string): Promise<Customer> {
+    const customer = await this.knex('customer')
+      .where('id', id)
       .first();
 
-    if (!result) {
-      return 0;
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
     }
 
-    return parseInt(result.count as string);
+    return new Customer(customer);
   }
-} 
+
+  /**
+   * Find customer by ID with tags
+   */
+  async findCustomerByIdWithTags(id: string): Promise<Customer> {
+    const customer = await this.knex('customer')
+      .where('id', id)
+      .first();
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    const tags = await this.knex('customerTags')
+      .where('customerId', id)
+      .select('tag');
+
+    return new Customer({
+      ...customer,
+      tags: tags.map(t => t.tag),
+    });
+  }
+
+  /**
+   * Find customer by platformId and platform
+   */
+  async findCustomerByPlatformId(platformId: string, platform: CustomerPlatform): Promise<Customer | null> {
+    const customer = await this.knex('customer')
+      .where('platformId', platformId)
+      .where('platform', platform)
+      .first();
+
+    return customer ? new Customer(customer) : null;
+  }
+
+  /**
+   * Update customer by ID with tags
+   */
+  async updateCustomer(id: string, updateCustomerDto: UpdateCustomerDto): Promise<Customer> {
+    // Check if customer exists
+    const existingCustomer = await this.knex('customer')
+      .where('id', id)
+      .first();
+
+    if (!existingCustomer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    const { tags, ...customerData } = updateCustomerDto;
+
+    // Check for unique constraints if updating platformId
+    if (customerData.platformId && customerData.platformId !== existingCustomer.platformId) {
+      const existingPlatformId = await this.knex('customer')
+        .where('platformId', customerData.platformId)
+        .where('platform', customerData.platform || existingCustomer.platform)
+        .whereNot('id', id)
+        .first();
+      
+      if (existingPlatformId) {
+        throw new ConflictException('Customer with this platformId already exists for this platform');
+      }
+    }
+
+    // Check for unique constraints if updating email
+    if (customerData.email && customerData.email !== existingCustomer.email) {
+      const existingEmail = await this.knex('customer')
+        .where('email', customerData.email)
+        .whereNot('id', id)
+        .first();
+      
+      if (existingEmail) {
+        throw new ConflictException('Email already exists');
+      }
+    }
+
+    // Check for unique constraints if updating CPF
+    if (customerData.cpf && customerData.cpf !== existingCustomer.cpf) {
+      const existingCpf = await this.knex('customer')
+        .where('cpf', customerData.cpf)
+        .whereNot('id', id)
+        .first();
+      
+      if (existingCpf) {
+        throw new ConflictException('CPF already exists');
+      }
+    }
+
+    // Check for unique constraints if updating CNPJ
+    if (customerData.cnpj && customerData.cnpj !== existingCustomer.cnpj) {
+      const existingCnpj = await this.knex('customer')
+        .where('cnpj', customerData.cnpj)
+        .whereNot('id', id)
+        .first();
+      
+      if (existingCnpj) {
+        throw new ConflictException('CNPJ already exists');
+      }
+    }
+
+    // Start transaction
+    const trx = await this.knex.transaction();
+
+    try {
+      // Update customer
+      const [updatedCustomer] = await trx('customer')
+        .where('id', id)
+        .update({
+          ...customerData,
+          updatedAt: this.knex.fn.now(),
+        })
+        .returning('*');
+
+      // Handle tags update if provided
+      if (tags !== undefined) {
+        // Get current tags
+        const currentTags = await trx('customerTags')
+          .where('customerId', id)
+          .select('tag');
+        
+        const currentTagList = currentTags.map(t => t.tag);
+        const newTagList = tags.map(tag => tag.trim()).filter(tag => tag);
+
+        // Find tags to add and remove
+        const tagsToAdd = newTagList.filter(tag => !currentTagList.includes(tag));
+        const tagsToRemove = currentTagList.filter(tag => !newTagList.includes(tag));
+
+        // Remove tags that are no longer needed
+        if (tagsToRemove.length > 0) {
+          await trx('customerTags')
+            .where('customerId', id)
+            .whereIn('tag', tagsToRemove)
+            .del();
+        }
+
+        // Add new tags
+        if (tagsToAdd.length > 0) {
+          const tagInserts = tagsToAdd.map(tag => ({
+            customerId: id,
+            tag: tag,
+            createdAt: this.knex.fn.now(),
+            updatedAt: this.knex.fn.now(),
+          }));
+
+          await trx('customerTags').insert(tagInserts);
+        }
+      }
+
+      await trx.commit();
+
+      // Fetch customer with tags
+      const customerWithTags = await this.findCustomerByIdWithTags(id);
+      return customerWithTags;
+
+    } catch (error) {
+      await trx.rollback();
+      throw error;
+    }
+  }
+
+  /**
+   * Delete customer by ID
+   */
+  async deleteCustomer(id: string): Promise<void> {
+    const deletedRows = await this.knex('customer')
+      .where('id', id)
+      .del();
+
+    if (deletedRows === 0) {
+      throw new NotFoundException('Customer not found');
+    }
+  }
+
+  /**
+   * Add tag to customer
+   */
+  async addTagToCustomer(customerId: string, tag: string): Promise<CustomerTag> {
+    // Check if customer exists
+    const customer = await this.knex('customer')
+      .where('id', customerId)
+      .first();
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    // Check if tag already exists
+    const existingTag = await this.knex('customerTags')
+      .where('customerId', customerId)
+      .where('tag', tag.trim())
+      .first();
+
+    if (existingTag) {
+      throw new ConflictException('Tag already exists for this customer');
+    }
+
+    const [newTag] = await this.knex('customerTags')
+      .insert({
+        customerId,
+        tag: tag.trim(),
+        createdAt: this.knex.fn.now(),
+        updatedAt: this.knex.fn.now(),
+      })
+      .returning('*');
+
+    return new CustomerTag(newTag);
+  }
+
+  /**
+   * Remove tag from customer
+   */
+  async removeTagFromCustomer(customerId: string, tag: string): Promise<void> {
+    const deletedRows = await this.knex('customerTags')
+      .where('customerId', customerId)
+      .where('tag', tag.trim())
+      .del();
+
+    if (deletedRows === 0) {
+      throw new NotFoundException('Tag not found for this customer');
+    }
+  }
+
+  /**
+   * Get customer tags
+   */
+  async getCustomerTags(customerId: string): Promise<CustomerTag[]> {
+    const tags = await this.knex('customerTags')
+      .where('customerId', customerId)
+      .select('*');
+
+    return tags.map(tag => new CustomerTag(tag));
+  }
+
+  /**
+   * Get customer tags as simple string array
+   */
+  async getCustomerTagsAsArray(customerId: string): Promise<string[]> {
+    const tags = await this.knex('customerTags')
+      .where('customerId', customerId)
+      .select('tag');
+
+    return tags.map(t => t.tag);
+  }
+
+  /**
+   * Add multiple tags to customer
+   */
+  async addTagsToCustomer(customerId: string, tags: string[]): Promise<void> {
+    // Check if customer exists
+    const customer = await this.knex('customer')
+      .where('id', customerId)
+      .first();
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    // Filter out existing tags
+    const existingTags = await this.knex('customerTags')
+      .where('customerId', customerId)
+      .whereIn('tag', tags)
+      .select('tag');
+
+    const existingTagList = existingTags.map(t => t.tag);
+    const newTags = tags.filter(tag => !existingTagList.includes(tag.trim()));
+
+    if (newTags.length > 0) {
+      const tagInserts = newTags.map(tag => ({
+        customerId,
+        tag: tag.trim(),
+        createdAt: this.knex.fn.now(),
+        updatedAt: this.knex.fn.now(),
+      }));
+
+      await this.knex('customerTags').insert(tagInserts);
+    }
+  }
+
+  /**
+   * Remove multiple tags from customer
+   */
+  async removeTagsFromCustomer(customerId: string, tags: string[]): Promise<void> {
+    const deletedRows = await this.knex('customerTags')
+      .where('customerId', customerId)
+      .whereIn('tag', tags.map(tag => tag.trim()))
+      .del();
+
+    if (deletedRows === 0) {
+      throw new NotFoundException('No tags found for this customer');
+    }
+  }
+}

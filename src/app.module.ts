@@ -4,23 +4,10 @@ import { BullModule } from '@nestjs/bullmq';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
-import { UsersModule } from './modules/users/users.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { EvolutionModule } from './modules/evolution/evolution.module';
-import { WebhookModule } from './modules/webhook/webhook.module';
-import { SocketModule } from './modules/socket/socket.module';
-import { ChatModule } from './modules/chat/chat.module';
-import { GroupModule } from './modules/group/group.module';
-import { CustomerModule } from './modules/customer/customer.module';
-import { QueuesModule } from './modules/queues/queues.module';
-import { StartupModule } from './modules/startup/startup.module';
-import { TypebotModule } from './modules/typebot/typebot.module';
-import { MessagesModule } from './modules/messages/messages.module';
-import { TabulationsModule } from './modules/tabulations/tabulations.module';
-import { TabulationStatusModule } from './modules/tabulation-status/tabulation-status.module';
-import { DashboardModule } from './modules/dashboard/dashboard.module';
-import { MessageTemplatesModule } from './modules/message-templates/message-templates.module';
-import { SchedulerModule } from './modules/scheduler/scheduler.module';
+import { UserModule } from './modules/user';
+import { CustomerModule } from './modules/customer';
+import { TabulationModule } from './modules/tabulation';
+import { HistoryModule } from './modules/history';
 
 @Module({
   imports: [
@@ -37,23 +24,10 @@ import { SchedulerModule } from './modules/scheduler/scheduler.module';
         },
     }),
     DatabaseModule,
-    AuthModule,
-    UsersModule,
-    EvolutionModule,
-    ChatModule,
-    GroupModule,
+    UserModule,
     CustomerModule,
-    QueuesModule,
-    WebhookModule,
-    SocketModule,
-    StartupModule,
-    TypebotModule,
-    MessagesModule,
-    TabulationsModule,
-    TabulationStatusModule,
-    DashboardModule,
-    MessageTemplatesModule,
-    SchedulerModule,
+    TabulationModule,
+    HistoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,596 +1,327 @@
-import { Injectable, Logger } from '@nestjs/common';
-import type { Knex } from 'nestjs-knex';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectKnex } from 'nestjs-knex';
-import { CustomerService } from '../customer/customer.service';
-import type {
-  Message,
-  CreateMessageDto,
-  EvolutionApiMessage,
-  MessageFilters,
-  MessageMetrics
-} from './interfaces/message.interface';
-import {
-  MessageType,
-  MessageDirection,
-  MessageStatus,
-  MessageFrom
-} from './interfaces/message.interface';
-import { randomUUID } from 'crypto';
+import { Knex } from 'knex';
+import { Message, MessageEntity, MessageStatus } from './entities/message.entity';
+import { CreateMessageDto, UpdateMessageDto, MessageQueryDto, AddReactionDto } from './dto/message.dto';
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 @Injectable()
 export class MessagesService {
-  private readonly logger = new Logger(MessagesService.name);
+  constructor(@InjectKnex() private readonly knex: Knex) {}
 
-  constructor(
-    @InjectKnex() private readonly knex: Knex,
-    private readonly customerService: CustomerService
-  ) {}
+  /**
+   * List messages with filtering and pagination
+   */
+  async listMessages(query: MessageQueryDto): Promise<PaginatedResult<Message>> {
+    const page = parseInt(query.page || '1');
+    const limit = parseInt(query.limit || '20');
+    const offset = (page - 1) * limit;
+    const sortBy = query.sortBy || 'sentAt';
+    const sortOrder = query.sortOrder || 'desc';
 
-  async createMessage(createMessageDto: CreateMessageDto): Promise<Message> {
-    const [message] = await this.knex('messages')
-      .insert({
-        sessionId: createMessageDto.sessionId,
-        evolutionMessageId: createMessageDto.evolutionMessageId,
-        remoteJid: createMessageDto.remoteJid,
-        instance: createMessageDto.instance,
-        pushName: createMessageDto.pushName,
-        source: createMessageDto.source,
-        messageTimestamp: createMessageDto.messageTimestamp,
-        messageType: createMessageDto.messageType,
-        from: createMessageDto.from,
-        direction: createMessageDto.direction,
-        content: createMessageDto.content,
-        mediaUrl: createMessageDto.mediaUrl,
-        mimetype: createMessageDto.mimetype,
-        caption: createMessageDto.caption,
-        fileName: createMessageDto.fileName,
-        fileLength: createMessageDto.fileLength,
-        fileSha256: createMessageDto.fileSha256,
-        width: createMessageDto.width,
-        height: createMessageDto.height,
-        seconds: createMessageDto.seconds,
-        isAnimated: createMessageDto.isAnimated,
-        ptt: createMessageDto.ptt,
-        pageCount: createMessageDto.pageCount,
-        latitude: createMessageDto.latitude,
-        longitude: createMessageDto.longitude,
-        locationName: createMessageDto.locationName,
-        locationAddress: createMessageDto.locationAddress,
-        contactDisplayName: createMessageDto.contactDisplayName,
-        contactVcard: createMessageDto.contactVcard,
-        senderId: createMessageDto.senderId,
-        senderName: createMessageDto.senderName,
-        senderPhone: createMessageDto.senderPhone,
-        typebotMessageId: createMessageDto.typebotMessageId,
-        evolutionData: createMessageDto.evolutionData || {},
-        metadata: createMessageDto.metadata || {},
-        status: createMessageDto.status || MessageStatus.PENDING,
-        fromMe: createMessageDto.direction === MessageDirection.OUTBOUND
-      })
-      .returning('*');
+    // Build query
+    let queryBuilder = this.knex('messages');
 
-    return message;
-  }
-
-  async processEvolutionApiMessage(evolutionMessage: EvolutionApiMessage): Promise<Message | null> {
-    const { data } = evolutionMessage;
-    
-    // Check if message already exists
-    const existingMessage = await this.findMessageByEvolutionId(data.key.id);
-    if (existingMessage) {
-      return existingMessage;
+    // Apply filters
+    if (query.sessionId) {
+      queryBuilder = queryBuilder.where('sessionId', query.sessionId);
     }
 
-    // Check if this is a group message
-    const isGroupMessage = data.key.remoteJid.includes('@g.us');
-    const customerPhone = data.key.remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '');
+    if (query.senderId) {
+      queryBuilder = queryBuilder.where('senderId', query.senderId);
+    }
 
-    // Create or update customer with all available data
-    const customer = await this.customerService.createOrUpdateFromWhatsAppData({
-      remoteJid: data.key.remoteJid,
-      pushName: data.pushName,
-      instance: evolutionMessage.instance, // Pass instance for profile picture fetch
-      // Add any other available data from the message
-      ...data
-    });
+    if (query.recipientId) {
+      queryBuilder = queryBuilder.where('recipientId', query.recipientId);
+    }
 
-    let queue: any = null;
-    let sessionId: string | null;
-    
-    
-    if (isGroupMessage || evolutionMessage.isOpen === false) {
-      // For group messages, use a special sessionId and don't create/find a queue
-      sessionId = null
-      this.logger.log(`Processing group message with sessionId: ${sessionId}`);
-    } else {
-      // For non-group messages, find or create queue session
-      queue = await this.knex('queues')
-        .where({ customerId: customer.id })
-        .whereIn('status', ['typebot', 'waiting', 'service'])
-        .orderBy('createdAt', 'desc')
+    if (query.platform) {
+      queryBuilder = queryBuilder.where('platform', query.platform);
+    }
+
+    if (query.type) {
+      queryBuilder = queryBuilder.where('type', query.type);
+    }
+
+    if (query.status) {
+      queryBuilder = queryBuilder.where('status', query.status);
+    }
+
+    if (query.fromMe !== undefined) {
+      queryBuilder = queryBuilder.where('fromMe', query.fromMe);
+    }
+
+    if (query.system !== undefined) {
+      queryBuilder = queryBuilder.where('system', query.system);
+    }
+
+    if (query.isGroup !== undefined) {
+      queryBuilder = queryBuilder.where('isGroup', query.isGroup);
+    }
+
+    if (query.search) {
+      queryBuilder = queryBuilder.where('message', 'ilike', `%${query.search}%`);
+    }
+
+    // Get total count
+    const totalQuery = queryBuilder.clone();
+    const [{ count }] = await totalQuery.count('* as count');
+    const total = parseInt(count as string);
+
+    // Apply pagination and sorting
+    const messages = await queryBuilder
+      .orderBy(sortBy, sortOrder)
+      .limit(limit)
+      .offset(offset);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: messages.map(msg => new Message(msg)),
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  /**
+   * Find message by ID or messageId
+   */
+  async findMessage(identifier: string): Promise<Message> {
+    // Try to find by UUID first (primary key)
+    let message = await this.knex('messages')
+      .where('id', identifier)
+      .first();
+
+    // If not found by UUID, try by messageId
+    if (!message) {
+      message = await this.knex('messages')
+        .where('messageId', identifier)
+        .first();
+    }
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    return new Message(message);
+  }
+
+  /**
+   * Create a new message
+   */
+  async createMessage(createMessageDto: CreateMessageDto): Promise<Message> {
+    // Check if message with same messageId already exists
+    const existingMessage = await this.knex('messages')
+      .where('messageId', createMessageDto.messageId)
+      .first();
+
+    if (existingMessage) {
+      throw new ConflictException('Message with this messageId already exists');
+    }
+
+    // Validate foreign key references
+    const senderExists = await this.knex('user')
+      .where('id', createMessageDto.senderId)
+      .first();
+
+    if (!senderExists) {
+      throw new BadRequestException('Sender not found');
+    }
+
+    const recipientExists = await this.knex('customer')
+      .where('id', createMessageDto.recipientId)
+      .first();
+
+    if (!recipientExists) {
+      throw new BadRequestException('Recipient not found');
+    }
+
+    // Validate reply message if provided
+    if (createMessageDto.replyMessageId) {
+      const replyMessage = await this.knex('messages')
+        .where('messageId', createMessageDto.replyMessageId)
         .first();
 
-      if (!queue) {
-        // Create a new queue session
-        sessionId = randomUUID();
-        const [newQueue] = await this.knex('queues')
-          .insert({
-            sessionId,
-            customerId: customer.id,
-            status: 'typebot',
-            department: 'Personal', // Default department
-            evolutionInstance: evolutionMessage.instance,
-            typebotData: {},
-            metadata: {
-              lastMessage: data,
-              lastMessageTimestamp: data.messageTimestamp,
-              direction: data.key.fromMe ? MessageDirection.OUTBOUND : MessageDirection.INBOUND,
-            }
-          })
-          .returning('*');
-        
-        queue = newQueue;
-      } else {
-        sessionId = queue.sessionId;
+      if (!replyMessage) {
+        throw new BadRequestException('Reply message not found');
       }
     }
 
-    // Determine message source and sender information
-    let from: MessageFrom;
-    let senderId: string | undefined;
-    let senderName: string | undefined;
-    let senderPhone: string | undefined;
-
-    if (data.key.fromMe) {
-      // Message is from the system (operator or typebot)
-      if (isGroupMessage) {
-        from = MessageFrom.OPERATOR; // Group messages from system are considered operator messages
-        senderId = undefined;
-        senderName = 'System';
-      } else if (queue && queue.status === 'typebot') {
-        from = MessageFrom.TYPEBOT;
-        senderId = undefined; // Typebot messages don't have a specific sender ID
-        senderName = 'Typebot';
-      } else {
-        from = MessageFrom.OPERATOR;
-        // Set senderId for operator messages
-        senderId = queue?.assignedOperatorId || undefined;
-        senderName = 'Operator';
-      }
-    } else {
-      // Message is from customer - use customer ID as senderId
-      from = MessageFrom.CUSTOMER;
-      senderId = customer.id; // Use customer ID as senderId
-      senderName = data.pushName || customerPhone;
-      senderPhone = isGroupMessage ? data.key.participant?.replace('@s.whatsapp.net', '') : customerPhone;
-    }
-
-    // Extract basic message information
-    const messageData = {
-      evolutionMessageId: data.key.id,
-      remoteJid: data.key.remoteJid,
-      fromMe: data.key.fromMe,
-      instance: evolutionMessage.instance,
-      pushName: data.pushName,
-      source: data.source,
-      messageTimestamp: data.messageTimestamp,
-      evolutionData: evolutionMessage,
-      from,
-      direction: data.key.fromMe ? MessageDirection.OUTBOUND : MessageDirection.INBOUND,
-      status: MessageStatus.SENT,
-      senderId,
-      senderName,
-      senderPhone,
-      metadata: {
-        isGroupMessage: isGroupMessage,
-        groupJid: isGroupMessage ? data.key.remoteJid : undefined,
-        ...(isGroupMessage && { groupSessionId: sessionId })
-      }
-    };
-
-    // Extract message content using the reusable function
-    const contentData = this.extractMessageContent(data);
-
-    // Create the message with proper sessionId
-    const [message] = await this.knex('messages')
+    const [newMessage] = await this.knex('messages')
       .insert({
-        ...messageData,
-        ...contentData,
-        sessionId: sessionId // Use the determined sessionId (either queue.sessionId or group sessionId)
+        ...createMessageDto,
+        status: createMessageDto.status || MessageStatus.PENDING,
+        sentAt: this.knex.fn.now(),
+        createdAt: this.knex.fn.now(),
+        updatedAt: this.knex.fn.now(),
       })
       .returning('*');
 
-    return message;
+    return new Message(newMessage);
   }
 
-  async processSendMessageEvent(evolutionMessage: EvolutionApiMessage, queueId?: string): Promise<Message | null> {
-    const { data } = evolutionMessage;
-    
-    // Get queue information to determine message source (if queueId is provided)
-    let queue: any = null;
-    if (queueId) {
-      queue = await this.knex('queues').where({ id: queueId }).first();
-      if (!queue) {
-        this.logger.warn(`Queue not found for queueId: ${queueId}`);
-      }
-    }
-    
-    // Determine message source and sender information
-    let from: MessageFrom;
-    let senderId: string | undefined;
-    let senderName: string | undefined;
-    let sessionId: string | null = null;
+  /**
+   * Update a message
+   */
+  async updateMessage(id: string, updateMessageDto: UpdateMessageDto): Promise<Message> {
+    const message = await this.knex('messages')
+      .where('id', id)
+      .first();
 
-    if (queue && queue.status === 'typebot') {
-      from = MessageFrom.TYPEBOT;
-      senderId = undefined; // Typebot messages don't have a specific sender ID
-      senderName = 'Typebot';
-      sessionId = queue.sessionId;
-    } else if (queue) {
-      from = MessageFrom.OPERATOR;
-      // Set senderId for operator messages
-      senderId = queue.assignedOperatorId || undefined;
-      senderName = 'Operator';
-      sessionId = queue.sessionId;
-    } else {
-      // No queue found - this could be a group message or standalone message
-      from = MessageFrom.OPERATOR;
-      senderId = undefined;
-      senderName = 'System';
-      sessionId = null; // No session for messages without queue context
-    }
-  
-    if(sessionId) {
-      await this.knex('queues').where({ id: queueId }).update({ metadata: {
-        ...queue.metadata,
-        lastMessage: data,
-        lastMessageTimestamp: data.messageTimestamp,
-        direction: data.key.fromMe ? MessageDirection.OUTBOUND : MessageDirection.INBOUND,
-      } });
+    if (!message) {
+      throw new NotFoundException('Message not found');
     }
 
-    // Extract basic message information for send.message events
-    const messageData = {
-      evolutionMessageId: data.key.id,
-      remoteJid: data.key.remoteJid,
-      fromMe: true, // send.message events are always from the system
-      instance: evolutionMessage.instance,
-      pushName: data.pushName,
-      source: data.source,
-      messageTimestamp: data.messageTimestamp,
-      evolutionData: evolutionMessage,
-      from,
-      direction: MessageDirection.OUTBOUND, // Always outbound for send.message
-      status: MessageStatus.SENT,
-      sessionId: sessionId, // Use the determined sessionId (could be null for group messages)
-      senderId,
-      senderName
-    };
-
-    // Extract message content using the reusable function
-    const contentData = this.extractMessageContent(data);
-
-    // Check if message already exists
-    const existingMessage = await this.findMessageByEvolutionId(data.key.id);
-    if (existingMessage) {
-      return existingMessage;
-    }
-
-    // Create the message
-    const [message] = await this.knex('messages')
-      .insert({
-        ...messageData,
-        ...contentData
+    const [updatedMessage] = await this.knex('messages')
+      .where('id', id)
+      .update({
+        ...updateMessageDto,
+        updatedAt: this.knex.fn.now(),
       })
       .returning('*');
 
-    return message;
-  }
-  
-  async findMessageById(id: string): Promise<Message | null> {
-    const [message] = await this.knex('messages')
-      .where({ id })
-      .select('*');
-
-    return message || null;
+    return new Message(updatedMessage);
   }
 
-  async findMessageByEvolutionId(evolutionMessageId: string): Promise<Message | null> {
-    const [message] = await this.knex('messages')
-      .where({ evolutionMessageId })
-      .select('*');
+  /**
+   * Add a reaction to a message
+   */
+  async addReaction(addReactionDto: AddReactionDto): Promise<void> {
+    // Check if message exists
+    const message = await this.knex('messages')
+      .where('messageId', addReactionDto.messageId)
+      .first();
 
-    return message || null;
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    // Check if reaction already exists from this user
+    const existingReaction = await this.knex('messageReactions')
+      .where('messageId', addReactionDto.messageId)
+      .where('reactorId', addReactionDto.reactorId)
+      .first();
+
+    if (existingReaction) {
+      // Update existing reaction
+      await this.knex('messageReactions')
+        .where('messageId', addReactionDto.messageId)
+        .where('reactorId', addReactionDto.reactorId)
+        .update({
+          emoji: addReactionDto.emoji,
+          reactedAt: this.knex.fn.now(),
+          updatedAt: this.knex.fn.now(),
+        });
+    } else {
+      // Create new reaction
+      await this.knex('messageReactions')
+        .insert({
+          messageId: addReactionDto.messageId,
+          reactorId: addReactionDto.reactorId,
+          emoji: addReactionDto.emoji,
+          reactedAt: this.knex.fn.now(),
+          createdAt: this.knex.fn.now(),
+          updatedAt: this.knex.fn.now(),
+        });
+    }
   }
 
-  async findMessagesBySessionId(sessionId: string): Promise<Message[]> {
-    return this.knex('messages')
-      .where({ sessionId })
-      .orderBy('sentAt', 'asc')
-      .select('*');
-  }
+  /**
+   * Delete a reaction from a message
+   */
+  async deleteReaction(messageId: string, reactorId: string): Promise<void> {
+    const reaction = await this.knex('messageReactions')
+      .where('messageId', messageId)
+      .where('reactorId', reactorId)
+      .first();
 
-  async findMessages(filters: MessageFilters = {}): Promise<Message[]> {
-    let query = this.knex('messages').select('*');
-
-    if (filters.sessionId) {
-      query = query.where({ sessionId: filters.sessionId });
+    if (!reaction) {
+      throw new NotFoundException('Reaction not found');
     }
 
-    if (filters.messageType) {
-      query = query.where({ messageType: filters.messageType });
-    }
-
-    if (filters.from) {
-      query = query.where({ from: filters.from });
-    }
-
-    if (filters.direction) {
-      query = query.where({ direction: filters.direction });
-    }
-
-    if (filters.senderId) {
-      query = query.where({ senderId: filters.senderId });
-    }
-
-    if (filters.remoteJid) {
-      query = query.where({ remoteJid: filters.remoteJid });
-    }
-
-    if (filters.fromMe !== undefined) {
-      query = query.where({ fromMe: filters.fromMe });
-    }
-
-    if (filters.startDate) {
-      query = query.where('sentAt', '>=', filters.startDate);
-    }
-
-    if (filters.endDate) {
-      query = query.where('sentAt', '<=', filters.endDate);
-    }
-
-    return query.orderBy('sentAt', 'asc');
-  }
-
-  async updateMessageStatus(id: string, status: MessageStatus): Promise<Message | null> {
-    const updateData: any = { status };
-
-    if (status === MessageStatus.DELIVERED) {
-      updateData.deliveredAt = new Date();
-    } else if (status === MessageStatus.READ) {
-      updateData.readAt = new Date();
-    }
-
-    const [message] = await this.knex('messages')
-      .where({ id })
-      .update(updateData)
-      .returning('*');
-
-    return message || null;
-  }
-
-  async updateMessageStatusByEvolutionId(evolutionMessageId: string, status: MessageStatus): Promise<Message | null> {
-    const updateData: any = { status };
-
-    if (status === MessageStatus.DELIVERED) {
-      updateData.deliveredAt = new Date();
-    } else if (status === MessageStatus.READ) {
-      updateData.readAt = new Date();
-    }
-
-    const [message] = await this.knex('messages')
-      .where({ evolutionMessageId })
-      .update(updateData)
-      .returning('*');
-
-    return message || null;
-  }
-
-  async getMessageMetrics(startDate?: Date, endDate?: Date): Promise<MessageMetrics> {
-    let query = this.knex('messages');
-
-    if (startDate) {
-      query = query.where('sentAt', '>=', startDate);
-    }
-
-    if (endDate) {
-      query = query.where('sentAt', '<=', endDate);
-    }
-
-    const [metrics] = await query
-      .select(
-        this.knex.raw('COUNT(*) as total_messages'),
-        this.knex.raw('COUNT(CASE WHEN direction = ? THEN 1 END) as inbound_messages', [MessageDirection.INBOUND]),
-        this.knex.raw('COUNT(CASE WHEN direction = ? THEN 1 END) as outbound_messages', [MessageDirection.OUTBOUND]),
-        this.knex.raw('COUNT(CASE WHEN messageType IN (?, ?, ?, ?, ?) THEN 1 END) as media_messages', [
-          MessageType.IMAGE_MESSAGE,
-          MessageType.VIDEO_MESSAGE,
-          MessageType.AUDIO_MESSAGE,
-          MessageType.DOCUMENT_MESSAGE,
-          MessageType.STICKER_MESSAGE
-        ])
-      );
-
-    return {
-      totalMessages: parseInt(metrics.total_messages) || 0,
-      inboundMessages: parseInt(metrics.inbound_messages) || 0,
-      outboundMessages: parseInt(metrics.outbound_messages) || 0,
-      mediaMessages: parseInt(metrics.media_messages) || 0,
-      averageResponseTime: 0 // TODO: Implement response time calculation
-    };
-  }
-
-  async deleteMessage(id: string): Promise<boolean> {
-    const deletedCount = await this.knex('messages')
-      .where({ id })
+    await this.knex('messageReactions')
+      .where('messageId', messageId)
+      .where('reactorId', reactorId)
       .del();
-
-    return deletedCount > 0;
   }
 
-  async deleteMessagesBySessionId(sessionId: string): Promise<boolean> {
-    const deletedCount = await this.knex('messages')
-      .where({ sessionId })
-      .del();
+  /**
+   * Delete a message (soft delete by updating status)
+   */
+  async deleteMessage(id: string): Promise<void> {
+    const message = await this.knex('messages')
+      .where('id', id)
+      .first();
 
-    return deletedCount > 0;
-  }
-
-  private extractMessageContent(data: any): {
-    messageType: MessageType;
-    content?: string;
-    mediaUrl?: string;
-    mimetype?: string;
-    caption?: string;
-    fileName?: string;
-    fileLength?: string;
-    fileSha256?: string;
-    width?: number;
-    height?: number;
-    seconds?: number;
-    isAnimated?: boolean;
-    ptt?: boolean;
-    pageCount?: number;
-    latitude?: number;
-    longitude?: number;
-    locationName?: string;
-    locationAddress?: string;
-    contactDisplayName?: string;
-    contactVcard?: string;
-    reactionText?: string;
-    reactionToMessageId?: string;
-  } {
-    const messageType = data.messageType as MessageType;
-    let content: string | undefined;
-    let mediaUrl: string | undefined;
-    let mimetype: string | undefined;
-    let caption: string | undefined;
-    let fileName: string | undefined;
-    let fileLength: string | undefined;
-    let fileSha256: string | undefined;
-    let width: number | undefined;
-    let height: number | undefined;
-    let seconds: number | undefined;
-    let isAnimated: boolean | undefined;
-    let ptt: boolean | undefined;
-    let pageCount: number | undefined;
-    let latitude: number | undefined;
-    let longitude: number | undefined;
-    let locationName: string | undefined;
-    let locationAddress: string | undefined;
-    let contactDisplayName: string | undefined;
-    let contactVcard: string | undefined;
-    let reactionText: string | undefined;
-    let reactionToMessageId: string | undefined;
-
-    // Always use mediaUrl from the webhook data if available
-    if (data.message.mediaUrl) {
-      mediaUrl = data.message.mediaUrl;
+    if (!message) {
+      throw new NotFoundException('Message not found');
     }
 
-    // Extract content based on message type
-    switch (messageType) {
-      case MessageType.CONVERSATION:
-        content = data.message.conversation;
-        break;
-
-      case MessageType.IMAGE_MESSAGE:
-        const imageMsg = data.message.imageMessage;
-        content = imageMsg.caption;
-        if (!mediaUrl) mediaUrl = imageMsg.url;
-        mimetype = imageMsg.mimetype;
-        caption = imageMsg.caption;
-        fileLength = imageMsg.fileLength;
-        fileSha256 = imageMsg.fileSha256;
-        width = imageMsg.width;
-        height = imageMsg.height;
-        break;
-
-      case MessageType.VIDEO_MESSAGE:
-        const videoMsg = data.message.videoMessage;
-        content = videoMsg.caption;
-        if (!mediaUrl) mediaUrl = videoMsg.url;
-        mimetype = videoMsg.mimetype;
-        caption = videoMsg.caption;
-        fileLength = videoMsg.fileLength;
-        seconds = videoMsg.seconds;
-        break;
-
-      case MessageType.AUDIO_MESSAGE:
-        const audioMsg = data.message.audioMessage;
-        if (!mediaUrl) mediaUrl = audioMsg.url;
-        mimetype = audioMsg.mimetype;
-        fileLength = audioMsg.fileLength;
-        seconds = audioMsg.seconds;
-        ptt = audioMsg.ptt;
-        break;
-
-      case MessageType.DOCUMENT_MESSAGE:
-        const docMsg = data.message.documentMessage;
-        content = docMsg.title;
-        if (!mediaUrl) mediaUrl = docMsg.url;
-        mimetype = docMsg.mimetype;
-        fileName = docMsg.fileName;
-        fileLength = docMsg.fileLength;
-        pageCount = docMsg.pageCount;
-        break;
-
-      case MessageType.STICKER_MESSAGE:
-        const stickerMsg = data.message.stickerMessage;
-        if (!mediaUrl) mediaUrl = stickerMsg.url;
-        mimetype = stickerMsg.mimetype;
-        fileLength = stickerMsg.fileLength;
-        fileSha256 = stickerMsg.fileSha256;
-        width = stickerMsg.width;
-        height = stickerMsg.height;
-        isAnimated = stickerMsg.isAnimated;
-        break;
-
-      case MessageType.CONTACT_MESSAGE:
-        const contactMsg = data.message.contactMessage;
-        content = contactMsg.displayName;
-        contactDisplayName = contactMsg.displayName;
-        contactVcard = contactMsg.vcard;
-        break;
-
-      case MessageType.LOCATION_MESSAGE:
-        const locationMsg = data.message.locationMessage;
-        latitude = locationMsg.degreesLatitude;
-        longitude = locationMsg.degreesLongitude;
-        locationName = locationMsg.name;
-        locationAddress = locationMsg.address;
-        break;
-
-      case MessageType.REACTION_MESSAGE:
-        const reactionMsg = data.message.reactionMessage;
-        reactionText = reactionMsg.text;
-        reactionToMessageId = reactionMsg.key.id;
-        break;
-    }
-
-    return {
-      messageType,
-      content,
-      mediaUrl,
-      mimetype,
-      caption,
-      fileName,
-      fileLength,
-      fileSha256,
-      width,
-      height,
-      seconds,
-      isAnimated,
-      ptt,
-      pageCount,
-      latitude,
-      longitude,
-      locationName,
-      locationAddress,
-      contactDisplayName,
-      contactVcard,
-      reactionText,
-      reactionToMessageId,
-    };
+    await this.knex('messages')
+      .where('id', id)
+      .update({
+        status: MessageStatus.DELETED,
+        updatedAt: this.knex.fn.now(),
+      });
   }
-} 
+
+  /**
+   * Get message reactions
+   */
+  async getMessageReactions(messageId: string): Promise<any[]> {
+    const reactions = await this.knex('messageReactions')
+      .where('messageId', messageId)
+      .orderBy('reactedAt', 'desc');
+
+    return reactions;
+  }
+
+  /**
+   * Get reaction counts for a message
+   */
+  async getReactionCounts(messageId: string): Promise<any> {
+    const counts = await this.knex('messageReactions')
+      .where('messageId', messageId)
+      .select('emoji')
+      .count('* as count')
+      .groupBy('emoji');
+
+    return counts.reduce((acc, item) => {
+      acc[item.emoji] = parseInt(item.count as string);
+      return acc;
+    }, {});
+  }
+
+  /**
+   * Check if user has reacted to a message
+   */
+  async hasUserReacted(messageId: string, reactorId: string): Promise<boolean> {
+    const reaction = await this.knex('messageReactions')
+      .where('messageId', messageId)
+      .where('reactorId', reactorId)
+      .first();
+
+    return !!reaction;
+  }
+
+  /**
+   * Get user's reaction to a message
+   */
+  async getUserReaction(messageId: string, reactorId: string): Promise<string | null> {
+    const reaction = await this.knex('messageReactions')
+      .where('messageId', messageId)
+      .where('reactorId', reactorId)
+      .first();
+
+    return reaction ? reaction.emoji : null;
+  }
+}

@@ -8,12 +8,12 @@ services:
     container_name: ccs-backend
     restart: unless-stopped
     ports:
-      - "8098:8098"
+      - "8082:8082"
     env_file:
       - .env
     environment:
       NODE_ENV: production
-      PORT: 8098
+      PORT: 8082
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: ccs_db

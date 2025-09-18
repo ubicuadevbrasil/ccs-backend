@@ -2,19 +2,19 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
-import { UsersService } from '../users/users.service';
-import type { User } from '../users/interfaces/user.interface';
+import { UserService } from '../user/user.service';
+import { User, UserStatus, UserProfile } from '../user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
+    private userService: UserService,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
 
   async validateUser(login: string, password: string): Promise<User | null> {
-    const user = await this.usersService.findByLogin(login);
+    const user = await this.userService.findUserByLogin(login);
     
     if (!user) {
       return null;
@@ -36,7 +36,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (user.status !== 'Active') {
+    if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('User account is inactive');
     }
 
@@ -44,7 +44,6 @@ export class AuthService {
       sub: user.id, 
       login: user.login,
       profile: user.profile,
-      department: user.department
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -65,8 +64,9 @@ export class AuthService {
         login: user.login,
         name: user.name,
         email: user.email,
+        contact: user.contact,
         profile: user.profile,
-        department: user.department,
+        status: user.status,
       },
     };
   }
@@ -74,9 +74,9 @@ export class AuthService {
   async refreshToken(refreshToken: string) {
     try {
       const payload = this.jwtService.verify(refreshToken);
-      const user = await this.usersService.findOne(payload.sub);
+      const user = await this.userService.findUserById(payload.sub);
 
-      if (!user || user.status !== 'Active') {
+      if (!user || user.status !== UserStatus.ACTIVE) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
@@ -84,7 +84,6 @@ export class AuthService {
         sub: user.id, 
         login: user.login,
         profile: user.profile,
-        department: user.department
       };
 
       const newAccessToken = this.jwtService.sign(newPayload, {
@@ -105,8 +104,9 @@ export class AuthService {
           login: user.login,
           name: user.name,
           email: user.email,
+          contact: user.contact,
           profile: user.profile,
-          department: user.department,
+          status: user.status,
         },
       };
     } catch (error) {
@@ -117,9 +117,9 @@ export class AuthService {
   async validateToken(token: string) {
     try {
       const payload = this.jwtService.verify(token);
-      const user = await this.usersService.findOne(payload.sub);
+      const user = await this.userService.findUserById(payload.sub);
 
-      if (!user || user.status !== 'Active') {
+      if (!user || user.status !== UserStatus.ACTIVE) {
         return { valid: false };
       }
 
@@ -130,8 +130,9 @@ export class AuthService {
           login: user.login,
           name: user.name,
           email: user.email,
+          contact: user.contact,
           profile: user.profile,
-          department: user.department,
+          status: user.status,
         },
       };
     } catch (error) {
