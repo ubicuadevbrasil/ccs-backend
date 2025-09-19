@@ -68,7 +68,7 @@ export class Tabulation implements TabulationEntity {
 
   @Expose()
   get hasSubs(): boolean {
-    return this.tabulationSubs && this.tabulationSubs.length > 0;
+    return !!(this.tabulationSubs && this.tabulationSubs.length > 0);
   }
 
   @Expose()

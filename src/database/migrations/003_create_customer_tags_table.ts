@@ -14,7 +14,6 @@ export async function up(knex: Knex): Promise<void> {
     
     table.index(['customerId']);
     table.index(['tag']);
-    table.index(['createdBy']);
     table.index(['createdAt']);
   });
 }

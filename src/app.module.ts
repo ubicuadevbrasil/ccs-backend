@@ -8,6 +8,7 @@ import { CustomerModule } from './modules/customer';
 import { TabulationModule } from './modules/tabulation';
 import { HistoryModule } from './modules/history';
 import { QueueModule } from './modules/customer-queue';
+import { EvolutionModule } from './modules/whatsapp/evolution/evolution.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { QueueModule } from './modules/customer-queue';
     TabulationModule,
     HistoryModule,
     QueueModule,
+    EvolutionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

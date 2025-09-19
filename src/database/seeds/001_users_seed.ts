@@ -3,16 +3,16 @@ import * as bcrypt from 'bcryptjs';
 
 export async function seed(knex: Knex): Promise<void> {
   // Clear existing data
-  await knex('users').del();
+  await knex('user').del();
 
   // Hash the password (using the same hash from the original data)
   const hashedPassword = await bcrypt.hash('123456Ab!', 10); // Assuming the original password was '123456'
 
   // Map profile numbers to enum values
   const profileMap = {
-    1: 'Admin',
-    2: 'Supervisor', 
-    3: 'Operator'
+    1: 'admin',
+    2: 'supervisor', 
+    3: 'operator'
   };
 
   // Seed data
@@ -25,9 +25,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'ubcatende@ubicua.com',
       contact: '+5511999999991',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[3],
-      department: 'Personal',
       createdAt: new Date('2021-10-21 15:45:51'),
       updatedAt: new Date('2021-10-21 15:45:51'),
     },
@@ -39,9 +38,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'ubcsuper@ubicua.com',
       contact: '+5511999999992',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[2],
-      department: 'Personal',
       createdAt: new Date('2023-10-06 19:25:41'),
       updatedAt: new Date('2023-10-06 19:25:41'),
     },
@@ -53,9 +51,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'samara@ubicua.com',
       contact: '+5511999999993',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[2],
-      department: 'Personal',
       createdAt: new Date('2025-07-23 12:40:10'),
       updatedAt: new Date('2025-07-23 12:40:10'),
     },
@@ -67,9 +64,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'andressa@ubicua.com',
       contact: '+5511999999994',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[3],
-      department: 'Personal',
       createdAt: new Date('2025-07-23 12:40:10'),
       updatedAt: new Date('2025-07-23 12:40:10'),
     },
@@ -81,9 +77,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'thayse@ubicua.com',
       contact: '+5511999999995',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[3],
-      department: 'Personal',
       createdAt: new Date('2025-07-23 12:40:10'),
       updatedAt: new Date('2025-07-23 12:40:10'),
     },
@@ -95,9 +90,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'jc.mattiuzzi@ubicua.com',
       contact: '+5511999999996',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[2],
-      department: 'Personal',
       createdAt: new Date('2025-07-21 18:50:56'),
       updatedAt: new Date('2025-07-21 18:50:56'),
     },
@@ -109,9 +103,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'aline@ubicua.com',
       contact: '+5511999999997',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[2],
-      department: 'Fiscal',
       createdAt: new Date('2025-07-23 12:41:55'),
       updatedAt: new Date('2025-07-23 12:41:55'),
     },
@@ -123,9 +116,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'cristiane@ubicua.com',
       contact: '+5511999999998',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[3],
-      department: 'Fiscal',
       createdAt: new Date('2025-07-23 12:41:55'),
       updatedAt: new Date('2025-07-23 12:41:55'),
     },
@@ -137,9 +129,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'elaine@ubicua.com',
       contact: '+5511999999999',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[3],
-      department: 'Fiscal',
       createdAt: new Date('2025-07-23 12:41:55'),
       updatedAt: new Date('2025-07-23 12:41:55'),
     },
@@ -151,9 +142,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'vinicius@ubicua.com',
       contact: '+5511999999990',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[3],
-      department: 'Fiscal',
       createdAt: new Date('2025-07-23 12:41:55'),
       updatedAt: new Date('2025-07-23 12:41:55'),
     },
@@ -165,9 +155,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'renan@ubicua.com',
       contact: '+5511999999981',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[3],
-      department: 'Accounting',
       createdAt: new Date('2025-07-23 13:55:31'),
       updatedAt: new Date('2025-07-23 13:55:31'),
     },
@@ -179,9 +168,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'joao@ubicua.com',
       contact: '+5511999999982',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[3],
-      department: 'Accounting',
       createdAt: new Date('2025-07-23 13:55:31'),
       updatedAt: new Date('2025-07-23 13:55:31'),
     },
@@ -193,9 +181,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'victor@ubicua.com',
       contact: '+5511999999983',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[3],
-      department: 'Accounting',
       createdAt: new Date('2025-07-23 13:55:31'),
       updatedAt: new Date('2025-07-23 13:55:31'),
     },
@@ -207,26 +194,20 @@ export async function seed(knex: Knex): Promise<void> {
       email: 'matheus@ubicua.com',
       contact: '+5511999999984',
       profilePicture: null,
-      status: 'Active',
+      status: 'active',
       profile: profileMap[3],
-      department: 'Financial',
       createdAt: new Date('2025-07-23 13:57:04'),
       updatedAt: new Date('2025-07-23 13:57:04'),
     },
   ];
 
   // Insert users
-  await knex('users').insert(users);
+  await knex('user').insert(users);
 
   console.log('✅ Users seeded successfully!');
   console.log(`📊 Total users created: ${users.length}`);
-  console.log('👥 Users by department:');
-  console.log(`   - Personal: ${users.filter(u => u.department === 'Personal').length}`);
-  console.log(`   - Fiscal: ${users.filter(u => u.department === 'Fiscal').length}`);
-  console.log(`   - Accounting: ${users.filter(u => u.department === 'Accounting').length}`);
-  console.log(`   - Financial: ${users.filter(u => u.department === 'Financial').length}`);
   console.log('👤 Users by profile:');
-  console.log(`   - Admin: ${users.filter(u => u.profile === 'Admin').length}`);
-  console.log(`   - Supervisor: ${users.filter(u => u.profile === 'Supervisor').length}`);
-  console.log(`   - Operator: ${users.filter(u => u.profile === 'Operator').length}`);
+  console.log(`   - admin: ${users.filter(u => u.profile === 'admin').length}`);
+  console.log(`   - supervisor: ${users.filter(u => u.profile === 'supervisor').length}`);
+  console.log(`   - operator: ${users.filter(u => u.profile === 'operator').length}`);
 } 

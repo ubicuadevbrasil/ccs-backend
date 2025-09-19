@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     
     // Platform-specific message identifier
-    table.text('messageId').notNullable();
+    table.text('messageId').notNullable().unique();
     
     // Session identifier for grouping related messages
     table.text('sessionId').notNullable();
