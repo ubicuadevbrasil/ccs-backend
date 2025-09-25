@@ -34,12 +34,20 @@ export class MessagesService {
       queryBuilder = queryBuilder.where('sessionId', query.sessionId);
     }
 
-    if (query.senderId) {
-      queryBuilder = queryBuilder.where('senderId', query.senderId);
+    if (query.senderType) {
+      queryBuilder = queryBuilder.where('senderType', query.senderType);
     }
 
-    if (query.recipientId) {
-      queryBuilder = queryBuilder.where('recipientId', query.recipientId);
+    if (query.recipientType) {
+      queryBuilder = queryBuilder.where('recipientType', query.recipientType);
+    }
+
+    if (query.customerId) {
+      queryBuilder = queryBuilder.where('customerId', query.customerId);
+    }
+
+    if (query.userId) {
+      queryBuilder = queryBuilder.where('userId', query.userId);
     }
 
     if (query.platform) {
@@ -116,6 +124,21 @@ export class MessagesService {
   }
 
   /**
+   * Find message by messageId only (for Evolution API updates)
+   */
+  async findMessageByMessageId(messageId: string): Promise<Message> {
+    const message = await this.knex('messages')
+      .where('messageId', messageId)
+      .first();
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    return new Message(message);
+  }
+
+  /**
    * Create a new message
    */
   async createMessage(createMessageDto: CreateMessageDto): Promise<Message> {
@@ -128,21 +151,45 @@ export class MessagesService {
       throw new ConflictException('Message with this messageId already exists');
     }
 
-    // Validate foreign key references
-    const senderExists = await this.knex('user')
-      .where('id', createMessageDto.senderId)
-      .first();
+    // Validate foreign key references based on sender and recipient types
+    if (createMessageDto.senderType === 'customer' && createMessageDto.customerId) {
+      const customerExists = await this.knex('customer')
+        .where('id', createMessageDto.customerId)
+        .first();
 
-    if (!senderExists) {
-      throw new BadRequestException('Sender not found');
+      if (!customerExists) {
+        throw new BadRequestException('Sender (customer) not found');
+      }
     }
 
-    const recipientExists = await this.knex('customer')
-      .where('id', createMessageDto.recipientId)
-      .first();
+    if (createMessageDto.senderType === 'user' && createMessageDto.userId) {
+      const userExists = await this.knex('user')
+        .where('id', createMessageDto.userId)
+        .first();
 
-    if (!recipientExists) {
-      throw new BadRequestException('Recipient not found');
+      if (!userExists) {
+        throw new BadRequestException('Sender (user) not found');
+      }
+    }
+
+    if (createMessageDto.recipientType === 'customer' && createMessageDto.customerId) {
+      const customerExists = await this.knex('customer')
+        .where('id', createMessageDto.customerId)
+        .first();
+
+      if (!customerExists) {
+        throw new BadRequestException('Recipient (customer) not found');
+      }
+    }
+
+    if (createMessageDto.recipientType === 'user' && createMessageDto.userId) {
+      const userExists = await this.knex('user')
+        .where('id', createMessageDto.userId)
+        .first();
+
+      if (!userExists) {
+        throw new BadRequestException('Recipient (user) not found');
+      }
     }
 
     // Validate reply message if provided

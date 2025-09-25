@@ -1416,4 +1416,1022 @@ export class SetDefaultSettingsDto {
   @IsOptional()
   @IsString()
   openaiCredsId?: string;
+}
+
+// Evolution RabbitMQ Event DTOs
+export class EvolutionMessageKeyDto {
+  @IsString()
+  remoteJid: string;
+
+  @IsBoolean()
+  fromMe: boolean;
+
+  @IsString()
+  id: string;
+
+  @IsOptional()
+  @IsString()
+  senderLid?: string;
+
+  @IsOptional()
+  @IsString()
+  senderPn?: string;
+
+  @IsOptional()
+  @IsString()
+  participant?: string;
+
+  @IsOptional()
+  @IsString()
+  participantPn?: string;
+
+  @IsOptional()
+  @IsString()
+  participantLid?: string;
+}
+
+export class EvolutionDeviceListMetadataDto {
+  @IsString()
+  senderKeyHash: string;
+
+  @IsString()
+  senderTimestamp: string;
+
+  @IsString()
+  recipientKeyHash: string;
+
+  @IsString()
+  recipientTimestamp: string;
+}
+
+export class EvolutionMessageContextInfoDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionDeviceListMetadataDto)
+  deviceListMetadata?: EvolutionDeviceListMetadataDto;
+
+  @IsOptional()
+  @IsNumber()
+  deviceListMetadataVersion?: number;
+
+  @IsOptional()
+  @IsString()
+  messageSecret?: string;
+
+  @IsOptional()
+  @IsString()
+  paddingBytes?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  mentionedJid?: string[];
+}
+
+export class EvolutionStickerMessageDto {
+  @IsString()
+  url: string;
+
+  @IsString()
+  fileSha256: string;
+
+  @IsString()
+  fileEncSha256: string;
+
+  @IsString()
+  mediaKey: string;
+
+  @IsString()
+  mimetype: string;
+
+  @IsString()
+  directPath: string;
+
+  @IsString()
+  fileLength: string;
+
+  @IsString()
+  mediaKeyTimestamp: string;
+
+  @IsOptional()
+  @IsNumber()
+  firstFrameLength?: number;
+
+  @IsOptional()
+  @IsString()
+  firstFrameSidecar?: string;
+
+  @IsBoolean()
+  isAnimated: boolean;
+
+  @IsString()
+  stickerSentTs: string;
+
+  @IsBoolean()
+  isAvatar: boolean;
+
+  @IsBoolean()
+  isAiSticker: boolean;
+
+  @IsBoolean()
+  isLottie: boolean;
+}
+
+export class EvolutionImageMessageDto {
+  @IsString()
+  url: string;
+
+  @IsString()
+  mimetype: string;
+
+  @IsString()
+  fileSha256: string;
+
+  @IsString()
+  fileLength: string;
+
+  @IsNumber()
+  height: number;
+
+  @IsNumber()
+  width: number;
+
+  @IsString()
+  mediaKey: string;
+
+  @IsString()
+  fileEncSha256: string;
+
+  @IsString()
+  directPath: string;
+
+  @IsString()
+  mediaKeyTimestamp: string;
+
+  @IsOptional()
+  @IsString()
+  jpegThumbnail?: string;
+
+  @IsOptional()
+  @IsObject()
+  contextInfo?: any;
+
+  @IsOptional()
+  @IsString()
+  scansSidecar?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  scanLengths?: number[];
+
+  @IsOptional()
+  @IsString()
+  midQualityFileSha256?: string;
+}
+
+export class EvolutionVideoMessageDto {
+  @IsString()
+  url: string;
+
+  @IsString()
+  mimetype: string;
+
+  @IsString()
+  fileSha256: string;
+
+  @IsString()
+  fileLength: string;
+
+  @IsNumber()
+  seconds: number;
+
+  @IsString()
+  mediaKey: string;
+
+  @IsNumber()
+  height: number;
+
+  @IsNumber()
+  width: number;
+
+  @IsString()
+  fileEncSha256: string;
+
+  @IsString()
+  directPath: string;
+
+  @IsString()
+  mediaKeyTimestamp: string;
+
+  @IsOptional()
+  @IsString()
+  jpegThumbnail?: string;
+
+  @IsOptional()
+  @IsObject()
+  contextInfo?: any;
+
+  @IsOptional()
+  @IsString()
+  streamingSidecar?: string;
+
+  @IsOptional()
+  @IsNumber()
+  externalShareFullVideoDurationInSeconds?: number;
+}
+
+export class EvolutionPtvMessageDto {
+  @IsString()
+  url: string;
+
+  @IsString()
+  mimetype: string;
+
+  @IsString()
+  fileSha256: string;
+
+  @IsString()
+  fileLength: string;
+
+  @IsNumber()
+  seconds: number;
+
+  @IsString()
+  mediaKey: string;
+
+  @IsNumber()
+  height: number;
+
+  @IsNumber()
+  width: number;
+
+  @IsString()
+  fileEncSha256: string;
+
+  @IsString()
+  directPath: string;
+
+  @IsString()
+  mediaKeyTimestamp: string;
+
+  @IsOptional()
+  @IsString()
+  jpegThumbnail?: string;
+
+  @IsOptional()
+  @IsString()
+  streamingSidecar?: string;
+
+  @IsOptional()
+  @IsNumber()
+  externalShareFullVideoDurationInSeconds?: number;
+}
+
+export class EvolutionAudioMessageDto {
+  @IsString()
+  url: string;
+
+  @IsString()
+  mimetype: string;
+
+  @IsString()
+  fileSha256: string;
+
+  @IsString()
+  fileLength: string;
+
+  @IsNumber()
+  seconds: number;
+
+  @IsBoolean()
+  ptt: boolean;
+
+  @IsString()
+  mediaKey: string;
+
+  @IsString()
+  fileEncSha256: string;
+
+  @IsString()
+  directPath: string;
+
+  @IsString()
+  mediaKeyTimestamp: string;
+
+  @IsOptional()
+  @IsString()
+  waveform?: string;
+}
+
+export class EvolutionLocationMessageDto {
+  @IsNumber()
+  degreesLatitude: number;
+
+  @IsNumber()
+  degreesLongitude: number;
+
+  @IsOptional()
+  @IsString()
+  jpegThumbnail?: string;
+}
+
+export class EvolutionContactMessageDto {
+  @IsString()
+  displayName: string;
+
+  @IsString()
+  vcard: string;
+}
+
+export class EvolutionPollOptionDto {
+  @IsString()
+  optionName: string;
+}
+
+export class EvolutionPollCreationMessageDto {
+  @IsString()
+  name: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EvolutionPollOptionDto)
+  options: EvolutionPollOptionDto[];
+
+  @IsNumber()
+  selectableOptionsCount: number;
+}
+
+export class EvolutionEventLocationDto {
+  @IsNumber()
+  degreesLatitude: number;
+
+  @IsNumber()
+  degreesLongitude: number;
+
+  @IsString()
+  name: string;
+}
+
+export class EvolutionEventMessageDto {
+  @IsBoolean()
+  isCanceled: boolean;
+
+  @IsString()
+  name: string;
+
+  @ValidateNested()
+  @Type(() => EvolutionEventLocationDto)
+  location: EvolutionEventLocationDto;
+
+  @IsString()
+  joinLink: string;
+
+  @IsString()
+  startTime: string;
+
+  @IsString()
+  endTime: string;
+
+  @IsBoolean()
+  extraGuestsAllowed: boolean;
+
+  @IsBoolean()
+  isScheduleCall: boolean;
+}
+
+export class EvolutionInteractiveButtonDto {
+  @IsString()
+  name: string;
+
+  @IsString()
+  buttonParamsJson: string;
+}
+
+export class EvolutionNativeFlowMessageDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EvolutionInteractiveButtonDto)
+  buttons: EvolutionInteractiveButtonDto[];
+}
+
+export class EvolutionInteractiveMessageDto {
+  @ValidateNested()
+  @Type(() => EvolutionNativeFlowMessageDto)
+  nativeFlowMessage: EvolutionNativeFlowMessageDto;
+}
+
+export class EvolutionSenderKeyDistributionMessageDto {
+  @IsString()
+  groupId: string;
+
+  @IsString()
+  axolotlSenderKeyDistributionMessage: string;
+}
+
+export class EvolutionReactionMessageDto {
+  @ValidateNested()
+  @Type(() => EvolutionMessageKeyDto)
+  key: EvolutionMessageKeyDto;
+
+  @IsString()
+  text: string;
+
+  @IsString()
+  senderTimestampMs: string;
+}
+
+export class EvolutionWhatsAppMessageDto {
+  @IsOptional()
+  @IsString()
+  conversation?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionStickerMessageDto)
+  stickerMessage?: EvolutionStickerMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionImageMessageDto)
+  imageMessage?: EvolutionImageMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionVideoMessageDto)
+  videoMessage?: EvolutionVideoMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionAudioMessageDto)
+  audioMessage?: EvolutionAudioMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionPtvMessageDto)
+  ptvMessage?: EvolutionPtvMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionLocationMessageDto)
+  locationMessage?: EvolutionLocationMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionContactMessageDto)
+  contactMessage?: EvolutionContactMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionPollCreationMessageDto)
+  pollCreationMessageV3?: EvolutionPollCreationMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionEventMessageDto)
+  eventMessage?: EvolutionEventMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionInteractiveMessageDto)
+  interactiveMessage?: EvolutionInteractiveMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionSenderKeyDistributionMessageDto)
+  senderKeyDistributionMessage?: EvolutionSenderKeyDistributionMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionReactionMessageDto)
+  reactionMessage?: EvolutionReactionMessageDto;
+
+  @IsOptional()
+  @IsObject()
+  documentMessage?: any;
+
+  @IsOptional()
+  @IsObject()
+  contactsArrayMessage?: any;
+
+  @IsOptional()
+  @IsObject()
+  groupInviteMessage?: any;
+
+  @IsOptional()
+  @IsObject()
+  listMessage?: any;
+
+  @IsOptional()
+  @IsObject()
+  buttonsMessage?: any;
+
+  @IsOptional()
+  @IsObject()
+  templateMessage?: any;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionMessageContextInfoDto)
+  messageContextInfo?: EvolutionMessageContextInfoDto;
+
+  @IsOptional()
+  @IsString()
+  mediaUrl?: string;
+}
+
+export class EvolutionMessageContextInfoDataDto {
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  mentionedJid?: string[];
+
+  @IsOptional()
+  @IsString()
+  conversionSource?: string;
+
+  @IsOptional()
+  @IsNumber()
+  conversionDelaySeconds?: number;
+
+  @IsOptional()
+  @IsNumber()
+  expiration?: number;
+
+  @IsOptional()
+  @IsString()
+  ephemeralSettingTimestamp?: string;
+
+  @IsOptional()
+  @IsObject()
+  disappearingMode?: {
+    initiator: string;
+  };
+
+  @IsOptional()
+  @IsString()
+  pairedMediaType?: string;
+}
+
+export class EvolutionMessagesUpsertDataDto {
+  @ValidateNested()
+  @Type(() => EvolutionMessageKeyDto)
+  key: EvolutionMessageKeyDto;
+
+  @IsString()
+  pushName: string;
+
+  @IsEnum(['DELIVERY_ACK', 'READ', 'SENT', 'FAILED'])
+  status: 'DELIVERY_ACK' | 'READ' | 'SENT' | 'FAILED';
+
+  @ValidateNested()
+  @Type(() => EvolutionWhatsAppMessageDto)
+  message: EvolutionWhatsAppMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionMessageContextInfoDataDto)
+  contextInfo?: EvolutionMessageContextInfoDataDto;
+
+  @IsEnum(['conversation', 'imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage', 'locationMessage', 'contactMessage', 'listMessage', 'buttonsMessage', 'templateMessage', 'ptvMessage', 'pollCreationMessageV3', 'eventMessage', 'interactiveMessage', 'senderKeyDistributionMessage', 'reactionMessage'])
+  messageType: 'conversation' | 'imageMessage' | 'videoMessage' | 'audioMessage' | 'documentMessage' | 'stickerMessage' | 'locationMessage' | 'contactMessage' | 'listMessage' | 'buttonsMessage' | 'templateMessage' | 'ptvMessage' | 'pollCreationMessageV3' | 'eventMessage' | 'interactiveMessage' | 'senderKeyDistributionMessage' | 'reactionMessage';
+
+  @IsNumber()
+  messageTimestamp: number;
+
+  @IsString()
+  instanceId: string;
+
+  @IsEnum(['android', 'ios', 'web', 'unknown'])
+  source: 'android' | 'ios' | 'web' | 'unknown';
+}
+
+export class EvolutionMessagesUpsertEventDto {
+  @IsString()
+  event: string;
+
+  @IsString()
+  instance: string;
+
+  @ValidateNested()
+  @Type(() => EvolutionMessagesUpsertDataDto)
+  data: EvolutionMessagesUpsertDataDto;
+
+  @IsString()
+  server_url: string;
+
+  @IsString()
+  date_time: string;
+
+  @IsString()
+  sender: string;
+
+  @IsString()
+  apikey: string;
+}
+
+export class EvolutionPresenceInfoDto {
+  @IsEnum(['unavailable', 'available', 'composing', 'recording', 'paused'])
+  lastKnownPresence: 'unavailable' | 'available' | 'composing' | 'recording' | 'paused';
+}
+
+export class EvolutionPresenceUpdateDataDto {
+  @IsString()
+  id: string;
+
+  @IsObject()
+  presences: Record<string, EvolutionPresenceInfoDto>;
+}
+
+export class EvolutionContactUpdateDto {
+  @IsString()
+  remoteJid: string;
+
+  @IsOptional()
+  @IsString()
+  pushName?: string;
+
+  @IsOptional()
+  @IsString()
+  profilePicUrl?: string;
+
+  @IsString()
+  instanceId: string;
+}
+
+export class EvolutionChatUpdateDto {
+  @IsString()
+  remoteJid: string;
+
+  @IsString()
+  instanceId: string;
+}
+
+export class EvolutionSendMessageDataDto {
+  @ValidateNested()
+  @Type(() => EvolutionMessageKeyDto)
+  key: EvolutionMessageKeyDto;
+
+  @IsString()
+  pushName: string;
+
+  @IsEnum(['PENDING'])
+  status: 'PENDING';
+
+  @ValidateNested()
+  @Type(() => EvolutionWhatsAppMessageDto)
+  message: EvolutionWhatsAppMessageDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EvolutionMessageContextInfoDataDto)
+  contextInfo?: EvolutionMessageContextInfoDataDto | null;
+
+  @IsEnum(['conversation', 'imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage', 'locationMessage', 'contactMessage', 'listMessage', 'buttonsMessage', 'templateMessage', 'ptvMessage', 'pollCreationMessageV3', 'eventMessage', 'interactiveMessage', 'senderKeyDistributionMessage', 'reactionMessage'])
+  messageType: 'conversation' | 'imageMessage' | 'videoMessage' | 'audioMessage' | 'documentMessage' | 'stickerMessage' | 'locationMessage' | 'contactMessage' | 'listMessage' | 'buttonsMessage' | 'templateMessage' | 'ptvMessage' | 'pollCreationMessageV3' | 'eventMessage' | 'interactiveMessage' | 'senderKeyDistributionMessage' | 'reactionMessage';
+
+  @IsNumber()
+  messageTimestamp: number;
+
+  @IsString()
+  instanceId: string;
+
+  @IsEnum(['unknown'])
+  source: 'unknown';
+}
+
+export class EvolutionMessagesUpdateDataDto {
+  @IsString()
+  keyId: string;
+
+  @IsString()
+  remoteJid: string;
+
+  @IsBoolean()
+  fromMe: boolean;
+
+  @IsString()
+  participant: string;
+
+  @IsEnum(['SERVER_ACK', 'DELIVERY_ACK', 'READ', 'PLAYED'])
+  status: 'SERVER_ACK' | 'DELIVERY_ACK' | 'READ' | 'PLAYED';
+
+  @IsString()
+  instanceId: string;
+
+  @IsString()
+  messageId: string;
+}
+
+export class EvolutionMessagesUpdateEventDto {
+  @IsString()
+  event: string;
+
+  @IsString()
+  instance: string;
+
+  @ValidateNested()
+  @Type(() => EvolutionMessagesUpdateDataDto)
+  data: EvolutionMessagesUpdateDataDto;
+
+  @IsString()
+  server_url: string;
+
+  @IsString()
+  date_time: string;
+
+  @IsString()
+  sender: string;
+
+  @IsString()
+  apikey: string;
+}
+
+export class EvolutionChatUpsertDto {
+  @IsString()
+  remoteJid: string;
+
+  @IsString()
+  instanceId: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsNumber()
+  unreadMessages: number;
+}
+
+export class EvolutionChatsUpsertEventDto {
+  @IsString()
+  event: string;
+
+  @IsString()
+  instance: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EvolutionChatUpsertDto)
+  data: EvolutionChatUpsertDto[];
+
+  @IsString()
+  server_url: string;
+
+  @IsString()
+  date_time: string;
+
+  @IsString()
+  sender: string;
+
+  @IsString()
+  apikey: string;
+}
+
+export class EvolutionGroupParticipantDto {
+  @IsString()
+  id: string;
+
+  @IsString()
+  jid: string;
+
+  @IsString()
+  lid: string;
+
+  @IsOptional()
+  @IsString()
+  admin: string | null;
+}
+
+export class EvolutionGroupUpsertDto {
+  @IsString()
+  id: string;
+
+  @IsString()
+  subject: string;
+
+  @IsString()
+  subjectOwner: string;
+
+  @IsNumber()
+  subjectTime: number;
+
+  @IsNumber()
+  size: number;
+
+  @IsNumber()
+  creation: number;
+
+  @IsString()
+  owner: string;
+
+  @IsString()
+  owner_country_code: string;
+
+  @IsBoolean()
+  restrict: boolean;
+
+  @IsBoolean()
+  announce: boolean;
+
+  @IsBoolean()
+  isCommunity: boolean;
+
+  @IsBoolean()
+  isCommunityAnnounce: boolean;
+
+  @IsBoolean()
+  joinApprovalMode: boolean;
+
+  @IsBoolean()
+  memberAddMode: boolean;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EvolutionGroupParticipantDto)
+  participants: EvolutionGroupParticipantDto[];
+
+  @IsString()
+  author: string;
+}
+
+export class EvolutionGroupsUpsertEventDto {
+  @IsString()
+  event: string;
+
+  @IsString()
+  instance: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EvolutionGroupUpsertDto)
+  data: EvolutionGroupUpsertDto[];
+
+  @IsString()
+  server_url: string;
+
+  @IsString()
+  date_time: string;
+
+  @IsString()
+  sender: string;
+
+  @IsString()
+  apikey: string;
+}
+
+export class EvolutionConnectionUpdateDataDto {
+  @IsString()
+  instance: string;
+
+  @IsEnum(['open', 'connecting', 'close'])
+  state: 'open' | 'connecting' | 'close';
+
+  @IsNumber()
+  statusReason: number;
+
+  @IsOptional()
+  @IsString()
+  wuid?: string;
+
+  @IsOptional()
+  @IsString()
+  profileName?: string;
+
+  @IsOptional()
+  @IsString()
+  profilePictureUrl?: string | null;
+}
+
+export class EvolutionConnectionUpdateEventDto {
+  @IsString()
+  event: string;
+
+  @IsString()
+  instance: string;
+
+  @ValidateNested()
+  @Type(() => EvolutionConnectionUpdateDataDto)
+  data: EvolutionConnectionUpdateDataDto;
+
+  @IsString()
+  server_url: string;
+
+  @IsString()
+  date_time: string;
+
+  @IsString()
+  sender: string;
+
+  @IsString()
+  apikey: string;
+}
+
+export class EvolutionInstanceCreateDataDto {
+  @IsString()
+  instanceName: string;
+
+  @IsString()
+  instanceId: string;
+}
+
+export class EvolutionInstanceCreateEventDto {
+  @IsString()
+  event: string;
+
+  @IsString()
+  instance: string;
+
+  @ValidateNested()
+  @Type(() => EvolutionInstanceCreateDataDto)
+  data: EvolutionInstanceCreateDataDto;
+
+  @IsString()
+  server_url: string;
+
+  @IsString()
+  date_time: string;
+
+  @IsString()
+  apikey: string;
+}
+
+export class EvolutionInstanceDeleteDataDto {
+  @IsString()
+  instanceName: string;
+
+  @IsString()
+  instanceId: string;
+}
+
+export class EvolutionInstanceDeleteEventDto {
+  @IsString()
+  event: string;
+
+  @IsString()
+  instance: string;
+
+  @ValidateNested()
+  @Type(() => EvolutionInstanceDeleteDataDto)
+  data: EvolutionInstanceDeleteDataDto;
+
+  @IsString()
+  server_url: string;
+
+  @IsString()
+  date_time: string;
+
+  @IsString()
+  apikey: string;
+}
+
+export class EvolutionMessagesEditedDataDto {
+  @ValidateNested()
+  @Type(() => EvolutionMessageKeyDto)
+  key: EvolutionMessageKeyDto;
+
+  @IsEnum(['MESSAGE_EDIT'])
+  type: 'MESSAGE_EDIT';
+
+  @ValidateNested()
+  @Type(() => EvolutionWhatsAppMessageDto)
+  editedMessage: EvolutionWhatsAppMessageDto;
+
+  @IsString()
+  timestampMs: string;
+}
+
+export class EvolutionMessagesEditedEventDto {
+  @IsString()
+  event: string;
+
+  @IsString()
+  instance: string;
+
+  @ValidateNested()
+  @Type(() => EvolutionMessagesEditedDataDto)
+  data: EvolutionMessagesEditedDataDto;
+
+  @IsString()
+  server_url: string;
+
+  @IsString()
+  date_time: string;
+
+  @IsString()
+  sender: string;
+
+  @IsString()
+  apikey: string;
+}
+
+export class EvolutionRabbitMQEventDto {
+  @IsString()
+  timestamp: string;
+
+  @IsString()
+  eventType: string;
+
+  @ValidateNested()
+  @Type(() => EvolutionMessagesUpsertEventDto)
+  event: EvolutionMessagesUpsertEventDto;
 } 

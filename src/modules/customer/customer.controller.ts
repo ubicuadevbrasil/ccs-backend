@@ -52,7 +52,7 @@ export class CustomerController {
   })
   async createCustomer(@Body() createCustomerDto: CreateCustomerDto): Promise<CustomerResponseDto> {
     const customer = await this.customerService.createCustomer(createCustomerDto);
-    return customer as CustomerResponseDto;
+    return customer.toResponseDto();
   }
 
   @Get('list')
@@ -101,7 +101,7 @@ export class CustomerController {
   })
   async findCustomerById(@Query() query: FindCustomerDto): Promise<CustomerResponseDto> {
     const customer = await this.customerService.findCustomerByIdWithTags(query.id);
-    return customer as CustomerResponseDto;
+    return customer.toResponseDto();
   }
 
   @Patch('update')
@@ -126,7 +126,7 @@ export class CustomerController {
   async updateCustomer(@Body() updateCustomerDto: UpdateCustomerByIdDto): Promise<CustomerResponseDto> {
     const { id, ...updateData } = updateCustomerDto;
     const customer = await this.customerService.updateCustomer(id, updateData);
-    return customer as CustomerResponseDto;
+    return customer.toResponseDto();
   }
 
   @Delete('delete')

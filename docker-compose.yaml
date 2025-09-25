@@ -15,13 +15,13 @@ services:
       NODE_ENV: development
       PORT: 8082
       DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
+      DATABASE_PORT: 5433
       DATABASE_NAME: ccs_db
       DATABASE_USER: ccs_user
       DATABASE_PASSWORD: ccs_password
       REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_URL: redis://redis:6379
+      REDIS_PORT: 6380
+      REDIS_URL: redis://redis:6380
     depends_on:
       - postgres
       - redis
@@ -37,7 +37,7 @@ services:
       POSTGRES_USER: ccs_user
       POSTGRES_PASSWORD: ccs_password
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -48,7 +48,7 @@ services:
     container_name: ccs-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     networks:

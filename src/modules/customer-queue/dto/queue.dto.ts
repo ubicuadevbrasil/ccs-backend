@@ -5,12 +5,16 @@ import {
   IsString, 
   IsUUID, 
   IsDateString,
+  IsObject,
   MinLength, 
   MaxLength
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { HistoryPlatform } from '../../history/entities/history.entity';
 import { QueueStatus } from '../entities/queue.entity';
+import { Customer } from '../../customer/entities/customer.entity';
+import { User } from '../../user/entities/user.entity';
+import { Message } from '../../messages/entities/message.entity';
 
 export class CreateQueueDto {
   @ApiProperty({
@@ -33,6 +37,14 @@ export class CreateQueueDto {
   @IsNotEmpty()
   customerId: string;
 
+  @ApiPropertyOptional({
+    description: 'Customer object with actual customer data',
+    type: Customer,
+  })
+  @IsOptional()
+  @IsObject()
+  customer?: Customer;
+
   @ApiProperty({
     description: 'User ID who will handle the interaction',
     example: '123e4567-e89b-12d3-a456-426614174000',
@@ -40,6 +52,14 @@ export class CreateQueueDto {
   @IsUUID()
   @IsNotEmpty()
   userId: string;
+
+  @ApiPropertyOptional({
+    description: 'User object with actual user data',
+    type: User,
+  })
+  @IsOptional()
+  @IsObject()
+  user?: User;
 
   @ApiProperty({
     description: 'Platform where the interaction occurred',
@@ -65,6 +85,22 @@ export class CreateQueueDto {
   @IsOptional()
   @IsDateString()
   attendedAt?: string;
+
+  @ApiPropertyOptional({
+    description: 'Last message in the conversation',
+    type: Message,
+  })
+  @IsOptional()
+  @IsObject()
+  lastMessage?: Message;
+
+  @ApiPropertyOptional({
+    description: 'Additional platform-specific metadata',
+    example: { instance: 'instance_1', remoteJid: '5511999999999@s.whatsapp.net' },
+  })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, any>;
 }
 
 export class UpdateQueueDto {
@@ -338,4 +374,324 @@ export class EndServiceDto {
   @IsOptional()
   @IsUUID()
   tabulationId?: string;
+}
+
+export class TransferQueueDto {
+  @ApiProperty({
+    description: 'Session identifier of the queue to transfer',
+    example: 'session_123456789',
+    minLength: 1,
+    maxLength: 100,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(1)
+  @MaxLength(100)
+  sessionId: string;
+
+  @ApiProperty({
+    description: 'User ID to transfer the queue to',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  userId: string;
+}
+
+// Platform-specific DTOs
+
+export class CreateQueueWhatsAppDto {
+  @ApiProperty({
+    description: 'Session identifier for tracking interactions',
+    example: 'session_123456789',
+    minLength: 1,
+    maxLength: 100,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(1)
+  @MaxLength(100)
+  sessionId: string;
+
+  @ApiProperty({
+    description: 'Customer ID involved in the interaction',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  customerId: string;
+
+  @ApiPropertyOptional({
+    description: 'Customer object with actual customer data',
+    type: Customer,
+  })
+  @IsOptional()
+  @IsObject()
+  customer?: Customer;
+
+  @ApiProperty({
+    description: 'User ID who will handle the interaction',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  userId: string;
+
+  @ApiPropertyOptional({
+    description: 'User object with actual user data',
+    type: User,
+  })
+  @IsOptional()
+  @IsObject()
+  user?: User;
+
+  @ApiPropertyOptional({
+    description: 'When the customer was attended (nullable)',
+    example: '2024-01-01T10:05:00.000Z',
+  })
+  @IsOptional()
+  @IsDateString()
+  attendedAt?: string;
+
+  @ApiPropertyOptional({
+    description: 'Last message in the conversation',
+    type: Message,
+  })
+  @IsOptional()
+  @IsObject()
+  lastMessage?: Message;
+
+  @ApiPropertyOptional({
+    description: 'WhatsApp-specific metadata',
+    example: { instance: 'instance_1', remoteJid: '5511999999999@s.whatsapp.net' },
+  })
+  @IsOptional()
+  @IsObject()
+  metadata?: {
+    instance?: string;
+    remoteJid?: string;
+    [key: string]: any;
+  };
+}
+
+export class CreateQueueTelegramDto {
+  @ApiProperty({
+    description: 'Session identifier for tracking interactions',
+    example: 'session_123456789',
+    minLength: 1,
+    maxLength: 100,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(1)
+  @MaxLength(100)
+  sessionId: string;
+
+  @ApiProperty({
+    description: 'Customer ID involved in the interaction',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  customerId: string;
+
+  @ApiPropertyOptional({
+    description: 'Customer object with actual customer data',
+    type: Customer,
+  })
+  @IsOptional()
+  @IsObject()
+  customer?: Customer;
+
+  @ApiProperty({
+    description: 'User ID who will handle the interaction',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  userId: string;
+
+  @ApiPropertyOptional({
+    description: 'User object with actual user data',
+    type: User,
+  })
+  @IsOptional()
+  @IsObject()
+  user?: User;
+
+  @ApiPropertyOptional({
+    description: 'When the customer was attended (nullable)',
+    example: '2024-01-01T10:05:00.000Z',
+  })
+  @IsOptional()
+  @IsDateString()
+  attendedAt?: string;
+
+  @ApiPropertyOptional({
+    description: 'Last message in the conversation',
+    type: Message,
+  })
+  @IsOptional()
+  @IsObject()
+  lastMessage?: Message;
+
+  @ApiPropertyOptional({
+    description: 'Telegram-specific metadata',
+    example: { botToken: '123456789:ABCdefGHIjklMNOpqrsTUVwxyz', chatId: '123456789' },
+  })
+  @IsOptional()
+  @IsObject()
+  metadata?: {
+    botToken?: string;
+    chatId?: string;
+    [key: string]: any;
+  };
+}
+
+export class CreateQueueInstagramDto {
+  @ApiProperty({
+    description: 'Session identifier for tracking interactions',
+    example: 'session_123456789',
+    minLength: 1,
+    maxLength: 100,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(1)
+  @MaxLength(100)
+  sessionId: string;
+
+  @ApiProperty({
+    description: 'Customer ID involved in the interaction',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  customerId: string;
+
+  @ApiPropertyOptional({
+    description: 'Customer object with actual customer data',
+    type: Customer,
+  })
+  @IsOptional()
+  @IsObject()
+  customer?: Customer;
+
+  @ApiProperty({
+    description: 'User ID who will handle the interaction',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  userId: string;
+
+  @ApiPropertyOptional({
+    description: 'User object with actual user data',
+    type: User,
+  })
+  @IsOptional()
+  @IsObject()
+  user?: User;
+
+  @ApiPropertyOptional({
+    description: 'When the customer was attended (nullable)',
+    example: '2024-01-01T10:05:00.000Z',
+  })
+  @IsOptional()
+  @IsDateString()
+  attendedAt?: string;
+
+  @ApiPropertyOptional({
+    description: 'Last message in the conversation',
+    type: Message,
+  })
+  @IsOptional()
+  @IsObject()
+  lastMessage?: Message;
+
+  @ApiPropertyOptional({
+    description: 'Instagram-specific metadata',
+    example: { pageId: '123456789012345', conversationId: 't_123456789012345' },
+  })
+  @IsOptional()
+  @IsObject()
+  metadata?: {
+    pageId?: string;
+    conversationId?: string;
+    [key: string]: any;
+  };
+}
+
+export class CreateQueueFacebookDto {
+  @ApiProperty({
+    description: 'Session identifier for tracking interactions',
+    example: 'session_123456789',
+    minLength: 1,
+    maxLength: 100,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(1)
+  @MaxLength(100)
+  sessionId: string;
+
+  @ApiProperty({
+    description: 'Customer ID involved in the interaction',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  customerId: string;
+
+  @ApiPropertyOptional({
+    description: 'Customer object with actual customer data',
+    type: Customer,
+  })
+  @IsOptional()
+  @IsObject()
+  customer?: Customer;
+
+  @ApiProperty({
+    description: 'User ID who will handle the interaction',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  userId: string;
+
+  @ApiPropertyOptional({
+    description: 'User object with actual user data',
+    type: User,
+  })
+  @IsOptional()
+  @IsObject()
+  user?: User;
+
+  @ApiPropertyOptional({
+    description: 'When the customer was attended (nullable)',
+    example: '2024-01-01T10:05:00.000Z',
+  })
+  @IsOptional()
+  @IsDateString()
+  attendedAt?: string;
+
+  @ApiPropertyOptional({
+    description: 'Last message in the conversation',
+    type: Message,
+  })
+  @IsOptional()
+  @IsObject()
+  lastMessage?: Message;
+
+  @ApiPropertyOptional({
+    description: 'Facebook-specific metadata',
+    example: { pageId: '123456789012345', conversationId: 't_123456789012345' },
+  })
+  @IsOptional()
+  @IsObject()
+  metadata?: {
+    pageId?: string;
+    conversationId?: string;
+    [key: string]: any;
+  };
 }

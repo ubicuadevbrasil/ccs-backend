@@ -20,7 +20,6 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { QueueService, PaginatedResult } from './queue.service';
-import { Queue } from './entities/queue.entity';
 import {
   CreateQueueDto,
   UpdateQueueDto,
@@ -28,8 +27,11 @@ import {
   QueueResponseDto,
   FindQueueDto,
   EndServiceDto,
+  TransferQueueDto,
 } from './dto/queue.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '../user/entities/user.entity';
 
 @ApiTags('Customer Queue')
 @ApiBearerAuth()
@@ -166,7 +168,7 @@ export class QueueController {
   }
 
   @Post('attend')
-  @ApiOperation({ summary: 'Mark queue item as attended' })
+  @ApiOperation({ summary: 'Mark queue item as attended by authenticated user' })
   @ApiResponse({
     status: 200,
     description: 'Queue item marked as attended successfully',
@@ -176,8 +178,31 @@ export class QueueController {
     status: 404,
     description: 'Queue item not found',
   })
-  async markAsAttended(@Query() query: FindQueueDto): Promise<QueueResponseDto> {
-    const queue = await this.queueService.markAsAttended(query.sessionId);
+  async markAsAttended(
+    @Query() query: FindQueueDto,
+    @CurrentUser() user: User,
+  ): Promise<QueueResponseDto> {
+    const queue = await this.queueService.markAsAttended(query.sessionId, user.id, user);
+    return queue as QueueResponseDto;
+  }
+
+  @Post('transfer')
+  @ApiOperation({ summary: 'Transfer queue item to another user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Queue item transferred successfully',
+    type: QueueResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Queue item not found or target user not found',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - invalid data',
+  })
+  async transferQueue(@Body() transferQueueDto: TransferQueueDto): Promise<QueueResponseDto> {
+    const queue = await this.queueService.transferQueue(transferQueueDto.sessionId, transferQueueDto.userId);
     return queue as QueueResponseDto;
   }
 
@@ -205,5 +230,23 @@ export class QueueController {
     averageWaitingTime: number;
   }> {
     return this.queueService.getQueueStatistics();
+  }
+
+  @Delete('clear-all')
+  @ApiOperation({ summary: 'Clear all Redis queues and messages' })
+  @ApiResponse({
+    status: 200,
+    description: 'All queues and messages cleared successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        clearedCount: { type: 'number' },
+        messagesClearedCount: { type: 'number' },
+      },
+    },
+  })
+  async clearAllQueues(): Promise<{ message: string; clearedCount: number; messagesClearedCount: number }> {
+    return this.queueService.clearAllQueues();
   }
 }

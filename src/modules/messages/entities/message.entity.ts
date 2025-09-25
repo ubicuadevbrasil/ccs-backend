@@ -1,5 +1,19 @@
 import { Expose, Exclude } from 'class-transformer';
 
+export enum SenderType {
+  SYSTEM = 'system',
+  BOT = 'bot',
+  CUSTOMER = 'customer',
+  USER = 'user',
+}
+
+export enum RecipientType {
+  SYSTEM = 'system',
+  BOT = 'bot',
+  CUSTOMER = 'customer',
+  USER = 'user',
+}
+
 export enum MessageType {
   TEXT = 'text',
   IMAGE = 'image',
@@ -33,8 +47,10 @@ export interface MessageEntity {
   id: string;
   messageId: string;
   sessionId: string;
-  senderId: string;
-  recipientId: string;
+  senderType: SenderType;
+  recipientType: RecipientType;
+  customerId: string | null;
+  userId: string | null;
   fromMe: boolean;
   system: boolean;
   isGroup: boolean;
@@ -54,8 +70,10 @@ export class Message implements MessageEntity {
   id: string;
   messageId: string;
   sessionId: string;
-  senderId: string;
-  recipientId: string;
+  senderType: SenderType;
+  recipientType: RecipientType;
+  customerId: string | null;
+  userId: string | null;
   fromMe: boolean;
   system: boolean;
   isGroup: boolean;

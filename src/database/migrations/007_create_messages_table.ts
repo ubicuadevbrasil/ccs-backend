@@ -11,8 +11,12 @@ export async function up(knex: Knex): Promise<void> {
     table.text('sessionId').notNullable();
     
     // Sender and recipient information
-    table.uuid('senderId').notNullable();
-    table.uuid('recipientId').notNullable();
+    table.enum('senderType', ['system', 'bot', 'customer', 'user']).notNullable();
+    table.enum('recipientType', ['system', 'bot', 'customer', 'user']).notNullable();
+    
+    // Foreign key references
+    table.uuid('customerId').nullable();
+    table.uuid('userId').nullable();
     
     // Indicates if the message was sent by the system/user (true) or received from customer (false)
     table.boolean('fromMe').notNullable().defaultTo(false);
@@ -48,8 +52,10 @@ export async function up(knex: Knex): Promise<void> {
     table.index(['messageId']);
     table.index(['sessionId']);
     table.index(['replyMessageId']);
-    table.index(['senderId']);
-    table.index(['recipientId']);
+    table.index(['senderType']);
+    table.index(['recipientType']);
+    table.index(['customerId']);
+    table.index(['userId']);
     table.index(['fromMe']);
     table.index(['system']);
     table.index(['isGroup']);
@@ -62,15 +68,17 @@ export async function up(knex: Knex): Promise<void> {
     // Composite indexes for common queries
     table.index(['platform', 'messageId']);
     table.index(['sessionId', 'platform']);
-    table.index(['senderId', 'platform']);
-    table.index(['recipientId', 'platform']);
+    table.index(['senderType', 'platform']);
+    table.index(['recipientType', 'platform']);
+    table.index(['customerId', 'platform']);
+    table.index(['userId', 'platform']);
     table.index(['fromMe', 'platform']);
     table.index(['status', 'platform']);
     table.index(['sentAt', 'platform']);
     
     // Foreign key constraints
-    table.foreign('senderId').references('id').inTable('user').onDelete('CASCADE');
-    table.foreign('recipientId').references('id').inTable('customer').onDelete('CASCADE');
+    table.foreign('customerId').references('id').inTable('customer').onDelete('CASCADE');
+    table.foreign('userId').references('id').inTable('user').onDelete('CASCADE');
     table.foreign('replyMessageId').references('messageId').inTable('messages').onDelete('SET NULL');
     // table.foreign('conversationId').references('id').inTable('conversations').onDelete('SET NULL');
   });

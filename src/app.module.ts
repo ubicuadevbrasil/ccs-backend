@@ -9,6 +9,9 @@ import { TabulationModule } from './modules/tabulation';
 import { HistoryModule } from './modules/history';
 import { QueueModule } from './modules/customer-queue';
 import { EvolutionModule } from './modules/whatsapp/evolution/evolution.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { MessagesModule } from './modules/messages/messages.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -16,12 +19,15 @@ import { EvolutionModule } from './modules/whatsapp/evolution/evolution.module';
       isGlobal: true,
     }),
     DatabaseModule,
+    AuthModule,
     UserModule,
     CustomerModule,
     TabulationModule,
     HistoryModule,
     QueueModule,
     EvolutionModule,
+    MessagesModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

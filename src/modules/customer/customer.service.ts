@@ -256,6 +256,29 @@ export class CustomerService {
   }
 
   /**
+   * Find customer by platformId and platform with tags
+   */
+  async findCustomerByPlatformIdWithTags(platformId: string, platform: CustomerPlatform): Promise<Customer | null> {
+    const customer = await this.knex('customer')
+      .where('platformId', platformId)
+      .where('platform', platform)
+      .first();
+
+    if (!customer) {
+      return null;
+    }
+
+    const tags = await this.knex('customerTags')
+      .where('customerId', customer.id)
+      .select('*');
+
+    return new Customer({
+      ...customer,
+      tags: tags.map(tag => new CustomerTag(tag))
+    });
+  }
+
+  /**
    * Update customer by ID with tags
    */
   async updateCustomer(id: string, updateCustomerDto: UpdateCustomerDto): Promise<Customer> {

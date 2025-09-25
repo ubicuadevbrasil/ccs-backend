@@ -22,28 +22,193 @@ export interface MessageKey {
   participantLid?: string;
 }
 
+export interface DeviceListMetadata {
+  senderKeyHash: string;
+  senderTimestamp: string;
+  recipientKeyHash: string;
+  recipientTimestamp: string;
+}
+
 export interface MessageContextInfo {
-  deviceListMetadata?: any;
+  deviceListMetadata?: DeviceListMetadata;
   deviceListMetadataVersion?: number;
   messageSecret?: string;
   paddingBytes?: string;
+  mentionedJid?: string[];
+}
+
+export interface StickerMessage {
+  url: string;
+  fileSha256: string;
+  fileEncSha256: string;
+  mediaKey: string;
+  mimetype: string;
+  directPath: string;
+  fileLength: string;
+  mediaKeyTimestamp: string;
+  firstFrameLength?: number;
+  firstFrameSidecar?: string;
+  isAnimated: boolean;
+  stickerSentTs: string;
+  isAvatar: boolean;
+  isAiSticker: boolean;
+  isLottie: boolean;
+}
+
+export interface ImageMessage {
+  caption?: string;
+  url: string;
+  mimetype: string;
+  fileSha256: string;
+  fileLength: string;
+  height: number;
+  width: number;
+  mediaKey: string;
+  fileEncSha256: string;
+  directPath: string;
+  mediaKeyTimestamp: string;
+  jpegThumbnail?: string;
+  contextInfo?: any;
+  scansSidecar?: string;
+  scanLengths?: number[];
+  midQualityFileSha256?: string;
+}
+
+export interface VideoMessage {
+  caption?: string;
+  url: string;
+  mimetype: string;
+  fileSha256: string;
+  fileLength: string;
+  seconds: number;
+  mediaKey: string;
+  height: number;
+  width: number;
+  fileEncSha256: string;
+  directPath: string;
+  mediaKeyTimestamp: string;
+  jpegThumbnail?: string;
+  contextInfo?: any;
+  streamingSidecar?: string;
+  externalShareFullVideoDurationInSeconds?: number;
+}
+
+export interface PtvMessage {
+  caption?: string;
+  url: string;
+  mimetype: string;
+  fileSha256: string;
+  fileLength: string;
+  seconds: number;
+  mediaKey: string;
+  height: number;
+  width: number;
+  fileEncSha256: string;
+  directPath: string;
+  mediaKeyTimestamp: string;
+  jpegThumbnail?: string;
+  streamingSidecar?: string;
+  externalShareFullVideoDurationInSeconds?: number;
+}
+
+export interface AudioMessage {
+  url: string;
+  mimetype: string;
+  fileSha256: string;
+  fileLength: string;
+  seconds: number;
+  ptt: boolean;
+  mediaKey: string;
+  fileEncSha256: string;
+  directPath: string;
+  mediaKeyTimestamp: string;
+  waveform?: string;
+}
+
+export interface LocationMessage {
+  degreesLatitude: number;
+  degreesLongitude: number;
+  jpegThumbnail?: string;
+}
+
+export interface ContactMessage {
+  displayName: string;
+  vcard: string;
+}
+
+export interface PollOption {
+  optionName: string;
+}
+
+export interface PollCreationMessage {
+  name: string;
+  options: PollOption[];
+  selectableOptionsCount: number;
+}
+
+export interface EventLocation {
+  degreesLatitude: number;
+  degreesLongitude: number;
+  name: string;
+}
+
+export interface EventMessage {
+  isCanceled: boolean;
+  name: string;
+  location: EventLocation;
+  joinLink: string;
+  startTime: string;
+  endTime: string;
+  extraGuestsAllowed: boolean;
+  isScheduleCall: boolean;
+}
+
+export interface InteractiveButton {
+  name: string;
+  buttonParamsJson: string;
+}
+
+export interface NativeFlowMessage {
+  buttons: InteractiveButton[];
+}
+
+export interface InteractiveMessage {
+  nativeFlowMessage: NativeFlowMessage;
+}
+
+export interface SenderKeyDistributionMessage {
+  groupId: string;
+  axolotlSenderKeyDistributionMessage: string;
+}
+
+export interface ReactionMessage {
+  key: MessageKey;
+  text: string;
+  senderTimestampMs: string;
 }
 
 export interface WhatsAppMessage {
   conversation?: string;
-  imageMessage?: any;
-  videoMessage?: any;
-  audioMessage?: any;
+  imageMessage?: ImageMessage;
+  videoMessage?: VideoMessage;
+  audioMessage?: AudioMessage;
   documentMessage?: any;
-  stickerMessage?: any;
-  locationMessage?: any;
-  contactMessage?: any;
+  stickerMessage?: StickerMessage;
+  ptvMessage?: PtvMessage;
+  locationMessage?: LocationMessage;
+  contactMessage?: ContactMessage;
+  pollCreationMessageV3?: PollCreationMessage;
+  eventMessage?: EventMessage;
+  interactiveMessage?: InteractiveMessage;
+  senderKeyDistributionMessage?: SenderKeyDistributionMessage;
+  reactionMessage?: ReactionMessage;
   contactsArrayMessage?: any;
   groupInviteMessage?: any;
   listMessage?: any;
   buttonsMessage?: any;
   templateMessage?: any;
   messageContextInfo?: MessageContextInfo;
+  mediaUrl?: string;
 }
 
 // Base event interfaces for each event type
@@ -54,12 +219,18 @@ export interface EvolutionApplicationStartupEvent extends EvolutionRabbitMQEvent
 
 export interface EvolutionInstanceCreateEvent extends EvolutionRabbitMQEvent {
   event: 'INSTANCE_CREATE';
-  data: any;
+  data: {
+    instanceName: string;
+    instanceId: string;
+  };
 }
 
 export interface EvolutionInstanceDeleteEvent extends EvolutionRabbitMQEvent {
   event: 'INSTANCE_DELETE';
-  data: any;
+  data: {
+    instanceName: string;
+    instanceId: string;
+  };
 }
 
 export interface EvolutionQrcodeUpdatedEvent extends EvolutionRabbitMQEvent {
@@ -72,6 +243,18 @@ export interface EvolutionMessagesSetEvent extends EvolutionRabbitMQEvent {
   data: any;
 }
 
+export interface MessageContextInfoData {
+  mentionedJid?: string[];
+  conversionSource?: string;
+  conversionDelaySeconds?: number;
+  expiration?: number;
+  ephemeralSettingTimestamp?: string;
+  disappearingMode?: {
+    initiator: string;
+  };
+  pairedMediaType?: string;
+}
+
 export interface EvolutionMessagesUpsertEvent extends EvolutionRabbitMQEvent {
   event: 'MESSAGES_UPSERT';
   data: {
@@ -79,27 +262,41 @@ export interface EvolutionMessagesUpsertEvent extends EvolutionRabbitMQEvent {
     pushName: string;
     status: 'DELIVERY_ACK' | 'READ' | 'SENT' | 'FAILED';
     message: WhatsAppMessage;
-    contextInfo?: any;
-    messageType: 'conversation' | 'imageMessage' | 'videoMessage' | 'audioMessage' | 'documentMessage' | 'stickerMessage' | 'locationMessage' | 'contactMessage' | 'listMessage' | 'buttonsMessage' | 'templateMessage';
+    contextInfo?: MessageContextInfoData;
+    messageType: 'conversation' | 'imageMessage' | 'videoMessage' | 'audioMessage' | 'documentMessage' | 'stickerMessage' | 'locationMessage' | 'contactMessage' | 'listMessage' | 'buttonsMessage' | 'templateMessage' | 'ptvMessage' | 'pollCreationMessageV3' | 'eventMessage' | 'interactiveMessage' | 'senderKeyDistributionMessage' | 'reactionMessage';
     messageTimestamp: number;
     instanceId: string;
     source: 'android' | 'ios' | 'web' | 'unknown';
   };
 }
 
+// New interface for the actual RabbitMQ event structure
+export interface EvolutionRabbitMQEventWrapper {
+  timestamp: string;
+  eventType: string;
+  event: EvolutionMessagesUpsertEvent;
+}
+
 export interface EvolutionMessagesEditedEvent extends EvolutionRabbitMQEvent {
   event: 'MESSAGES_EDITED';
-  data: any;
+  data: {
+    key: MessageKey;
+    type: 'MESSAGE_EDIT';
+    editedMessage: WhatsAppMessage;
+    timestampMs: string;
+  };
 }
 
 export interface EvolutionMessagesUpdateEvent extends EvolutionRabbitMQEvent {
   event: 'MESSAGES_UPDATE';
   data: {
-    key: MessageKey;
-    update: {
-      status?: 'READ' | 'DELIVERY_ACK';
-      messageTimestamp?: number;
-    };
+    keyId: string;
+    remoteJid: string;
+    fromMe: boolean;
+    participant: string;
+    status: 'SERVER_ACK' | 'DELIVERY_ACK' | 'READ' | 'PLAYED';
+    instanceId: string;
+    messageId: string;
   };
 }
 
@@ -110,7 +307,17 @@ export interface EvolutionMessagesDeleteEvent extends EvolutionRabbitMQEvent {
 
 export interface EvolutionSendMessageEvent extends EvolutionRabbitMQEvent {
   event: 'SEND_MESSAGE';
-  data: any;
+  data: {
+    key: MessageKey;
+    pushName: string;
+    status: 'PENDING';
+    message: WhatsAppMessage;
+    contextInfo?: MessageContextInfoData | null;
+    messageType: 'conversation' | 'imageMessage' | 'videoMessage' | 'audioMessage' | 'documentMessage' | 'stickerMessage' | 'locationMessage' | 'contactMessage' | 'listMessage' | 'buttonsMessage' | 'templateMessage' | 'ptvMessage' | 'pollCreationMessageV3' | 'eventMessage' | 'interactiveMessage' | 'senderKeyDistributionMessage' | 'reactionMessage';
+    messageTimestamp: number;
+    instanceId: string;
+    source: 'unknown';
+  };
 }
 
 export interface EvolutionSendMessageUpdateEvent extends EvolutionRabbitMQEvent {
@@ -128,18 +335,27 @@ export interface EvolutionContactsUpsertEvent extends EvolutionRabbitMQEvent {
   data: any;
 }
 
+export interface ContactUpdate {
+  remoteJid: string;
+  pushName?: string;
+  profilePicUrl?: string;
+  instanceId: string;
+}
+
 export interface EvolutionContactsUpdateEvent extends EvolutionRabbitMQEvent {
   event: 'CONTACTS_UPDATE';
-  data: any;
+  data: ContactUpdate | ContactUpdate[];
+}
+
+export interface PresenceInfo {
+  lastKnownPresence: 'unavailable' | 'available' | 'composing' | 'recording' | 'paused';
 }
 
 export interface EvolutionPresenceUpdateEvent extends EvolutionRabbitMQEvent {
   event: 'PRESENCE_UPDATE';
   data: {
     id: string;
-    presences: {
-      [key: string]: 'unavailable' | 'available' | 'composing' | 'recording' | 'paused';
-    };
+    presences: Record<string, PresenceInfo>;
   };
 }
 
@@ -148,14 +364,26 @@ export interface EvolutionChatsSetEvent extends EvolutionRabbitMQEvent {
   data: any;
 }
 
+export interface ChatUpsert {
+  remoteJid: string;
+  instanceId: string;
+  name?: string;
+  unreadMessages: number;
+}
+
 export interface EvolutionChatsUpsertEvent extends EvolutionRabbitMQEvent {
   event: 'CHATS_UPSERT';
-  data: any;
+  data: ChatUpsert[];
+}
+
+export interface ChatUpdate {
+  remoteJid: string;
+  instanceId: string;
 }
 
 export interface EvolutionChatsUpdateEvent extends EvolutionRabbitMQEvent {
   event: 'CHATS_UPDATE';
-  data: any;
+  data: ChatUpdate[];
 }
 
 export interface EvolutionChatsDeleteEvent extends EvolutionRabbitMQEvent {
@@ -163,9 +391,35 @@ export interface EvolutionChatsDeleteEvent extends EvolutionRabbitMQEvent {
   data: any;
 }
 
+export interface GroupParticipant {
+  id: string;
+  jid: string;
+  lid: string;
+  admin: string | null;
+}
+
+export interface GroupUpsert {
+  id: string;
+  subject: string;
+  subjectOwner: string;
+  subjectTime: number;
+  size: number;
+  creation: number;
+  owner: string;
+  owner_country_code: string;
+  restrict: boolean;
+  announce: boolean;
+  isCommunity: boolean;
+  isCommunityAnnounce: boolean;
+  joinApprovalMode: boolean;
+  memberAddMode: boolean;
+  participants: GroupParticipant[];
+  author: string;
+}
+
 export interface EvolutionGroupsUpsertEvent extends EvolutionRabbitMQEvent {
   event: 'GROUPS_UPSERT';
-  data: any;
+  data: GroupUpsert[];
 }
 
 export interface EvolutionGroupUpdateEvent extends EvolutionRabbitMQEvent {
@@ -181,9 +435,12 @@ export interface EvolutionGroupParticipantsUpdateEvent extends EvolutionRabbitMQ
 export interface EvolutionConnectionUpdateEvent extends EvolutionRabbitMQEvent {
   event: 'CONNECTION_UPDATE';
   data: {
-    instanceId: string;
+    instance: string;
     state: 'open' | 'connecting' | 'close';
-    qr?: string;
+    statusReason: number;
+    wuid?: string;
+    profileName?: string;
+    profilePictureUrl?: string | null;
   };
 }
 

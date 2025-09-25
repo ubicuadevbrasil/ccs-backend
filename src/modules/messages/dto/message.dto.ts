@@ -9,7 +9,7 @@ import {
   MaxLength
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { MessageType, MessagePlatform, MessageStatus } from '../entities/message.entity';
+import { MessageType, MessagePlatform, MessageStatus, SenderType, RecipientType } from '../entities/message.entity';
 
 export class CreateMessageDto {
   @ApiProperty({
@@ -37,20 +37,40 @@ export class CreateMessageDto {
   sessionId: string;
 
   @ApiProperty({
-    description: 'Sender ID (user or customer)',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Type of sender (system, bot, customer, user)',
+    enum: SenderType,
+    example: SenderType.CUSTOMER,
   })
-  @IsUUID()
+  @IsEnum(SenderType)
   @IsNotEmpty()
-  senderId: string;
+  senderType: SenderType;
 
   @ApiProperty({
-    description: 'Recipient ID (user or customer)',
+    description: 'Type of recipient (system, bot, customer, user)',
+    enum: RecipientType,
+    example: RecipientType.USER,
+  })
+  @IsEnum(RecipientType)
+  @IsNotEmpty()
+  recipientType: RecipientType;
+
+  @ApiProperty({
+    description: 'Customer ID (required if senderType or recipientType is customer)',
     example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
   })
   @IsUUID()
-  @IsNotEmpty()
-  recipientId: string;
+  @IsOptional()
+  customerId: string | null;
+
+  @ApiProperty({
+    description: 'User ID (required if senderType or recipientType is user)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @IsUUID()
+  @IsOptional()
+  userId: string | null;
 
   @ApiProperty({
     description: 'Indicates if the message was sent by the system/user (true) or received from customer (false)',
@@ -216,20 +236,38 @@ export class MessageQueryDto {
   sessionId?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by sender ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Filter by sender type',
+    enum: SenderType,
+    example: SenderType.CUSTOMER,
   })
   @IsOptional()
-  @IsUUID()
-  senderId?: string;
+  @IsEnum(SenderType)
+  senderType?: SenderType;
 
   @ApiPropertyOptional({
-    description: 'Filter by recipient ID',
+    description: 'Filter by recipient type',
+    enum: RecipientType,
+    example: RecipientType.USER,
+  })
+  @IsOptional()
+  @IsEnum(RecipientType)
+  recipientType?: RecipientType;
+
+  @ApiPropertyOptional({
+    description: 'Filter by customer ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsOptional()
   @IsUUID()
-  recipientId?: string;
+  customerId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by user ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by platform',
@@ -346,6 +384,36 @@ export class AddReactionDto {
   emoji: string;
 }
 
+export class SessionMessagesQueryDto {
+  @ApiProperty({
+    description: 'Session ID to retrieve messages for',
+    example: 'session_123456789',
+  })
+  @IsString()
+  sessionId: string;
+
+  @ApiPropertyOptional({
+    description: 'Number of messages to retrieve',
+    example: 50,
+    default: 50,
+    minimum: 1,
+    maximum: 1000,
+  })
+  @IsOptional()
+  @IsString()
+  limit?: string;
+
+  @ApiPropertyOptional({
+    description: 'Source to retrieve messages from (redis or postgres)',
+    example: 'redis',
+    enum: ['redis', 'postgres'],
+    default: 'redis',
+  })
+  @IsOptional()
+  @IsString()
+  source?: 'redis' | 'postgres';
+}
+
 export class MessageResponseDto {
   @ApiProperty({
     description: 'Message ID',
@@ -366,16 +434,32 @@ export class MessageResponseDto {
   sessionId: string;
 
   @ApiProperty({
-    description: 'Sender ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Sender type',
+    enum: SenderType,
+    example: SenderType.CUSTOMER,
   })
-  senderId: string;
+  senderType: SenderType;
 
   @ApiProperty({
-    description: 'Recipient ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Recipient type',
+    enum: RecipientType,
+    example: RecipientType.USER,
   })
-  recipientId: string;
+  recipientType: RecipientType;
+
+  @ApiProperty({
+    description: 'Customer ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    nullable: true,
+  })
+  customerId: string | null;
+
+  @ApiProperty({
+    description: 'User ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    nullable: true,
+  })
+  userId: string | null;
 
   @ApiProperty({
     description: 'From me flag',
@@ -429,8 +513,9 @@ export class MessageResponseDto {
   status: MessageStatus;
 
   @ApiPropertyOptional({
-    description: 'Additional metadata',
-    example: { originalResponse: { id: '123' } },
+    description: 'Additional metadata (optional) - may contain platform response data',
+    example: null,
+    nullable: true,
   })
   metadata?: any;
 
@@ -494,4 +579,62 @@ export class MessageResponseDto {
     example: false,
   })
   hasMedia: boolean;
+}
+
+export class PaginatedMessagesResponseDto {
+  @ApiProperty({
+    description: 'Array of messages',
+    type: [MessageResponseDto],
+  })
+  data: MessageResponseDto[];
+
+  @ApiProperty({
+    description: 'Total number of messages',
+    example: 100,
+  })
+  total: number;
+
+  @ApiProperty({
+    description: 'Current page number',
+    example: 1,
+  })
+  page: number;
+
+  @ApiProperty({
+    description: 'Number of messages per page',
+    example: 20,
+  })
+  limit: number;
+
+  @ApiProperty({
+    description: 'Total number of pages',
+    example: 5,
+  })
+  totalPages: number;
+}
+
+export class SessionMessagesResponseDto {
+  @ApiProperty({
+    description: 'Session identifier',
+    example: 'session_123456789',
+  })
+  sessionId: string;
+
+  @ApiProperty({
+    description: 'Array of messages',
+    type: [MessageResponseDto],
+  })
+  messages: MessageResponseDto[];
+
+  @ApiProperty({
+    description: 'Number of messages',
+    example: 25,
+  })
+  count: number;
+
+  @ApiProperty({
+    description: 'Data source',
+    example: 'redis',
+  })
+  source: string;
 }

@@ -1,5 +1,8 @@
 import { Exclude, Expose } from 'class-transformer';
 import { HistoryPlatform } from '../../history/entities/history.entity';
+import { Customer } from '../../customer/entities/customer.entity';
+import { User } from '../../user/entities/user.entity';
+import { Message } from '../../messages/entities/message.entity';
 
 export enum QueueStatus {
   BOT = 'bot',
@@ -10,21 +13,29 @@ export enum QueueStatus {
 export interface QueueEntity {
   sessionId: string;
   customerId: string;
+  customer?: Customer;
   userId: string;
+  user?: User;
   platform: HistoryPlatform;
   status: QueueStatus;
   createdAt: Date;
   attendedAt?: Date;
+  lastMessage?: Message;
+  metadata?: Record<string, any>;
 }
 
 export class Queue implements QueueEntity {
   sessionId: string;
   customerId: string;
+  customer?: Customer;
   userId: string;
+  user?: User;
   platform: HistoryPlatform;
   status: QueueStatus;
   createdAt: Date;
   attendedAt?: Date;
+  lastMessage?: Message;
+  metadata?: Record<string, any>;
 
   constructor(partial: Partial<Queue>) {
     Object.assign(this, partial);

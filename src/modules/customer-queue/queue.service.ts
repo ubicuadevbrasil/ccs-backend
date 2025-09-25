@@ -1,9 +1,22 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { Queue, QueueEntity, QueueStatus } from './entities/queue.entity';
-import { CreateQueueDto, UpdateQueueDto, QueueQueryDto, EndServiceDto } from './dto/queue.dto';
+import { 
+  CreateQueueDto, 
+  UpdateQueueDto, 
+  QueueQueryDto, 
+  EndServiceDto,
+  CreateQueueWhatsAppDto,
+  CreateQueueTelegramDto,
+  CreateQueueInstagramDto,
+  CreateQueueFacebookDto
+} from './dto/queue.dto';
 import { HistoryService } from '../history/history.service';
 import { HistoryPlatform } from '../history/entities/history.entity';
+import { Customer } from '../customer/entities/customer.entity';
+import { User } from '../user/entities/user.entity';
+import { Message } from '../messages/entities/message.entity';
+import { UserService } from '../user/user.service';
 
 export interface PaginatedResult<T> {
   data: T[];
@@ -22,6 +35,7 @@ export class QueueService {
   constructor(
     @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
     private readonly historyService: HistoryService,
+    private readonly userService: UserService,
   ) {
     this.redis = redisClient;
   }
@@ -69,7 +83,7 @@ export class QueueService {
   /**
    * Create new queue entry when customer is not in queue
    */
-  async createQueueEntry(createQueueDto: CreateQueueDto): Promise<Queue> {
+  async createQueue(createQueueDto: CreateQueueDto): Promise<Queue> {
     const queueKey = `${this.QUEUE_KEY_PREFIX}${createQueueDto.sessionId}`;
     
     // Check if queue item already exists
@@ -81,11 +95,15 @@ export class QueueService {
     const queueData: QueueEntity = {
       sessionId: createQueueDto.sessionId,
       customerId: createQueueDto.customerId,
+      customer: createQueueDto.customer,
       userId: createQueueDto.userId,
+      user: createQueueDto.user,
       platform: createQueueDto.platform,
       status: QueueStatus.WAITING,
       createdAt: new Date(),
       attendedAt: createQueueDto.attendedAt ? new Date(createQueueDto.attendedAt) : undefined,
+      lastMessage: createQueueDto.lastMessage,
+      metadata: createQueueDto.metadata,
     };
 
     // Store in Redis
@@ -98,10 +116,87 @@ export class QueueService {
   }
 
   /**
-   * Create a new queue item (legacy method for backward compatibility)
+   * Create WhatsApp-specific queue entry
    */
-  async createQueue(createQueueDto: CreateQueueDto): Promise<Queue> {
-    return this.createQueueEntry(createQueueDto);
+  async createQueueWhatsApp(createQueueDto: CreateQueueWhatsAppDto): Promise<Queue> {
+    const queueData: CreateQueueDto = {
+      sessionId: createQueueDto.sessionId,
+      customerId: createQueueDto.customerId,
+      customer: createQueueDto.customer,
+      userId: createQueueDto.userId,
+      user: createQueueDto.user,
+      platform: HistoryPlatform.WHATSAPP,
+      status: QueueStatus.BOT,
+      attendedAt: createQueueDto.attendedAt,
+      lastMessage: createQueueDto.lastMessage,
+      metadata: createQueueDto.metadata,
+    };
+
+    const queue = await this.createQueue(queueData);
+    return queue;
+  }
+
+  /**
+   * Create Telegram-specific queue entry
+   */
+  async createQueueTelegram(createQueueDto: CreateQueueTelegramDto): Promise<Queue> {
+    const queueData: CreateQueueDto = {
+      sessionId: createQueueDto.sessionId,
+      customerId: createQueueDto.customerId,
+      customer: createQueueDto.customer,
+      userId: createQueueDto.userId,
+      user: createQueueDto.user,
+      platform: HistoryPlatform.TELEGRAM,
+      status: QueueStatus.BOT,
+      attendedAt: createQueueDto.attendedAt,
+      lastMessage: createQueueDto.lastMessage,
+      metadata: createQueueDto.metadata,
+    };
+
+    const queue = await this.createQueue(queueData);
+    return queue;
+  }
+
+  /**
+   * Create Instagram-specific queue entry
+   */
+  async createQueueInstagram(createQueueDto: CreateQueueInstagramDto): Promise<Queue> {
+    const queueData: CreateQueueDto = {
+      sessionId: createQueueDto.sessionId,
+      customerId: createQueueDto.customerId,
+      customer: createQueueDto.customer,
+      userId: createQueueDto.userId,
+      user: createQueueDto.user,
+      platform: HistoryPlatform.INSTAGRAM,
+      status: QueueStatus.BOT,
+      attendedAt: createQueueDto.attendedAt,
+      lastMessage: createQueueDto.lastMessage,
+      metadata: createQueueDto.metadata,
+    };
+
+    const queue = await this.createQueue(queueData);
+    return queue;
+  }
+
+  /**
+   * Create Facebook-specific queue entry
+   */
+  async createQueueFacebook(createQueueDto: CreateQueueFacebookDto): Promise<Queue> {
+    const queueData: CreateQueueDto = {
+      sessionId: createQueueDto.sessionId,
+      customerId: createQueueDto.customerId,
+      customer: createQueueDto.customer,
+      userId: createQueueDto.userId,
+      user: createQueueDto.user,
+      platform: HistoryPlatform.FACEBOOK,
+      status: QueueStatus.BOT,
+      attendedAt: createQueueDto.attendedAt,
+      lastMessage: createQueueDto.lastMessage,
+      metadata: createQueueDto.metadata,
+    };
+
+    const queue = await this.createQueue(queueData);
+    return queue;
   }
 
   /**
@@ -369,14 +464,291 @@ export class QueueService {
   /**
    * Mark queue as attended
    */
-  async markAsAttended(sessionId: string, attendedAt?: Date): Promise<Queue> {
+  async markAsAttended(sessionId: string, userId?: string, user?: User, attendedAt?: Date): Promise<Queue> {
     const attendedTime = attendedAt || new Date();
     
-    return this.updateQueue(sessionId, {
+    const updateData: any = {
       sessionId,
       status: QueueStatus.SERVICE,
       attendedAt: attendedTime.toISOString(),
-    });
+    };
+
+    // Update user information if provided
+    if (userId) {
+      updateData.userId = userId;
+    }
+    if (user) {
+      updateData.user = user;
+    }
+    
+    return this.updateQueue(sessionId, updateData);
+  }
+
+  /**
+   * Transfer queue to another user
+   */
+  async transferQueue(sessionId: string, targetUserId: string): Promise<Queue> {
+    // Get the target user information
+    const targetUser = await this.userService.findUserById(targetUserId);
+    
+    // Update the queue with the new user information
+    const updateData = {
+      sessionId,
+      userId: targetUserId,
+      user: targetUser,
+    };
+    
+    return this.updateQueue(sessionId, updateData);
+  }
+
+  /**
+   * Update queue with latest message
+   */
+  async updateLastMessage(sessionId: string, lastMessage: Message): Promise<Queue> {
+    const queueKey = `${this.QUEUE_KEY_PREFIX}${sessionId}`;
+    
+    // Check if queue exists
+    const exists = await this.redis.exists(queueKey);
+    if (!exists) {
+      throw new NotFoundException('Queue entry not found');
+    }
+
+    // Get current data
+    const currentData = await this.redis.hgetall(queueKey);
+    const currentQueue = new Queue(this.deserializeQueueData(currentData));
+
+    // Update queue with new last message
+    const updatedQueueData: QueueEntity = {
+      ...currentQueue,
+      lastMessage,
+    };
+
+    // Update in Redis
+    await this.redis.hset(queueKey, this.serializeQueueData(updatedQueueData));
+
+    return new Queue(updatedQueueData);
+  }
+
+  /**
+   * Update queue metadata
+   */
+  async updateMetadata(sessionId: string, metadata: Record<string, any>): Promise<Queue> {
+    const queueKey = `${this.QUEUE_KEY_PREFIX}${sessionId}`;
+    
+    // Check if queue exists
+    const exists = await this.redis.exists(queueKey);
+    if (!exists) {
+      throw new NotFoundException('Queue entry not found');
+    }
+
+    // Get current data
+    const currentData = await this.redis.hgetall(queueKey);
+    const currentQueue = new Queue(this.deserializeQueueData(currentData));
+
+    // Merge with existing metadata
+    const updatedMetadata = {
+      ...currentQueue.metadata,
+      ...metadata,
+    };
+
+    // Update queue with new metadata
+    const updatedQueueData: QueueEntity = {
+      ...currentQueue,
+      metadata: updatedMetadata,
+    };
+
+    // Update in Redis
+    await this.redis.hset(queueKey, this.serializeQueueData(updatedQueueData));
+
+    return new Queue(updatedQueueData);
+  }
+
+  /**
+   * Update queue customer data
+   */
+  async updateCustomer(sessionId: string, customer: Customer): Promise<Queue> {
+    const queueKey = `${this.QUEUE_KEY_PREFIX}${sessionId}`;
+    
+    // Check if queue exists
+    const exists = await this.redis.exists(queueKey);
+    if (!exists) {
+      throw new NotFoundException('Queue entry not found');
+    }
+
+    // Get current data
+    const currentData = await this.redis.hgetall(queueKey);
+    const currentQueue = new Queue(this.deserializeQueueData(currentData));
+
+    // Update queue with new customer data
+    const updatedQueueData: QueueEntity = {
+      ...currentQueue,
+      customer,
+      customerId: customer.id, // Ensure customerId is also updated
+    };
+
+    // Update in Redis
+    await this.redis.hset(queueKey, this.serializeQueueData(updatedQueueData));
+
+    return new Queue(updatedQueueData);
+  }
+
+  /**
+   * Update queue user data
+   */
+  async updateUser(sessionId: string, user: User): Promise<Queue> {
+    const queueKey = `${this.QUEUE_KEY_PREFIX}${sessionId}`;
+    
+    // Check if queue exists
+    const exists = await this.redis.exists(queueKey);
+    if (!exists) {
+      throw new NotFoundException('Queue entry not found');
+    }
+
+    // Get current data
+    const currentData = await this.redis.hgetall(queueKey);
+    const currentQueue = new Queue(this.deserializeQueueData(currentData));
+
+    // Update queue with new user data
+    const updatedQueueData: QueueEntity = {
+      ...currentQueue,
+      user,
+      userId: user.id, // Ensure userId is also updated
+    };
+
+    // Update in Redis
+    await this.redis.hset(queueKey, this.serializeQueueData(updatedQueueData));
+
+    return new Queue(updatedQueueData);
+  }
+
+  /**
+   * Update queue status
+   */
+  async updateStatus(sessionId: string, status: QueueStatus, attendedAt?: Date): Promise<Queue> {
+    const queueKey = `${this.QUEUE_KEY_PREFIX}${sessionId}`;
+    
+    // Check if queue exists
+    const exists = await this.redis.exists(queueKey);
+    if (!exists) {
+      throw new NotFoundException('Queue entry not found');
+    }
+
+    // Get current data
+    const currentData = await this.redis.hgetall(queueKey);
+    const currentQueue = new Queue(this.deserializeQueueData(currentData));
+
+    // Update queue with new status
+    const updatedQueueData: QueueEntity = {
+      ...currentQueue,
+      status,
+      attendedAt: attendedAt || (status === QueueStatus.SERVICE ? new Date() : currentQueue.attendedAt),
+    };
+
+    // Update in Redis
+    await this.redis.hset(queueKey, this.serializeQueueData(updatedQueueData));
+
+    return new Queue(updatedQueueData);
+  }
+
+  /**
+   * Comprehensive queue update function
+   */
+  async updateQueueData(sessionId: string, updateData: {
+    customer?: Customer;
+    user?: User;
+    lastMessage?: Message;
+    metadata?: Record<string, any>;
+    status?: QueueStatus;
+    attendedAt?: Date;
+  }): Promise<Queue> {
+    const queueKey = `${this.QUEUE_KEY_PREFIX}${sessionId}`;
+    
+    // Check if queue exists
+    const exists = await this.redis.exists(queueKey);
+    if (!exists) {
+      throw new NotFoundException('Queue entry not found');
+    }
+
+    // Get current data
+    const currentData = await this.redis.hgetall(queueKey);
+    const currentQueue = new Queue(this.deserializeQueueData(currentData));
+
+    // Prepare update data
+    const updatedQueueData: QueueEntity = {
+      ...currentQueue,
+    };
+
+    // Update customer if provided
+    if (updateData.customer) {
+      updatedQueueData.customer = updateData.customer;
+      updatedQueueData.customerId = updateData.customer.id;
+    }
+
+    // Update user if provided
+    if (updateData.user) {
+      updatedQueueData.user = updateData.user;
+      updatedQueueData.userId = updateData.user.id;
+    }
+
+    // Update last message if provided
+    if (updateData.lastMessage) {
+      updatedQueueData.lastMessage = updateData.lastMessage;
+    }
+
+    // Update metadata if provided (merge with existing)
+    if (updateData.metadata) {
+      updatedQueueData.metadata = {
+        ...currentQueue.metadata,
+        ...updateData.metadata,
+      };
+    }
+
+    // Update status if provided
+    if (updateData.status) {
+      updatedQueueData.status = updateData.status;
+    }
+
+    // Update attendedAt if provided
+    if (updateData.attendedAt) {
+      updatedQueueData.attendedAt = updateData.attendedAt;
+    } else if (updateData.status === QueueStatus.SERVICE && !currentQueue.attendedAt) {
+      // Auto-set attendedAt when moving to service status
+      updatedQueueData.attendedAt = new Date();
+    }
+
+    // Update in Redis
+    await this.redis.hset(queueKey, this.serializeQueueData(updatedQueueData));
+
+    return new Queue(updatedQueueData);
+  }
+
+  /**
+   * Clear all Redis queues and messages
+   */
+  async clearAllQueues(): Promise<{ message: string; clearedCount: number; messagesClearedCount: number }> {
+    // Get all queue keys
+    const allSessionIds = await this.redis.zrevrange(this.QUEUE_INDEX_KEY, 0, -1);
+    
+    if (allSessionIds.length === 0) {
+      return { message: 'No queues to clear', clearedCount: 0, messagesClearedCount: 0 };
+    }
+
+    // Delete all queue data
+    const queueKeys = allSessionIds.map(sessionId => `${this.QUEUE_KEY_PREFIX}${sessionId}`);
+    await this.redis.del(...queueKeys);
+    
+    // Clear all message data for these sessions
+    const messageKeys = allSessionIds.map(sessionId => `queue:messages:${sessionId}`);
+    const messagesClearedCount = await this.redis.del(...messageKeys);
+    
+    // Clear the index
+    await this.redis.del(this.QUEUE_INDEX_KEY);
+
+    return { 
+      message: `Successfully cleared ${allSessionIds.length} queue items and ${messagesClearedCount} message sessions`, 
+      clearedCount: allSessionIds.length,
+      messagesClearedCount
+    };
   }
 
   /**
@@ -449,6 +821,10 @@ export class QueueService {
       status: queue.status,
       createdAt: queue.createdAt.toISOString(),
       attendedAt: queue.attendedAt?.toISOString() || '',
+      customer: queue.customer ? JSON.stringify(queue.customer) : '',
+      user: queue.user ? JSON.stringify(queue.user) : '',
+      lastMessage: queue.lastMessage ? JSON.stringify(queue.lastMessage) : '',
+      metadata: queue.metadata ? JSON.stringify(queue.metadata) : '',
     };
   }
 
@@ -464,6 +840,10 @@ export class QueueService {
       status: data.status as QueueStatus,
       createdAt: new Date(data.createdAt),
       attendedAt: data.attendedAt ? new Date(data.attendedAt) : undefined,
+      customer: data.customer ? JSON.parse(data.customer) : undefined,
+      user: data.user ? JSON.parse(data.user) : undefined,
+      lastMessage: data.lastMessage ? JSON.parse(data.lastMessage) : undefined,
+      metadata: data.metadata ? JSON.parse(data.metadata) : undefined,
     };
   }
 }
