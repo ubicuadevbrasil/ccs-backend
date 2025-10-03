@@ -25,7 +25,8 @@ import { ChatModule } from './modules/chat/chat.module';
     TabulationModule,
     HistoryModule,
     QueueModule,
-    EvolutionModule,
+    // EvolutionModule, Not using for Sanofi
+    // VonageModule TODO:
     MessagesModule,
     ChatModule,
   ],

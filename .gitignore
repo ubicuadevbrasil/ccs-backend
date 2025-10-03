@@ -97,3 +97,6 @@ sessions/
 # Database
 *.sqlite
 *.db 
+
+# Scripts
+scripts/
