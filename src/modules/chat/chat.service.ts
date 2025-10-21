@@ -1,4 +1,5 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, Inject, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { MessageStorageService } from '../messages/message-storage.service';
 import { QueueService } from '../customer-queue/queue.service';
 import { User } from '../user/entities/user.entity';
@@ -10,9 +11,12 @@ import {
   SenderType, 
   RecipientType 
 } from '../messages/entities/message.entity';
-import { PlatformMessageData } from '../messages/platform-mappers';
+import { PlatformMessageData } from '../messages/message-mapper';
 import { PlatformChatServiceFactory } from './services/platform-chat.service.factory';
 import { EvolutionMessageData } from './services/chat.evolution.service';
+import { VonageMessageData } from './services/chat.vonage.service';
+import { EvolutionMessageMapperService } from '../whatsapp/evolution/evolution-mapper';
+import { VonageMessageMapperService } from '../whatsapp/vonage/vonage-mapper';
 
 @Injectable()
 export class ChatService {
@@ -22,6 +26,9 @@ export class ChatService {
         private readonly messageStorageService: MessageStorageService,
         private readonly platformChatServiceFactory: PlatformChatServiceFactory,
         private readonly queueService: QueueService,
+        private readonly configService: ConfigService,
+        @Inject('VONAGE_MAPPER') private readonly vonageMapper: VonageMessageMapperService | null,
+        @Inject('EVOLUTION_MAPPER') @Optional() private readonly evolutionMapper?: EvolutionMessageMapperService | null,
     ) { }
 
     /**
@@ -200,7 +207,22 @@ export class ChatService {
     private createPlatformSpecificData(sendMessageDto: SendMessageDto, user: User, customerData: any): any {
         switch (customerData.platform) {
             case MessagePlatform.WHATSAPP:
-                return this.createEvolutionData(sendMessageDto, user, customerData);
+                // Check which WhatsApp provider is enabled
+                const isEvolutionEnabled = this.configService.get<boolean>('EVOLUTION_WHATSAPP', false);
+                const isVonageEnabled = this.configService.get<boolean>('VONAGE_WHATSAPP', true); // Default to true for backward compatibility
+                
+                // Determine which provider to use based on platform type or flags
+                if (customerData.platformType === 'vonage' || customerData.platformType === 'vonage-sandbox') {
+                    if (!isVonageEnabled || !this.vonageMapper) {
+                        throw new Error('Vonage WhatsApp is disabled. Please enable VONAGE_WHATSAPP=true or use Evolution provider');
+                    }
+                    return this.vonageMapper.createVonageData(sendMessageDto, user, customerData);
+                } else {
+                    if (!isEvolutionEnabled || !this.evolutionMapper) {
+                        throw new Error('Evolution WhatsApp is disabled. Please enable EVOLUTION_WHATSAPP=true or use Vonage provider');
+                    }
+                    return this.evolutionMapper.createEvolutionData(sendMessageDto, user, customerData);
+                }
             case MessagePlatform.INSTAGRAM:
                 // TODO: Implement Instagram data creation
                 throw new Error('Instagram platform data creation not implemented yet');
@@ -212,25 +234,6 @@ export class ChatService {
         }
     }
 
-    /**
-     * Create Evolution API specific data
-     */
-    private createEvolutionData(sendMessageDto: SendMessageDto, user: User, customerData: any): EvolutionMessageData {
-        // Extract instance and number from customer data
-        const instance = customerData.instance || 'default';
-        const number = customerData.number || customerData.customerPhone;
-
-        return {
-            instance,
-            number,
-            text: sendMessageDto.message,
-            mediaUrl: sendMessageDto.media,
-            mediaType: sendMessageDto.media ? this.getMediaTypeFromUrl(sendMessageDto.media) : undefined,
-            messageType: sendMessageDto.type || MessageType.TEXT,
-            replyMessageId: sendMessageDto.replyMessageId,
-            isGroup: sendMessageDto.isGroup ?? customerData.isGroup,
-        };
-    }
 
     /**
      * Get media type from URL
@@ -336,21 +339,25 @@ export class ChatService {
     customerPhone?: string;
     instance?: string;
     number?: string;
+    platformType?: string;
     isGroup: boolean;
     platform: MessagePlatform;
   }> {
     try {
       const queueData = await this.getCustomerDataFromQueue(sessionId);
       
-      return {
+      const customerData = {
         customerId: queueData.customerId,
         customerName: queueData.customer?.name || queueData.customer?.pushName,
         customerPhone: queueData.customer?.contact,
         instance: queueData.metadata?.instance || 'default',
         number: queueData.metadata?.number || queueData.customer?.contact,
+        platformType: queueData.metadata?.platform || queueData.platformType, // Use metadata.platform as fallback
         isGroup: queueData.customer?.isGroup || false,
         platform: queueData.platform as MessagePlatform,
       };
+      
+      return customerData;
     } catch (error) {
       this.logger.error(`Error getting customer data for message from session ${sessionId}:`, error);
       throw error;

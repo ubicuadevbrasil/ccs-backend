@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ChatEvolutionService } from './chat.evolution.service';
 import { EvolutionService } from '../../whatsapp/evolution/evolution.service';
 import { MessageType, MessagePlatform, MessageStatus, SenderType, RecipientType } from '../../messages/entities/message.entity';
-import { PlatformMessageData } from '../../messages/platform-mappers';
+import { PlatformMessageData } from '../../messages/message-mapper';
 import { EvolutionMessageData } from './chat.evolution.service';
 
 describe('ChatEvolutionService', () => {

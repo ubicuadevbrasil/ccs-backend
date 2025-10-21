@@ -24,7 +24,7 @@ import { EvolutionService } from '../evolution.service';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         // Connection configuration
-        uri: configService.get<string>('RABBITMQ_URI', 'amqp://localhost:5672'),
+        uri: configService.get<string>('EVOLUTION_RABBITMQ_URI', 'amqp://localhost:5672'),
         
         // Connection manager options (uses amqp-connection-manager under the hood)
         connectionInitOptions: {

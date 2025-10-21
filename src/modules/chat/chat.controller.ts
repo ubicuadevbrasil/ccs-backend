@@ -161,7 +161,7 @@ export class ChatController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get chat history for a session',
-    description: 'Retrieve the chat history for a specific session from Redis storage.',
+    description: 'Retrieve the chat history for a specific session from Redis storage. Reactions are updated in real-time and stored in Redis for fast access.',
   })
   @ApiQuery({
     name: 'sessionId',
@@ -190,7 +190,21 @@ export class ChatController {
           type: 'array',
           items: {
             type: 'object',
-            description: 'Message object with all message properties',
+            description: 'Message object with all message properties including reactions',
+            properties: {
+              reactions: {
+                type: 'array',
+                description: 'Array of reactions for this message',
+                items: {
+                  type: 'object',
+                  properties: {
+                    emoji: { type: 'string', example: '❤️' },
+                    reactorId: { type: 'string', example: 'customer-uuid' },
+                    reactedAt: { type: 'string', format: 'date-time' },
+                  },
+                },
+              },
+            },
           },
         },
         count: {

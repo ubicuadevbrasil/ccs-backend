@@ -8,7 +8,7 @@ import { CustomerModule } from './modules/customer';
 import { TabulationModule } from './modules/tabulation';
 import { HistoryModule } from './modules/history';
 import { QueueModule } from './modules/customer-queue';
-import { EvolutionModule } from './modules/whatsapp/evolution/evolution.module';
+import { VonageModule } from './modules/whatsapp/vonage/vonage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { ChatModule } from './modules/chat/chat.module';
@@ -25,10 +25,9 @@ import { ChatModule } from './modules/chat/chat.module';
     TabulationModule,
     HistoryModule,
     QueueModule,
-    // EvolutionModule, Not using for Sanofi
-    // VonageModule TODO:
+    VonageModule,
     MessagesModule,
-    ChatModule,
+    ChatModule.forRootAsync(),
   ],
   controllers: [AppController],
   providers: [AppService],

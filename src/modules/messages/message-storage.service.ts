@@ -6,8 +6,8 @@ import { CreateMessageDto } from './dto/message.dto';
 import { 
   PlatformMessageData, 
   PlatformMessageMapper, 
-  MessageMapperFactory 
-} from './platform-mappers';
+  MessageMapperService 
+} from './message-mapper';
 
 export interface MessageStorageResult {
   redisMessage: any;
@@ -23,6 +23,7 @@ export class MessageStorageService {
 
   constructor(
     private readonly messagesService: MessagesService,
+    private readonly messageMapperService: MessageMapperService,
     @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
   ) {
     this.redis = redisClient;
@@ -41,7 +42,8 @@ export class MessageStorageService {
       this.logger.log(`Storing ${platform} message for session: ${sessionId}`);
 
       // Get platform-specific mapper
-      const mapper = MessageMapperFactory.getMapper(platform);
+      const platformType = rawMessage.platform; // This contains 'vonage' or 'vonage-sandbox'
+      const mapper = this.messageMapperService.getMapper(platform, platformType);
       
       // Map raw message to platform message data
       const platformMessageData = mapper.mapToPlatformMessageData({
@@ -197,6 +199,58 @@ export class MessageStorageService {
       return await this.redis.llen(redisKey);
     } catch (error) {
       this.logger.error(`Error getting message count for session ${sessionId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update message reactions in Redis
+   * This method updates the reactions array for a specific message in Redis
+   */
+  async updateMessageReactionsInRedis(sessionId: string, messageId: string): Promise<void> {
+    try {
+      const redisKey = `${this.REDIS_MESSAGE_KEY_PREFIX}${sessionId}`;
+      
+      // Get all messages from Redis
+      const messages = await this.redis.lrange(redisKey, 0, -1);
+      
+      // Find and update the specific message
+      let messageUpdated = false;
+      const updatedMessages = messages.map(msg => {
+        const message = JSON.parse(msg);
+        if (message.messageId === messageId) {
+          messageUpdated = true;
+          // Get current reactions from PostgreSQL
+          return this.messagesService.getMessageReactions(messageId).then(reactions => {
+            return JSON.stringify({
+              ...message,
+              reactions: reactions.map(reaction => ({
+                emoji: reaction.emoji,
+                reactorId: reaction.reactorId,
+                reactedAt: reaction.reactedAt,
+              })),
+            });
+          });
+        }
+        return Promise.resolve(msg);
+      });
+
+      if (messageUpdated) {
+        // Wait for all updates to complete
+        const resolvedMessages = await Promise.all(updatedMessages);
+        
+        // Clear and repopulate Redis with updated messages
+        await this.redis.del(redisKey);
+        if (resolvedMessages.length > 0) {
+          await this.redis.lpush(redisKey, ...resolvedMessages);
+        }
+        
+        this.logger.log(`Updated reactions for message ${messageId} in Redis for session ${sessionId}`);
+      } else {
+        this.logger.warn(`Message ${messageId} not found in Redis for session ${sessionId}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error updating message reactions in Redis for session ${sessionId}, message ${messageId}:`, error);
       throw error;
     }
   }
