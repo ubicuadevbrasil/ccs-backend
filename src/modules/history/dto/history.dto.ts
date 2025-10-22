@@ -46,7 +46,7 @@ export class CreateHistoryDto {
   })
   @IsOptional()
   @IsUUID()
-  tabulationId?: string;
+  transferId?: string;
 
   @ApiPropertyOptional({
     description: 'Internal notes/observations about the interaction',
@@ -127,7 +127,7 @@ export class UpdateHistoryDto {
   })
   @IsOptional()
   @IsUUID()
-  tabulationId?: string;
+  transferId?: string;
 
   @ApiPropertyOptional({
     description: 'Internal notes/observations about the interaction',
@@ -202,7 +202,7 @@ export class HistoryResponseDto {
     description: 'Tabulation ID used in the interaction',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  tabulationId?: string;
+  transferId?: string;
 
   @ApiPropertyOptional({
     description: 'Internal notes/observations',
@@ -358,7 +358,7 @@ export class HistoryQueryDto {
   })
   @IsOptional()
   @IsUUID()
-  tabulationId?: string;
+  transferId?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by platform',
@@ -463,7 +463,7 @@ export class UpdateHistoryByIdDto {
   })
   @IsOptional()
   @IsUUID()
-  tabulationId?: string;
+  transferId?: string;
 
   @ApiPropertyOptional({
     description: 'Internal notes/observations about the interaction',

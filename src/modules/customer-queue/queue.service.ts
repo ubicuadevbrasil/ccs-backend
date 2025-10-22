@@ -442,7 +442,7 @@ export class QueueService {
       sessionId: queue.sessionId,
       userId: queue.userId,
       customerId: queue.customerId,
-      tabulationId: endServiceDto.tabulationId,
+      transferId: endServiceDto.transferId,
       observations: endServiceDto.observations,
       platform: queue.platform,
       startedAt: queue.createdAt.toISOString(),

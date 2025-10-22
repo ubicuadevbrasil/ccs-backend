@@ -13,7 +13,7 @@ export interface HistoryEntity {
   sessionId: string;
   userId?: string;
   customerId?: string;
-  tabulationId?: string;
+  transferId?: string;
   observations?: string;
   platform: HistoryPlatform;
   startedAt: Date;
@@ -28,7 +28,7 @@ export class History implements HistoryEntity {
   sessionId: string;
   userId?: string;
   customerId?: string;
-  tabulationId?: string;
+  transferId?: string;
   observations?: string;
   platform: HistoryPlatform;
   startedAt: Date;

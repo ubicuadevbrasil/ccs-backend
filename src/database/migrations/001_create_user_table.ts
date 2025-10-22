@@ -6,8 +6,8 @@ export async function up(knex: Knex): Promise<void> {
     table.text('login').notNullable().unique();
     table.text('password').notNullable();
     table.text('name').notNullable();
-    table.text('email').notNullable().unique();
-    table.text('contact').notNullable().unique();
+    table.text('email').nullable().unique();
+    table.text('contact').nullable().unique();
     table.text('profilePicture');
     table.enum('status', ['active', 'inactive']).notNullable().defaultTo('active');
     table.enum('profile', ['admin', 'supervisor', 'operator']).notNullable();

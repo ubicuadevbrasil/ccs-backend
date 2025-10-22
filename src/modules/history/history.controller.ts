@@ -59,7 +59,7 @@ export class HistoryController {
   @ApiQuery({ name: 'search', required: false, description: 'Search term for sessionId or observations' })
   @ApiQuery({ name: 'userId', required: false, description: 'Filter by user ID' })
   @ApiQuery({ name: 'customerId', required: false, description: 'Filter by customer ID' })
-  @ApiQuery({ name: 'tabulationId', required: false, description: 'Filter by tabulation ID' })
+  @ApiQuery({ name: 'transferId', required: false, description: 'Filter by transfer ID' })
   @ApiQuery({ name: 'platform', required: false, description: 'Filter by platform' })
   @ApiQuery({ name: 'startDate', required: false, description: 'Filter by start date (ISO string)' })
   @ApiQuery({ name: 'endDate', required: false, description: 'Filter by end date (ISO string)' })
