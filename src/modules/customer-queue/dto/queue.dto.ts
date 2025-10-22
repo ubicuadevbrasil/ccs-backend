@@ -373,7 +373,7 @@ export class EndServiceDto {
   })
   @IsOptional()
   @IsUUID()
-  tabulationId?: string;
+  transferId?: string;
 }
 
 export class TransferQueueDto {

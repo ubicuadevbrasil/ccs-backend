@@ -41,13 +41,13 @@ export class HistoryService {
       }
     }
 
-    if (createHistoryDto.tabulationId) {
-      const tabulationExists = await this.knex('tabulation')
-        .where('id', createHistoryDto.tabulationId)
+    if (createHistoryDto.transferId) {
+      const transferExists = await this.knex('transfer')
+        .where('id', createHistoryDto.transferId)
         .first();
       
-      if (!tabulationExists) {
-        throw new BadRequestException('Tabulation not found');
+      if (!transferExists) {
+        throw new BadRequestException('Transfer not found');
       }
     }
 
@@ -111,9 +111,9 @@ export class HistoryService {
       queryBuilder = queryBuilder.where('customerId', query.customerId);
     }
 
-    // Apply tabulation filter
-    if (query.tabulationId) {
-      queryBuilder = queryBuilder.where('tabulationId', query.tabulationId);
+    // Apply transfer filter
+    if (query.transferId) {
+      queryBuilder = queryBuilder.where('transferId', query.transferId);
     }
 
     // Apply platform filter
@@ -245,13 +245,13 @@ export class HistoryService {
       }
     }
 
-    if (updateHistoryDto.tabulationId) {
-      const tabulationExists = await this.knex('tabulation')
-        .where('id', updateHistoryDto.tabulationId)
+    if (updateHistoryDto.transferId) {
+      const transferExists = await this.knex('transfer')
+        .where('id', updateHistoryDto.transferId)
         .first();
       
-      if (!tabulationExists) {
-        throw new BadRequestException('Tabulation not found');
+      if (!transferExists) {
+        throw new BadRequestException('Transfer not found');
       }
     }
 
