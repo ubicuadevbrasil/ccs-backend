@@ -7,7 +7,7 @@ import {
   SenderType, 
   RecipientType 
 } from '../../messages/entities/message.entity';
-import { PlatformMessageData } from '../../messages/platform-mappers';
+import { PlatformMessageData } from '../../messages/message-mapper';
 
 export interface EvolutionSendMessageResult {
   success: boolean;

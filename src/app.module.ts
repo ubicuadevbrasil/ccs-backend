@@ -9,7 +9,7 @@ import { CustomerModule } from './modules/customer';
 import { TabulationModule } from './modules/tabulation';
 import { HistoryModule } from './modules/history';
 import { QueueModule } from './modules/customer-queue';
-import { EvolutionModule } from './modules/whatsapp/evolution/evolution.module';
+import { VonageModule } from './modules/whatsapp/vonage/vonage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { ChatModule } from './modules/chat/chat.module';
@@ -28,11 +28,10 @@ import { OrderModule } from './modules/order';
     TabulationModule,
     HistoryModule,
     QueueModule,
-    // EvolutionModule, Not using for Sanofi
-    // VonageModule TODO:
+    VonageModule,
     MessagesModule,
     OrderModule,
-    // ChatModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

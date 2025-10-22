@@ -8,8 +8,8 @@ async function bootstrap() {
 
   // Enable CORS for development
   app.enableCors({
-    origin: ['http://10.20.20.103:8083', 'http://10.85.170.15:8099', 'https://vm103-8083.ubicuacloud.com.br', 'https://ccs.unidasgestaodeterceiros.com.br'],
-    credentials: true,
+    origin: true,
+    credentials: false,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });

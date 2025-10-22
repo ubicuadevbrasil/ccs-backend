@@ -1,18 +1,17 @@
-import { MessageType, MessagePlatform, MessageStatus, SenderType, RecipientType } from './entities/message.entity';
+import { MessageType, MessagePlatform, MessageStatus, SenderType, RecipientType } from '../../messages/entities/message.entity';
+import { EvolutionMessageData as ChatEvolutionMessageData } from '../../chat/services/chat.evolution.service';
 
 /**
- * Platform-specific message mapping interfaces
- * Each platform can implement its own mapping logic
+ * Evolution-specific message mapping interface
  */
-
-export interface PlatformMessageMapper {
-  mapToPlatformMessageData(rawMessage: any, platform: MessagePlatform): PlatformMessageData;
+export interface EvolutionMessageMapper {
+  mapToPlatformMessageData(rawMessage: any, platform: MessagePlatform): EvolutionMessageData;
   determineMessageType(message: any): MessageType;
   extractMediaUrl(message: any): string | undefined;
   extractMessageText(message: any): string | undefined;
 }
 
-export interface PlatformMessageData {
+export interface EvolutionMessageData {
   messageId: string;
   sessionId: string;
   senderType: SenderType;
@@ -27,15 +26,16 @@ export interface PlatformMessageData {
   type: MessageType;
   platform: MessagePlatform;
   status: MessageStatus;
-  metadata: any; // Platform-specific data
+  metadata: any; // Evolution-specific data
   replyMessageId?: string;
 }
 
 /**
- * WhatsApp-specific message mapper
+ * Evolution-specific message mapper
+ * Handles Evolution API message data structures
  */
-export class WhatsAppMessageMapper implements PlatformMessageMapper {
-  mapToPlatformMessageData(rawMessage: any, platform: MessagePlatform): PlatformMessageData {
+export class EvolutionMessageMapperService implements EvolutionMessageMapper {
+  mapToPlatformMessageData(rawMessage: any, platform: MessagePlatform): EvolutionMessageData {
     const messageData = rawMessage.data;
     const customer = rawMessage.customer;
     const event = rawMessage.event;
@@ -64,7 +64,7 @@ export class WhatsAppMessageMapper implements PlatformMessageMapper {
         remoteJid: messageData.key.remoteJid,
         participant: messageData.key.participant,
         messageTimestamp: messageData.messageTimestamp,
-        platform: 'whatsapp',
+        platform: 'evolution',
         evolutionApi: true,
       },
     };
@@ -112,72 +112,63 @@ export class WhatsAppMessageMapper implements PlatformMessageMapper {
   extractMessageText(message: any): string | undefined {
     return message?.conversation || undefined;
   }
-}
 
-/**
- * Instagram-specific message mapper (placeholder for future implementation)
- */
-export class InstagramMessageMapper implements PlatformMessageMapper {
-  mapToPlatformMessageData(rawMessage: any, platform: MessagePlatform): PlatformMessageData {
-    // TODO: Implement Instagram-specific mapping
-    throw new Error('Instagram message mapper not implemented yet');
+  /**
+   * Create Evolution API specific data for sending messages
+   */
+  createEvolutionData(sendMessageDto: any, user: any, customerData: any): ChatEvolutionMessageData {
+    // Extract instance and number from customer data
+    const instance = customerData.instance || 'default';
+    const number = customerData.number || customerData.customerPhone;
+
+    // Validate that we have a phone number
+    if (!number) {
+      throw new Error('Phone number is required for sending messages via Evolution');
+    }
+
+    return {
+      instance,
+      number,
+      text: sendMessageDto.message,
+      mediaUrl: sendMessageDto.media,
+      mediaType: sendMessageDto.media ? this.getMediaTypeFromUrl(sendMessageDto.media) : undefined,
+      messageType: sendMessageDto.type || MessageType.TEXT,
+      replyMessageId: sendMessageDto.replyMessageId,
+      isGroup: sendMessageDto.isGroup ?? customerData.isGroup,
+    };
   }
 
-  determineMessageType(message: any): MessageType {
-    // TODO: Implement Instagram-specific message type detection
-    return MessageType.OTHER;
-  }
-
-  extractMediaUrl(message: any): string | undefined {
-    // TODO: Implement Instagram-specific media URL extraction
-    return undefined;
-  }
-
-  extractMessageText(message: any): string | undefined {
-    // TODO: Implement Instagram-specific text extraction
-    return undefined;
-  }
-}
-
-/**
- * Telegram-specific message mapper (placeholder for future implementation)
- */
-export class TelegramMessageMapper implements PlatformMessageMapper {
-  mapToPlatformMessageData(rawMessage: any, platform: MessagePlatform): PlatformMessageData {
-    // TODO: Implement Telegram-specific mapping
-    throw new Error('Telegram message mapper not implemented yet');
-  }
-
-  determineMessageType(message: any): MessageType {
-    // TODO: Implement Telegram-specific message type detection
-    return MessageType.OTHER;
-  }
-
-  extractMediaUrl(message: any): string | undefined {
-    // TODO: Implement Telegram-specific media URL extraction
-    return undefined;
-  }
-
-  extractMessageText(message: any): string | undefined {
-    // TODO: Implement Telegram-specific text extraction
-    return undefined;
-  }
-}
-
-/**
- * Message mapper factory
- */
-export class MessageMapperFactory {
-  static getMapper(platform: MessagePlatform): PlatformMessageMapper {
-    switch (platform) {
-      case MessagePlatform.WHATSAPP:
-        return new WhatsAppMessageMapper();
-      case MessagePlatform.INSTAGRAM:
-        return new InstagramMessageMapper();
-      case MessagePlatform.TELEGRAM:
-        return new TelegramMessageMapper();
+  /**
+   * Get media type from URL
+   */
+  private getMediaTypeFromUrl(url: string): string {
+    const extension = url.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'webp':
+        return 'image';
+      case 'mp4':
+      case 'avi':
+      case 'mov':
+      case 'wmv':
+        return 'video';
+      case 'mp3':
+      case 'wav':
+      case 'ogg':
+      case 'm4a':
+        return 'audio';
+      case 'pdf':
+      case 'doc':
+      case 'docx':
+      case 'txt':
+      case 'xlsx':
+      case 'pptx':
+        return 'document';
       default:
-        throw new Error(`Unsupported platform: ${platform}`);
+        return 'document';
     }
   }
 }

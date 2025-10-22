@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MessagePlatform } from '../../messages/entities/message.entity';
-import { ChatEvolutionService } from './chat.evolution.service';
+import { ChatVonageService } from './chat.vonage.service';
 
 export interface PlatformChatService {
   sendMessage(platformData: any): Promise<any>;
@@ -13,7 +13,7 @@ export class PlatformChatServiceFactory {
   private readonly logger = new Logger(PlatformChatServiceFactory.name);
 
   constructor(
-    private readonly chatEvolutionService: ChatEvolutionService,
+    private readonly chatVonageService: ChatVonageService,
   ) {}
 
   /**
@@ -22,7 +22,7 @@ export class PlatformChatServiceFactory {
   getService(platform: MessagePlatform): PlatformChatService {
     switch (platform) {
       case MessagePlatform.WHATSAPP:
-        return this.chatEvolutionService;
+        return this.chatVonageService;
       case MessagePlatform.INSTAGRAM:
         // TODO: Implement Instagram service
         throw new Error('Instagram chat service not implemented yet');
