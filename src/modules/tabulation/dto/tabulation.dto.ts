@@ -5,6 +5,7 @@ import {
   IsString, 
   IsUUID, 
   IsArray,
+  IsBoolean,
   MinLength, 
   MaxLength,
   ArrayMinSize,
@@ -14,40 +15,6 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { TabulationStatus } from '../entities/tabulation.entity';
-
-export class CreateTabulationSubDto {
-  @ApiProperty({
-    description: 'Tabulation sub name',
-    example: 'Sub Tabulation 1',
-    minLength: 1,
-    maxLength: 100,
-  })
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(1)
-  @MaxLength(100)
-  name: string;
-
-  @ApiPropertyOptional({
-    description: 'Tabulation sub description',
-    example: 'Description for sub tabulation',
-    maxLength: 500,
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  description?: string;
-
-  @ApiPropertyOptional({
-    description: 'Tabulation sub status',
-    enum: TabulationStatus,
-    example: TabulationStatus.ACTIVE,
-    default: TabulationStatus.ACTIVE,
-  })
-  @IsOptional()
-  @IsEnum(TabulationStatus)
-  status?: TabulationStatus;
-}
 
 export class CreateTabulationDto {
   @ApiProperty({
@@ -83,53 +50,13 @@ export class CreateTabulationDto {
   status?: TabulationStatus;
 
   @ApiPropertyOptional({
-    description: 'Tabulation subs',
-    type: [CreateTabulationSubDto],
-    example: [
-      { name: 'Sub 1', description: 'First sub', status: 'active' },
-      { name: 'Sub 2', description: 'Second sub', status: 'active' }
-    ],
+    description: 'Whether tabulation handles orders',
+    example: false,
+    default: false,
   })
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateTabulationSubDto)
-  @ArrayMinSize(0)
-  @ArrayMaxSize(50)
-  tabulationSubs?: CreateTabulationSubDto[];
-}
-
-export class UpdateTabulationSubDto {
-  @ApiPropertyOptional({
-    description: 'Tabulation sub name',
-    example: 'Updated Sub Tabulation',
-    minLength: 1,
-    maxLength: 100,
-  })
-  @IsOptional()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(100)
-  name?: string;
-
-  @ApiPropertyOptional({
-    description: 'Tabulation sub description',
-    example: 'Updated description for sub tabulation',
-    maxLength: 500,
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  description?: string;
-
-  @ApiPropertyOptional({
-    description: 'Tabulation sub status',
-    enum: TabulationStatus,
-    example: TabulationStatus.ACTIVE,
-  })
-  @IsOptional()
-  @IsEnum(TabulationStatus)
-  status?: TabulationStatus;
+  @IsBoolean()
+  orders?: boolean;
 }
 
 export class UpdateTabulationDto {
@@ -165,71 +92,12 @@ export class UpdateTabulationDto {
   status?: TabulationStatus;
 
   @ApiPropertyOptional({
-    description: 'Tabulation subs',
-    type: [UpdateTabulationSubDto],
-    example: [
-      { name: 'Updated Sub 1', description: 'Updated first sub', status: 'active' },
-      { name: 'Updated Sub 2', description: 'Updated second sub', status: 'active' }
-    ],
+    description: 'Whether tabulation handles orders',
+    example: false,
   })
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpdateTabulationSubDto)
-  @ArrayMinSize(0)
-  @ArrayMaxSize(50)
-  tabulationSubs?: UpdateTabulationSubDto[];
-}
-
-export class TabulationSubResponseDto {
-  @ApiProperty({
-    description: 'Tabulation sub unique identifier',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  id: string;
-
-  @ApiProperty({
-    description: 'Parent tabulation ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  tabulationId: string;
-
-  @ApiProperty({
-    description: 'Tabulation sub name',
-    example: 'Sub Tabulation 1',
-  })
-  name: string;
-
-  @ApiPropertyOptional({
-    description: 'Tabulation sub description',
-    example: 'Description for sub tabulation',
-  })
-  description?: string;
-
-  @ApiProperty({
-    description: 'Tabulation sub status',
-    enum: TabulationStatus,
-    example: TabulationStatus.ACTIVE,
-  })
-  status: TabulationStatus;
-
-  @ApiProperty({
-    description: 'Tabulation sub creation timestamp',
-    example: '2024-01-01T00:00:00.000Z',
-  })
-  createdAt: Date;
-
-  @ApiProperty({
-    description: 'Tabulation sub last update timestamp',
-    example: '2024-01-01T00:00:00.000Z',
-  })
-  updatedAt: Date;
-
-  @ApiProperty({
-    description: 'Whether tabulation sub is active',
-    example: true,
-  })
-  isActive: boolean;
+  @IsBoolean()
+  orders?: boolean;
 }
 
 export class TabulationResponseDto {
@@ -259,6 +127,12 @@ export class TabulationResponseDto {
   status: TabulationStatus;
 
   @ApiProperty({
+    description: 'Whether tabulation handles orders',
+    example: false,
+  })
+  orders: boolean;
+
+  @ApiProperty({
     description: 'Tabulation creation timestamp',
     example: '2024-01-01T00:00:00.000Z',
   })
@@ -283,22 +157,10 @@ export class TabulationResponseDto {
   hasDescription: boolean;
 
   @ApiProperty({
-    description: 'Whether tabulation has subs',
+    description: 'Whether tabulation handles orders',
     example: true,
   })
-  hasSubs: boolean;
-
-  @ApiProperty({
-    description: 'Number of active subs',
-    example: 2,
-  })
-  activeSubsCount: number;
-
-  @ApiPropertyOptional({
-    description: 'Tabulation subs',
-    type: [TabulationSubResponseDto],
-  })
-  tabulationSubs?: TabulationSubResponseDto[];
+  hasOrders: boolean;j
 }
 
 export class TabulationQueryDto {
@@ -390,20 +252,12 @@ export class UpdateTabulationByIdDto {
   status?: TabulationStatus;
 
   @ApiPropertyOptional({
-    description: 'Tabulation subs',
-    type: [UpdateTabulationSubDto],
-    example: [
-      { name: 'Updated Sub 1', description: 'Updated first sub', status: 'active' },
-      { name: 'Updated Sub 2', description: 'Updated second sub', status: 'active' }
-    ],
+    description: 'Whether tabulation handles orders',
+    example: false,
   })
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpdateTabulationSubDto)
-  @ArrayMinSize(0)
-  @ArrayMaxSize(50)
-  tabulationSubs?: UpdateTabulationSubDto[];
+  @IsBoolean()
+  orders?: boolean;
 }
 
 export class DeleteTabulationDto {

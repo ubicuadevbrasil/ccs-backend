@@ -2,7 +2,7 @@ import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable('messages', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.string('id', 36).primary();
     
     // Platform-specific message identifier
     table.text('messageId').notNullable().unique();
@@ -15,8 +15,8 @@ export async function up(knex: Knex): Promise<void> {
     table.enum('recipientType', ['system', 'bot', 'customer', 'user']).notNullable();
     
     // Foreign key references
-    table.uuid('customerId').nullable();
-    table.uuid('userId').nullable();
+    table.string('customerId', 36).nullable();
+    table.string('userId', 36).nullable();
     
     // Indicates if the message was sent by the system/user (true) or received from customer (false)
     table.boolean('fromMe').notNullable().defaultTo(false);
@@ -29,7 +29,7 @@ export async function up(knex: Knex): Promise<void> {
     table.enum('type', ['text', 'image', 'video', 'audio', 'document', 'location', 'contact', 'sticker', 'other']).notNullable().defaultTo('text');
     
     // Platform information
-    table.enum('platform', ['whatsapp', 'telegram', 'instagram', 'facebook', 'other']).notNullable().defaultTo('whatsapp');
+    table.enum('platform', ['whatsapp', 'chatweb', 'telegram', 'instagram', 'facebook', 'other']).notNullable().defaultTo('whatsapp');
     
     // Message status - varies by platform capabilities
     table.enum('status', ['pending', 'sent', 'delivered', 'read', 'failed', 'deleted']).notNullable().defaultTo('pending');

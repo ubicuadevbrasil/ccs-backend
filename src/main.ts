@@ -1,10 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Configure Socket.IO adapter
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Enable CORS for development
   app.enableCors({
@@ -40,5 +44,6 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   
   console.log(process.env.NODE_ENV === 'production' ? `Application is running on: ${process.env.APPLICATION_URL} 🚀` : `Application is running on: http://localhost:${port} ⚙️`);
+  console.log(`Socket.IO server is available at: http://localhost:${port}/socket`);
 }
 bootstrap();

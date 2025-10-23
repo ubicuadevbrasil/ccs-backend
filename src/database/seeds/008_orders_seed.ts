@@ -1,11 +1,14 @@
 import { Knex } from 'knex';
-import * as fetch from 'node-fetch';
+import axios from 'axios';
 import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import externalKnexConfig from '../../../knexfile.external';
 
 // Load environment variables
 dotenv.config();
+
+// Token cache to avoid repeated authentication calls
+const tokenCache = new Map<string, { token: string; expiresAt: number }>();
 
 /**
  * Helper function to safely parse dates
@@ -47,6 +50,36 @@ function safeParseNumber(value: any): number {
     return isNaN(num) ? 0 : num;
   } catch (error) {
     return 0;
+  }
+}
+
+/**
+ * Helper function to look up history ID by sessionId or sessionBot
+ */
+async function lookupHistoryId(knex: Knex, sessionId: string): Promise<string | null> {
+  try {
+    if (!sessionId) return null;
+    
+    // First try to find by sessionId
+    let history = await knex('history')
+      .select('id')
+      .where('sessionId', sessionId)
+      .first();
+    
+    if (history) {
+      return history.id;
+    }
+    
+    // If not found by sessionId, try by sessionBot
+    history = await knex('history')
+      .select('id')
+      .where('sessionBot', sessionId)
+      .first();
+    
+    return history ? history.id : null;
+  } catch (error) {
+    console.error(`Error looking up history ID for sessionId ${sessionId}:`, error);
+    return null;
   }
 }
 
@@ -244,7 +277,7 @@ interface OrderRecord {
   netValue: number; // From GraphQL: details.netValueOrderFactoryPriceFloat
   billedValue: number; // From GraphQL: details.netValueBilledFactoryPriceFloat
   totalValue: number; // From GraphQL: details.orderTotalValueFloat
-  sessionId: string; // From MySQL: external.sessionid
+  historyId: string | null; // Looked up from history table by sessionId
   dateOrder: Date; // From GraphQL: details.dateOrder
   createdAt: Date;
   updatedAt: Date;
@@ -274,19 +307,21 @@ export async function seed(knex: Knex): Promise<void> {
     await externalKnex.raw('SELECT 1');
     console.log('✅ External database connection established');
   } catch (error) {
-    console.log('⚠️  Cannot connect to external database. Using sample data instead.');
+    console.log('⚠️  Cannot connect to external database. Skipping orders seed.');
     console.log(`Error: ${error.message}`);
-    await createSampleOrders(knex);
     return;
   }
 
   try {
-    // Step 1: Fetch external data from MySQL tab_pedidos table
+    const startTime = Date.now();
+    
+    // Step 1: Fetch ALL external data from MySQL tab_pedidos table
     console.log('📡 Fetching external data from MySQL tab_pedidos table...');
     const result = await externalKnex.raw(`
       SELECT id, sessionid, dtpedido, segmento, pedido, valor, faturado, orderStatus, status
       FROM tab_pedidos 
-      WHERE pedido IS NOT NULL
+      WHERE pedido IS NOT NULL 
+      AND YEAR(dtpedido) = 2025
     `);
     
     // Extract the actual data from knex.raw result
@@ -295,85 +330,96 @@ export async function seed(knex: Knex): Promise<void> {
     console.log(`📊 Found ${externalData.length} external records`);
 
     if (externalData.length === 0) {
-      console.log('⚠️  No external data found. Creating sample data...');
-      await createSampleOrders(knex);
+      console.log('⚠️  No external data found. Skipping orders seed.');
       return;
     }
 
-    // Step 2: Process external records in batches
-    const batchSize = parseInt(process.env.ORDERS_BATCH_SIZE || '100');
-    let totalProcessed = 0;
-    let totalInserted = 0;
-    const startTime = Date.now();
+    // Step 2: Fetch GraphQL details in batches
+    const graphqlBatchSize = parseInt(process.env.GRAPHQL_BATCH_SIZE || '50');
+    const orderDetailsMap = new Map<number, GraphQLOrderDetails | null>();
     
-    console.log(`📦 Processing ${externalData.length} records in batches of ${batchSize}...`);
+    console.log(`📦 Fetching GraphQL details in batches of ${graphqlBatchSize}...`);
     
-    for (let i = 0; i < externalData.length; i += batchSize) {
-      const batch = externalData.slice(i, i + batchSize);
-      const ordersToInsert: OrderRecord[] = [];
-      
-      const batchNumber = Math.floor(i / batchSize) + 1;
-      const totalBatches = Math.ceil(externalData.length / batchSize);
+    for (let i = 0; i < externalData.length; i += graphqlBatchSize) {
+      const batch = externalData.slice(i, i + graphqlBatchSize);
+      const batchNumber = Math.floor(i / graphqlBatchSize) + 1;
+      const totalBatches = Math.ceil(externalData.length / graphqlBatchSize);
       const progressPercent = ((i / externalData.length) * 100).toFixed(1);
       
-      console.log(`🔄 Processing batch ${batchNumber}/${totalBatches} (${batch.length} records) - ${progressPercent}% complete...`);
+      console.log(`🔄 Fetching GraphQL batch ${batchNumber}/${totalBatches} (${batch.length} orders) - ${progressPercent}% complete...`);
       
-      for (const externalRecord of batch) {
+      // Process GraphQL calls in parallel for this batch
+      const graphqlPromises = batch.map(async (externalRecord) => {
         try {
-          console.log(`🔍 Processing record ${totalProcessed + 1}/${externalData.length}:`, {
-            id: externalRecord.id,
-            pedido: externalRecord.pedido,
-            sessionid: externalRecord.sessionid,
-            segmento: externalRecord.segmento,
-            dtpedido: externalRecord.dtpedido,
-            valor: externalRecord.valor,
-            faturado: externalRecord.faturado
-          });
-          
-          // Step 2a: Fetch detailed order information via GraphQL
           const orderDetails = await fetchOrderDetailsFromGraphQL(externalRecord.pedido);
-          
-          // Step 2b: Transform and combine data
-          const orderRecord = transformToOrderRecord(externalRecord, orderDetails);
-          ordersToInsert.push(orderRecord);
-          
-          const detailsSource = orderDetails ? 'GraphQL' : 'MySQL (fallback)';
-          console.log(`✅ Processed order ${externalRecord.pedido} with ${detailsSource} data`);
-          
-          totalProcessed++;
+          return { orderId: externalRecord.pedido, details: orderDetails };
         } catch (error) {
-          console.error(`❌ Error processing order ${externalRecord.pedido}:`, error);
-          // Create a basic record without GraphQL details
-          const basicOrder = createBasicOrderRecord(externalRecord);
-          ordersToInsert.push(basicOrder);
-          totalProcessed++;
+          console.error(`❌ Error fetching GraphQL details for order ${externalRecord.pedido}:`, error);
+          return { orderId: externalRecord.pedido, details: null };
         }
-      }
+      });
+      
+      // Wait for all GraphQL calls in this batch to complete
+      const batchResults = await Promise.all(graphqlPromises);
+      
+      // Store results in map
+      batchResults.forEach(({ orderId, details }) => {
+        orderDetailsMap.set(orderId, details);
+      });
+      
+      console.log(`✅ Completed GraphQL batch ${batchNumber}/${totalBatches}`);
+    }
 
-      // Step 3: Insert batch into the database
-      if (ordersToInsert.length > 0) {
-        console.log(`💾 Inserting batch of ${ordersToInsert.length} orders into database...`);
-        await knex('orders').insert(ordersToInsert);
-        totalInserted += ordersToInsert.length;
-        console.log(`✅ Batch inserted successfully! Total inserted: ${totalInserted}`);
+    // Step 3: Transform all data and prepare for insertion
+    console.log('🔄 Transforming data and preparing for database insertion...');
+    const ordersToInsert: OrderRecord[] = [];
+    
+    for (const externalRecord of externalData) {
+      try {
+        const orderDetails = orderDetailsMap.get(externalRecord.pedido) || null;
+        const orderRecord = await transformToOrderRecord(knex, externalRecord, orderDetails);
+        ordersToInsert.push(orderRecord);
+      } catch (error) {
+        console.error(`❌ Error transforming order ${externalRecord.pedido}:`, error);
+        // Create a basic record without GraphQL details
+        const basicOrder = await createBasicOrderRecord(knex, externalRecord);
+        ordersToInsert.push(basicOrder);
       }
+    }
+
+    // Step 4: Insert all data in batches
+    const insertBatchSize = parseInt(process.env.INSERT_BATCH_SIZE || '1000');
+    let totalInserted = 0;
+    
+    console.log(`💾 Inserting ${ordersToInsert.length} orders in batches of ${insertBatchSize}...`);
+    
+    for (let i = 0; i < ordersToInsert.length; i += insertBatchSize) {
+      const batch = ordersToInsert.slice(i, i + insertBatchSize);
+      const batchNumber = Math.floor(i / insertBatchSize) + 1;
+      const totalBatches = Math.ceil(ordersToInsert.length / insertBatchSize);
+      
+      console.log(`💾 Inserting database batch ${batchNumber}/${totalBatches} (${batch.length} orders)...`);
+      
+      await knex('orders').insert(batch);
+      totalInserted += batch.length;
+      
+      console.log(`✅ Database batch ${batchNumber}/${totalBatches} inserted! Total inserted: ${totalInserted}`);
     }
     
     const endTime = Date.now();
     const totalTime = (endTime - startTime) / 1000; // in seconds
     
     console.log('✅ Orders seeded successfully!');
-    console.log(`📊 Total orders processed: ${totalProcessed}`);
+    console.log(`📊 Total orders processed: ${externalData.length}`);
     console.log(`📊 Total orders inserted: ${totalInserted}`);
-    console.log(`📊 Batches processed: ${Math.ceil(externalData.length / batchSize)}`);
+    console.log(`📊 GraphQL batches processed: ${Math.ceil(externalData.length / graphqlBatchSize)}`);
+    console.log(`📊 Database batches processed: ${Math.ceil(ordersToInsert.length / insertBatchSize)}`);
     console.log(`⏱️  Total processing time: ${totalTime.toFixed(2)} seconds`);
-    console.log(`📈 Average time per record: ${(totalTime / totalProcessed).toFixed(3)} seconds`);
-    console.log(`📈 Records per second: ${(totalProcessed / totalTime).toFixed(2)}`);
+    console.log(`📈 Average time per order: ${(totalTime / externalData.length).toFixed(3)} seconds`);
+    console.log(`📈 Orders per second: ${(externalData.length / totalTime).toFixed(2)}`);
 
   } catch (error) {
     console.error('❌ Error during orders seed:', error);
-    console.log('🔄 Creating sample orders as fallback...');
-    await createSampleOrders(knex);
   } finally {
     // Close external database connection
     if (externalKnex) {
@@ -385,6 +431,7 @@ export async function seed(knex: Knex): Promise<void> {
 
 /**
  * Fetches order details from GraphQL API with fallback to secondary endpoint
+ * Optimized for batch processing with timeout and retry logic
  */
 async function fetchOrderDetailsFromGraphQL(orderId: number): Promise<GraphQLOrderDetails | null> {
   // Primary GraphQL endpoint
@@ -397,13 +444,25 @@ async function fetchOrderDetailsFromGraphQL(orderId: number): Promise<GraphQLOrd
   const secondaryLogin = 'chat.bot';
   const secondaryPassword = 'Mudar@2023';
 
-  // Try primary endpoint first
-  let result = await tryGraphQLEndpoint(orderId, primaryEndpoint, primaryLogin || '', primaryPassword || '', 'primary');
+  // Set timeout for GraphQL calls (30 seconds)
+  const timeout = 30000;
   
-  // If primary fails, try secondary endpoint
+  // Try primary endpoint first with timeout
+  let result = await Promise.race([
+    tryGraphQLEndpoint(orderId, primaryEndpoint, primaryLogin || '', primaryPassword || '', 'primary'),
+    new Promise<null>((_, reject) => 
+      setTimeout(() => reject(new Error('Primary GraphQL timeout')), timeout)
+    )
+  ]).catch(() => null);
+  
+  // If primary fails, try secondary endpoint with timeout
   if (!result) {
-    console.log(`🔄 Primary GraphQL failed for order ${orderId}, trying secondary endpoint...`);
-    result = await tryGraphQLEndpoint(orderId, secondaryEndpoint, secondaryLogin, secondaryPassword, 'secondary');
+    result = await Promise.race([
+      tryGraphQLEndpoint(orderId, secondaryEndpoint, secondaryLogin, secondaryPassword, 'secondary'),
+      new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error('Secondary GraphQL timeout')), timeout)
+      )
+    ]).catch(() => null);
   }
 
   return result;
@@ -593,16 +652,18 @@ async function tryGraphQLEndpoint(orderId: number, endpoint: string, login: stri
       }
     `;
 
-    const response = await fetch.default(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ query }),
-    });
+    const response = await axios.post(endpoint, 
+      { query }, 
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        timeout: 25000, // 25 second timeout for GraphQL queries
+      }
+    );
 
-    const data = await response.json() as { data: { orderDetails: GraphQLOrderDetails } };
+    const data = response.data as { data: { orderDetails: GraphQLOrderDetails } };
 
     if (data && data.data && data.data.orderDetails) {
       console.log(`✅ Successfully fetched data from ${endpointType} endpoint for order ${orderId}`);
@@ -618,10 +679,19 @@ async function tryGraphQLEndpoint(orderId: number, endpoint: string, login: stri
 }
 
 /**
- * Gets GraphQL authentication token
+ * Gets GraphQL authentication token with caching
  */
 async function getGraphQLToken(endpoint: string, login: string, password: string): Promise<string | null> {
   try {
+    // Create cache key
+    const cacheKey = `${endpoint}:${login}`;
+    
+    // Check if we have a valid cached token
+    const cached = tokenCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.token;
+    }
+    
     const query = `
       mutation {
         createToken(login: "${login}", password: "${password}") {
@@ -630,16 +700,26 @@ async function getGraphQLToken(endpoint: string, login: string, password: string
       }
     `;
 
-    const response = await fetch.default(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
-    });
+    const response = await axios.post(endpoint, 
+      { query }, 
+      {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000, // 10 second timeout for auth
+      }
+    );
 
-    const result = await response.json() as { data: { createToken: { token: string } } };
+    const result = response.data as { data: { createToken: { token: string } } };
 
     if (result && result.data && result.data.createToken) {
-      return result.data.createToken.token;
+      const token = result.data.createToken.token;
+      
+      // Cache the token for 50 minutes (assuming tokens last 1 hour)
+      tokenCache.set(cacheKey, {
+        token,
+        expiresAt: Date.now() + (50 * 60 * 1000)
+      });
+      
+      return token;
     }
 
     return null;
@@ -652,7 +732,7 @@ async function getGraphQLToken(endpoint: string, login: string, password: string
 /**
  * Transforms external data and GraphQL details into order record
  */
-function transformToOrderRecord(external: ExternalOrderData, details: GraphQLOrderDetails | null): OrderRecord {
+async function transformToOrderRecord(knex: Knex, external: ExternalOrderData, details: GraphQLOrderDetails | null): Promise<OrderRecord> {
   const now = new Date();
   
   // Ensure we have a valid order ID
@@ -667,6 +747,9 @@ function transformToOrderRecord(external: ExternalOrderData, details: GraphQLOrd
     idHash.substring(16, 20),
     idHash.substring(20),
   ].join('-');
+
+  // Look up history ID by sessionId
+  const historyId = await lookupHistoryId(knex, external.sessionid);
 
   return {
     id: uuid,
@@ -679,7 +762,7 @@ function transformToOrderRecord(external: ExternalOrderData, details: GraphQLOrd
     netValue: safeParseNumber(details?.netValueOrderFactoryPriceFloat) || safeParseNumber(external.faturado),
     billedValue: safeParseNumber(details?.netValueBilledFactoryPriceFloat),
     totalValue: safeParseNumber(details?.orderTotalValueFloat),
-    sessionId: external.sessionid || '',
+    historyId: historyId,
     dateOrder: safeParseDate(details?.dateOrder) || safeParseDate(external.dtpedido) || now,
     createdAt: now,
     updatedAt: now,
@@ -689,7 +772,7 @@ function transformToOrderRecord(external: ExternalOrderData, details: GraphQLOrd
 /**
  * Creates a basic order record without GraphQL details
  */
-function createBasicOrderRecord(external: ExternalOrderData): OrderRecord {
+async function createBasicOrderRecord(knex: Knex, external: ExternalOrderData): Promise<OrderRecord> {
   const now = new Date();
   
   // Ensure we have a valid order ID
@@ -704,6 +787,9 @@ function createBasicOrderRecord(external: ExternalOrderData): OrderRecord {
     idHash.substring(16, 20),
     idHash.substring(20),
   ].join('-');
+
+  // Look up history ID by sessionId
+  const historyId = await lookupHistoryId(knex, external.sessionid);
 
   return {
     id: uuid,
@@ -722,87 +808,9 @@ function createBasicOrderRecord(external: ExternalOrderData): OrderRecord {
     netValue: safeParseNumber(external.faturado),
     billedValue: safeParseNumber(external.faturado),
     totalValue: safeParseNumber(external.valor), // Fallback to gross value when no GraphQL data
-    sessionId: external.sessionid || '',
+    historyId: historyId,
     dateOrder: safeParseDate(external.dtpedido) || now,
     createdAt: now,
     updatedAt: now,
   };
-}
-
-/**
- * Creates sample orders when external data is not available
- */
-async function createSampleOrders(knex: Knex): Promise<void> {
-  const sampleOrders: OrderRecord[] = [
-    {
-      id: '550e8400-e29b-41d4-a716-446655440001',
-      orderId: '191004988',
-      orderStatus: 'completed',
-      orderDetails: {
-        code: 'ORD-001',
-        status: 'completed',
-        statusDescription: 'Order completed successfully',
-        originOrdered: 'web',
-        sample: true,
-      },
-      originOrdered: 'web',
-      segment: 'pharmaceutical',
-      grossValue: 1500.50,
-      netValue: 1350.45,
-      billedValue: 1350.45,
-      totalValue: 1350.45,
-      sessionId: 'session-001',
-      dateOrder: new Date('2024-01-15 10:30:00'),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440002',
-      orderId: '191004989',
-      orderStatus: 'pending',
-      orderDetails: {
-        code: 'ORD-002',
-        status: 'pending',
-        statusDescription: 'Order is being processed',
-        originOrdered: 'mobile',
-        sample: true,
-      },
-      originOrdered: 'mobile',
-      segment: 'healthcare',
-      grossValue: 2200.75,
-      netValue: 1980.68,
-      billedValue: 0,
-      totalValue: 1980.68,
-      sessionId: 'session-002',
-      dateOrder: new Date('2024-01-16 14:15:00'),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440003',
-      orderId: '191004990',
-      orderStatus: 'shipped',
-      orderDetails: {
-        code: 'ORD-003',
-        status: 'shipped',
-        statusDescription: 'Order has been shipped',
-        originOrdered: 'api',
-        sample: true,
-      },
-      originOrdered: 'api',
-      segment: 'pharmaceutical',
-      grossValue: 850.25,
-      netValue: 765.23,
-      billedValue: 765.23,
-      totalValue: 765.23,
-      sessionId: 'session-003',
-      dateOrder: new Date('2024-01-17 09:45:00'),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
-
-  await knex('orders').insert(sampleOrders);
-  console.log('✅ Sample orders created successfully!');
-  console.log(`📊 Total sample orders created: ${sampleOrders.length}`);
 }

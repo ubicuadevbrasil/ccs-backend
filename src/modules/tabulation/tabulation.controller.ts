@@ -37,7 +37,7 @@ export class TabulationController {
   constructor(private readonly tabulationService: TabulationService) {}
 
   @Post('create')
-  @ApiOperation({ summary: 'Create a new tabulation with subs' })
+  @ApiOperation({ summary: 'Create a new tabulation' })
   @ApiResponse({
     status: 201,
     description: 'Tabulation created successfully',
@@ -84,7 +84,7 @@ export class TabulationController {
   }
 
   @Get('find')
-  @ApiOperation({ summary: 'Find tabulation by ID with subs' })
+  @ApiOperation({ summary: 'Find tabulation by ID' })
   @ApiQuery({ name: 'id', description: 'Tabulation ID' })
   @ApiResponse({
     status: 200,
@@ -96,12 +96,12 @@ export class TabulationController {
     description: 'Tabulation not found',
   })
   async findTabulationById(@Query() query: FindTabulationDto): Promise<TabulationResponseDto> {
-    const tabulation = await this.tabulationService.findTabulationByIdWithSubs(query.id);
+    const tabulation = await this.tabulationService.findTabulationById(query.id);
     return tabulation as TabulationResponseDto;
   }
 
   @Patch('update')
-  @ApiOperation({ summary: 'Update tabulation by ID with subs' })
+  @ApiOperation({ summary: 'Update tabulation by ID' })
   @ApiResponse({
     status: 200,
     description: 'Tabulation updated successfully',

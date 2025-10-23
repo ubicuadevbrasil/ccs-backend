@@ -2,13 +2,13 @@ import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable('messageReactions', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.string('id', 36).primary();
     
     // Reference to the message being reacted to
     table.text('messageId').notNullable();
     
     // Who reacted (can be user or customer ID)
-    table.uuid('reactorId').notNullable();
+    table.string('reactorId', 36).notNullable();
     
     // Reaction emoji
     table.text('emoji').notNullable();

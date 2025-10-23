@@ -13,11 +13,9 @@ dotenv.config();
 interface ExternalCustomerData {
   mobile: string | number;
   name: string;
-  photo: string;
-  cnpj: string | number;
   email: string;
   telefone: string | number;
-  dten: string; // Date field for filtering September data
+  cnpj: string | number;
 }
 
 /**
@@ -177,14 +175,9 @@ export async function seed(knex: Knex): Promise<void> {
     // Step 1: Fetch external data from MySQL tab_encerrain table
     console.log('📡 Fetching external data from MySQL tab_encerrain table...');
     const result = await externalKnex.raw(`
-      SELECT mobile, name, photo, cnpj, email, telefone, dten
-      FROM tab_encerrain t1
-      WHERE (mobile IS NOT NULL OR telefone IS NOT NULL)
-        AND dten = (
-          SELECT MAX(t2.dten)
-          FROM tab_encerrain t2
-          WHERE t2.mobile = t1.mobile
-        )
+      SELECT e.mobile, e.name, e.email, e.telefone, e.cnpj   
+      FROM tab_encerrain e 
+      GROUP BY e.mobile
     `);
 
     // Extract the actual data from knex.raw result
@@ -224,7 +217,6 @@ export async function seed(knex: Knex): Promise<void> {
             email: externalRecord.email,
             telefone: externalRecord.telefone,
             cnpj: externalRecord.cnpj,
-            dten: externalRecord.dten
           });
           
           // Step 2a: Transform and validate data
@@ -300,7 +292,7 @@ async function transformToCustomerRecord(external: ExternalCustomerData, knex: K
   }
   
   // Create a more unique identifier by combining multiple fields
-  const uniqueData = `${primaryIdentifier}_${external.name || ''}_${external.email || ''}_${external.dten || ''}`;
+  const uniqueData = `${primaryIdentifier}_${external.name || ''}_${external.email || ''}_${external.cnpj || ''}`;
   const idHash = crypto.createHash('md5').update(String(uniqueData)).digest('hex');
   const uuid = [
     idHash.substring(0, 8),
@@ -340,7 +332,7 @@ async function transformToCustomerRecord(external: ExternalCustomerData, knex: K
     platformId: external.mobile.toString(),
     pushName: safeParseText(external.name) || undefined,
     name: safeParseText(external.name) || undefined,
-    profilePicUrl: safeParseText(external.photo) || undefined,
+    profilePicUrl: undefined, // Photo field no longer available
     contact,
     email: safeParseText(external.email) || undefined,
     cpf: undefined, // Not provided in external data
@@ -350,7 +342,7 @@ async function transformToCustomerRecord(external: ExternalCustomerData, knex: K
     type: CustomerType.CONTACT,
     status: CustomerStatus.ACTIVE,
     platform: CustomerPlatform.WHATSAPP, // Default platform
-    observations: `Imported from external database - Mobile: ${external.mobile}, Telefone: ${external.telefone}, Date: ${external.dten}`,
+    observations: `Imported from external database - Mobile: ${external.mobile}, Telefone: ${external.telefone}`,
     createdAt: now,
     updatedAt: now,
   };

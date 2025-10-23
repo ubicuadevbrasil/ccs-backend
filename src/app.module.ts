@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { CommonModule } from './common/common.module';
+import { SocketModule } from './modules/socket';
 import { UserModule } from './modules/user';
 import { CustomerModule } from './modules/customer';
 import { TabulationModule } from './modules/tabulation';
@@ -22,6 +23,7 @@ import { OrderModule } from './modules/order';
     }),
     DatabaseModule,
     CommonModule,
+    SocketModule,
     AuthModule,
     UserModule,
     CustomerModule,

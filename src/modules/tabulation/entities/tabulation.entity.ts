@@ -10,37 +10,9 @@ export interface TabulationEntity {
   name: string;
   description?: string;
   status: TabulationStatus;
+  orders: boolean;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface TabulationSubEntity {
-  id: string;
-  tabulationId: string;
-  name: string;
-  description?: string;
-  status: TabulationStatus;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export class TabulationSub implements TabulationSubEntity {
-  id: string;
-  tabulationId: string;
-  name: string;
-  description?: string;
-  status: TabulationStatus;
-  createdAt: Date;
-  updatedAt: Date;
-
-  constructor(partial: Partial<TabulationSub>) {
-    Object.assign(this, partial);
-  }
-
-  @Expose()
-  get isActive(): boolean {
-    return this.status === TabulationStatus.ACTIVE;
-  }
 }
 
 export class Tabulation implements TabulationEntity {
@@ -48,9 +20,9 @@ export class Tabulation implements TabulationEntity {
   name: string;
   description?: string;
   status: TabulationStatus;
+  orders: boolean;
   createdAt: Date;
   updatedAt: Date;
-  tabulationSubs?: TabulationSub[];
 
   constructor(partial: Partial<Tabulation>) {
     Object.assign(this, partial);
@@ -67,12 +39,7 @@ export class Tabulation implements TabulationEntity {
   }
 
   @Expose()
-  get hasSubs(): boolean {
-    return !!(this.tabulationSubs && this.tabulationSubs.length > 0);
-  }
-
-  @Expose()
-  get activeSubsCount(): number {
-    return this.tabulationSubs ? this.tabulationSubs.filter(sub => sub.isActive).length : 0;
+  get hasOrders(): boolean {
+    return this.orders;
   }
 }

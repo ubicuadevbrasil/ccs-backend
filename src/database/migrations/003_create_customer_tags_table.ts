@@ -2,8 +2,8 @@ import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable('customerTags', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    table.uuid('customerId').references('id').inTable('customer').onDelete('CASCADE');
+    table.string('id', 36).primary();
+    table.string('customerId', 36).references('id').inTable('customer').onDelete('CASCADE');
     
     table.text('tag').notNullable(); // The actual tag value (e.g., 'vip', 'premium', 'new-customer')
     
