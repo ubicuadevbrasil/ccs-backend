@@ -15,6 +15,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { OrderModule } from './modules/order';
+import { DashboardModule } from './modules/dashboard';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { OrderModule } from './modules/order';
     MessagesModule,
     OrderModule,
     ChatModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

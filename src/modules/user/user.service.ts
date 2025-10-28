@@ -4,6 +4,7 @@ import { Knex } from 'knex';
 import { User, UserEntity, UserStatus, UserProfile } from './entities/user.entity';
 import { CreateUserDto, UpdateUserDto, UserQueryDto } from './dto/user.dto';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 
 export interface PaginatedResult<T> {
   data: T[];
@@ -53,9 +54,13 @@ export class UserService {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate UUID for the user
+    const userId = crypto.randomUUID();
+
     // Insert user
     const [newUser] = await this.knex('user')
       .insert({
+        id: userId,
         ...userData,
         password: hashedPassword,
         status: userData.status || UserStatus.ACTIVE,

@@ -19,6 +19,7 @@ interface ExternalTransferData {
   vacina: boolean | null;
   convert_compra: boolean | null;
   transbordo_intent: string | null;
+  jornadaStatus: string | null;
 }
 
 /**
@@ -31,6 +32,7 @@ interface TransferRecord {
   checkOrder: boolean;
   budget: boolean;
   vaccine: boolean;
+  timeout: boolean;
   hasOrder: boolean;
   intent: string | null;
   createdAt: Date;
@@ -87,16 +89,32 @@ async function findHistoryBySessionBot(knex: Knex, sessionBot: string): Promise<
 
 /**
  * Helper function to map origin value according to business rules
+ * Only returns 'whatsapp' or 'chatweb'
  */
 function mapOrigin(origem: string | null): string | null {
   if (!origem) return 'whatsapp';
   
-  const origemLower = origem.toLowerCase();
-  if (origemLower === 'wbot' || origemLower === 'null') {
+  const origemLower = origem.toLowerCase().trim();
+  
+  // Map all WhatsApp-related values to 'whatsapp'
+  if (origemLower === 'wbot' || 
+      origemLower === 'whatsapp' || 
+      origemLower === 'wpp' || 
+      origemLower === 'null') {
     return 'whatsapp';
   }
   
-  return 'chatweb';
+  // Map all chatweb-related values to 'chatweb'
+  if (origemLower === 'chatweb' || 
+      origemLower === 'web' || 
+      origemLower === 'chat' ||
+      origemLower === 'bot') {
+    return 'chatweb';
+  }
+  
+  // Default fallback to 'whatsapp' for any unknown values
+  console.log(`⚠️  Unknown origin value '${origem}', defaulting to 'whatsapp'`);
+  return 'whatsapp';
 }
 
 /**
@@ -182,7 +200,8 @@ export async function seed(knex: Knex): Promise<void> {
         t.orcamento,
         t.vacina,
         t.convert_compra,
-        t.transbordo_intent
+        t.transbordo_intent,
+        t.jornadaStatus
       FROM tab_transbordo t
       WHERE t.sessionBot IS NOT NULL
     `);
@@ -225,7 +244,8 @@ export async function seed(knex: Knex): Promise<void> {
             orcamento: externalRecord.orcamento,
             vacina: externalRecord.vacina,
             convert_compra: externalRecord.convert_compra,
-            transbordo_intent: externalRecord.transbordo_intent
+            transbordo_intent: externalRecord.transbordo_intent,
+            jornadaStatus: externalRecord.jornadaStatus
           });
           
           // Step 2a: Find history record by sessionBot
@@ -302,6 +322,7 @@ function transformToTransferRecord(
     checkOrder: external.consultar_pedido || false,
     budget: external.orcamento || false,
     vaccine: external.vacina || false,
+    timeout: external.jornadaStatus === null, // timeout is true when jornadaStatus is null
     hasOrder: external.convert_compra || false,
     intent: safeParseText(external.transbordo_intent),
     createdAt: now,

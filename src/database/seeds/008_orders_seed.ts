@@ -10,6 +10,89 @@ dotenv.config();
 // Token cache to avoid repeated authentication calls
 const tokenCache = new Map<string, { token: string; expiresAt: number }>();
 
+// Rate limiting detection and handling
+let rateLimitDetected = false;
+let rateLimitResetTime = 0;
+let consecutiveFailures = 0;
+const MAX_CONSECUTIVE_FAILURES = 5;
+
+// Rate limiting: 100 requests per minute (60 seconds)
+const MAX_REQUESTS_PER_MINUTE = 100;
+const RATE_LIMIT_WINDOW = 60 * 1000; // 60 seconds in milliseconds
+const requestTimes: number[] = [];
+
+/**
+ * Helper function to check if we should wait due to rate limiting
+ */
+async function checkRateLimit(): Promise<void> {
+  if (rateLimitDetected && Date.now() < rateLimitResetTime) {
+    const waitTime = Math.ceil((rateLimitResetTime - Date.now()) / 1000);
+    console.log(`⏳ Rate limit active, waiting ${waitTime} seconds...`);
+    await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+    rateLimitDetected = false;
+    console.log(`✅ Rate limit wait completed, resuming...`);
+  }
+}
+
+/**
+ * Helper function to enforce 100 requests per minute rate limit
+ */
+async function enforceRateLimit(): Promise<void> {
+  const now = Date.now();
+  
+  // Remove requests older than 1 minute
+  const cutoffTime = now - RATE_LIMIT_WINDOW;
+  const validRequests = requestTimes.filter(time => time > cutoffTime);
+  requestTimes.length = 0; // Clear array
+  requestTimes.push(...validRequests); // Add back valid requests
+  
+  // Check if we're at the limit
+  if (requestTimes.length >= MAX_REQUESTS_PER_MINUTE) {
+    const oldestRequest = Math.min(...requestTimes);
+    const waitTime = Math.ceil((oldestRequest + RATE_LIMIT_WINDOW - now) / 1000);
+    
+    console.log(`⏳ Rate limit reached (${requestTimes.length}/${MAX_REQUESTS_PER_MINUTE}), waiting ${waitTime} seconds...`);
+    await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+    
+    // Clean up after waiting
+    const newNow = Date.now();
+    const newCutoffTime = newNow - RATE_LIMIT_WINDOW;
+    const newValidRequests = requestTimes.filter(time => time > newCutoffTime);
+    requestTimes.length = 0;
+    requestTimes.push(...newValidRequests);
+  }
+  
+  // Record this request
+  requestTimes.push(now);
+  
+  console.log(`🔍 [DEBUG] Rate limit status: ${requestTimes.length}/${MAX_REQUESTS_PER_MINUTE} requests in last minute`);
+}
+
+/**
+ * Helper function to handle consecutive failures
+ */
+function handleConsecutiveFailure(): boolean {
+  consecutiveFailures++;
+  console.log(`🔍 [DEBUG] Consecutive failures: ${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}`);
+  
+  if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+    console.error(`🚨 Too many consecutive failures (${consecutiveFailures}), stopping GraphQL requests`);
+    return true; // Stop processing
+  }
+  
+  return false; // Continue processing
+}
+
+/**
+ * Helper function to reset failure counter on success
+ */
+function resetFailureCounter(): void {
+  if (consecutiveFailures > 0) {
+    console.log(`✅ GraphQL request succeeded, resetting failure counter (was ${consecutiveFailures})`);
+    consecutiveFailures = 0;
+  }
+}
+
 /**
  * Helper function to safely parse dates
  */
@@ -80,6 +163,41 @@ async function lookupHistoryId(knex: Knex, sessionId: string): Promise<string | 
   } catch (error) {
     console.error(`Error looking up history ID for sessionId ${sessionId}:`, error);
     return null;
+  }
+}
+
+/**
+ * Helper function to check if order already exists with GraphQL details
+ */
+async function checkExistingOrder(knex: Knex, orderId: number): Promise<boolean> {
+  try {
+    const existingOrder = await knex('orders')
+      .select('id', 'orderDetails')
+      .where('orderId', String(orderId))
+      .first();
+    
+    if (!existingOrder) {
+      return false; // Order doesn't exist
+    }
+    
+    // Check if orderDetails contains GraphQL data (not basic fallback data)
+    const orderDetails = existingOrder.orderDetails;
+    if (!orderDetails || typeof orderDetails !== 'object') {
+      return false; // No details or invalid format
+    }
+    
+    // Check if it's basic fallback data (has 'basic: true' property)
+    if (orderDetails.basic === true) {
+      return false; // Only has basic data, needs GraphQL details
+    }
+    
+    // Check if it has GraphQL-specific fields
+    const hasGraphQLData = orderDetails.id || orderDetails.code || orderDetails.customer || orderDetails.user;
+    return hasGraphQLData; // Has GraphQL data
+    
+  } catch (error) {
+    console.error(`Error checking existing order ${orderId}:`, error);
+    return false; // On error, assume we need to fetch
   }
 }
 
@@ -212,7 +330,7 @@ interface GraphQLOrderDetails {
     status: string;
     statusDescription: string;
     confirmed: boolean;
-    order: any;
+    order: any; // Nested order with same structure as parent order
     subOrderInvoice: {
       id: number;
       reversalStatus: string;
@@ -334,11 +452,13 @@ export async function seed(knex: Knex): Promise<void> {
       return;
     }
 
-    // Step 2: Fetch GraphQL details in batches
-    const graphqlBatchSize = parseInt(process.env.GRAPHQL_BATCH_SIZE || '50');
+    // Step 2: Check existing orders and fetch GraphQL details in batches
+    const graphqlBatchSize = parseInt(process.env.GRAPHQL_BATCH_SIZE || '10'); // Reduced from 50 to 10 for rate limiting
     const orderDetailsMap = new Map<number, GraphQLOrderDetails | null>();
+    const existingOrdersMap = new Map<number, boolean>(); // Track which orders already exist (for insert vs update)
     
-    console.log(`📦 Fetching GraphQL details in batches of ${graphqlBatchSize}...`);
+    console.log(`📦 Checking existing orders and fetching GraphQL details in batches of ${graphqlBatchSize}...`);
+    console.log(`🔍 [DEBUG] Rate limit: ${MAX_REQUESTS_PER_MINUTE} requests per minute (${RATE_LIMIT_WINDOW/1000} seconds)`);
     
     for (let i = 0; i < externalData.length; i += graphqlBatchSize) {
       const batch = externalData.slice(i, i + graphqlBatchSize);
@@ -346,64 +466,138 @@ export async function seed(knex: Knex): Promise<void> {
       const totalBatches = Math.ceil(externalData.length / graphqlBatchSize);
       const progressPercent = ((i / externalData.length) * 100).toFixed(1);
       
-      console.log(`🔄 Fetching GraphQL batch ${batchNumber}/${totalBatches} (${batch.length} orders) - ${progressPercent}% complete...`);
+      console.log(`🔄 Processing batch ${batchNumber}/${totalBatches} (${batch.length} orders) - ${progressPercent}% complete...`);
       
-      // Process GraphQL calls in parallel for this batch
-      const graphqlPromises = batch.map(async (externalRecord) => {
+      // Check which orders already exist in the database (regardless of GraphQL data)
+      const existingCheckPromises = batch.map(async (externalRecord) => {
+        const exists = await knex('orders')
+          .where('orderId', String(externalRecord.pedido))
+          .first()
+          .then(result => !!result);
+        return { orderId: externalRecord.pedido, exists };
+      });
+      
+      const existingResults = await Promise.all(existingCheckPromises);
+      
+      // Store existing status for later use (to determine insert vs update)
+      existingResults.forEach(({ orderId, exists }) => {
+        existingOrdersMap.set(orderId, exists);
+      });
+      
+      // Always fetch fresh GraphQL data for all orders (to update with new nested structure)
+      console.log(`📊 Batch ${batchNumber}: Fetching fresh GraphQL data for ${batch.length} orders...`);
+      
+      // Process GraphQL calls for ALL orders to get fresh data with updated structure
+      // Process sequentially to respect rate limits (100 requests per minute)
+      for (const externalRecord of batch) {
         try {
           const orderDetails = await fetchOrderDetailsFromGraphQL(externalRecord.pedido);
-          return { orderId: externalRecord.pedido, details: orderDetails };
+          orderDetailsMap.set(externalRecord.pedido, orderDetails);
+          
+          // Add a small delay between requests to be extra safe
+          await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
         } catch (error) {
           console.error(`❌ Error fetching GraphQL details for order ${externalRecord.pedido}:`, error);
-          return { orderId: externalRecord.pedido, details: null };
+          orderDetailsMap.set(externalRecord.pedido, null);
         }
-      });
+      }
       
-      // Wait for all GraphQL calls in this batch to complete
-      const batchResults = await Promise.all(graphqlPromises);
+      console.log(`✅ Processed ${batch.length} GraphQL requests`);
       
-      // Store results in map
-      batchResults.forEach(({ orderId, details }) => {
-        orderDetailsMap.set(orderId, details);
-      });
-      
-      console.log(`✅ Completed GraphQL batch ${batchNumber}/${totalBatches}`);
+      console.log(`✅ Completed batch ${batchNumber}/${totalBatches}`);
     }
 
-    // Step 3: Transform all data and prepare for insertion
-    console.log('🔄 Transforming data and preparing for database insertion...');
+    // Step 3: Transform all data and prepare for insertion/update
+    console.log('🔄 Transforming data and preparing for database operations...');
     const ordersToInsert: OrderRecord[] = [];
+    const ordersToUpdate: OrderRecord[] = [];
     
     for (const externalRecord of externalData) {
       try {
         const orderDetails = orderDetailsMap.get(externalRecord.pedido) || null;
         const orderRecord = await transformToOrderRecord(knex, externalRecord, orderDetails);
-        ordersToInsert.push(orderRecord);
+        
+        // Check if this order already exists (but wasn't skipped)
+        const alreadyExists = existingOrdersMap.get(externalRecord.pedido);
+        if (alreadyExists) {
+          // Order exists but wasn't skipped, so we need to update it
+          ordersToUpdate.push(orderRecord);
+        } else {
+          // New order, insert it
+          ordersToInsert.push(orderRecord);
+        }
       } catch (error) {
         console.error(`❌ Error transforming order ${externalRecord.pedido}:`, error);
         // Create a basic record without GraphQL details
         const basicOrder = await createBasicOrderRecord(knex, externalRecord);
-        ordersToInsert.push(basicOrder);
+        
+        // Check if this order already exists
+        const alreadyExists = existingOrdersMap.get(externalRecord.pedido);
+        if (alreadyExists) {
+          ordersToUpdate.push(basicOrder);
+        } else {
+          ordersToInsert.push(basicOrder);
+        }
       }
     }
 
-    // Step 4: Insert all data in batches
+    // Step 4: Insert new orders and update existing orders in batches
     const insertBatchSize = parseInt(process.env.INSERT_BATCH_SIZE || '1000');
+    const updateBatchSize = parseInt(process.env.UPDATE_BATCH_SIZE || '1000');
     let totalInserted = 0;
+    let totalUpdated = 0;
     
-    console.log(`💾 Inserting ${ordersToInsert.length} orders in batches of ${insertBatchSize}...`);
+    // Insert new orders
+    if (ordersToInsert.length > 0) {
+      console.log(`💾 Inserting ${ordersToInsert.length} new orders in batches of ${insertBatchSize}...`);
+      
+      for (let i = 0; i < ordersToInsert.length; i += insertBatchSize) {
+        const batch = ordersToInsert.slice(i, i + insertBatchSize);
+        const batchNumber = Math.floor(i / insertBatchSize) + 1;
+        const totalBatches = Math.ceil(ordersToInsert.length / insertBatchSize);
+        
+        console.log(`💾 Inserting batch ${batchNumber}/${totalBatches} (${batch.length} orders)...`);
+        
+        await knex('orders').insert(batch);
+        totalInserted += batch.length;
+        
+        console.log(`✅ Insert batch ${batchNumber}/${totalBatches} completed! Total inserted: ${totalInserted}`);
+      }
+    }
     
-    for (let i = 0; i < ordersToInsert.length; i += insertBatchSize) {
-      const batch = ordersToInsert.slice(i, i + insertBatchSize);
-      const batchNumber = Math.floor(i / insertBatchSize) + 1;
-      const totalBatches = Math.ceil(ordersToInsert.length / insertBatchSize);
+    // Update existing orders
+    if (ordersToUpdate.length > 0) {
+      console.log(`🔄 Updating ${ordersToUpdate.length} existing orders in batches of ${updateBatchSize}...`);
       
-      console.log(`💾 Inserting database batch ${batchNumber}/${totalBatches} (${batch.length} orders)...`);
-      
-      await knex('orders').insert(batch);
-      totalInserted += batch.length;
-      
-      console.log(`✅ Database batch ${batchNumber}/${totalBatches} inserted! Total inserted: ${totalInserted}`);
+      for (let i = 0; i < ordersToUpdate.length; i += updateBatchSize) {
+        const batch = ordersToUpdate.slice(i, i + updateBatchSize);
+        const batchNumber = Math.floor(i / updateBatchSize) + 1;
+        const totalBatches = Math.ceil(ordersToUpdate.length / updateBatchSize);
+        
+        console.log(`🔄 Updating batch ${batchNumber}/${totalBatches} (${batch.length} orders)...`);
+        
+        // Update each order individually since we need to match by orderId
+        for (const order of batch) {
+          await knex('orders')
+            .where('orderId', order.orderId)
+            .update({
+              orderStatus: order.orderStatus,
+              orderDetails: order.orderDetails,
+              originOrdered: order.originOrdered,
+              segment: order.segment,
+              grossValue: order.grossValue,
+              netValue: order.netValue,
+              billedValue: order.billedValue,
+              totalValue: order.totalValue,
+              historyId: order.historyId,
+              dateOrder: order.dateOrder,
+              updatedAt: order.updatedAt
+            });
+        }
+        
+        totalUpdated += batch.length;
+        console.log(`✅ Update batch ${batchNumber}/${totalBatches} completed! Total updated: ${totalUpdated}`);
+      }
     }
     
     const endTime = Date.now();
@@ -411,12 +605,17 @@ export async function seed(knex: Knex): Promise<void> {
     
     console.log('✅ Orders seeded successfully!');
     console.log(`📊 Total orders processed: ${externalData.length}`);
-    console.log(`📊 Total orders inserted: ${totalInserted}`);
+    console.log(`📊 New orders inserted: ${totalInserted}`);
+    console.log(`📊 Existing orders updated: ${totalUpdated}`);
+    console.log(`📊 Orders fetched from GraphQL: ${externalData.length}`);
     console.log(`📊 GraphQL batches processed: ${Math.ceil(externalData.length / graphqlBatchSize)}`);
-    console.log(`📊 Database batches processed: ${Math.ceil(ordersToInsert.length / insertBatchSize)}`);
+    console.log(`📊 Insert batches processed: ${ordersToInsert.length > 0 ? Math.ceil(ordersToInsert.length / insertBatchSize) : 0}`);
+    console.log(`📊 Update batches processed: ${ordersToUpdate.length > 0 ? Math.ceil(ordersToUpdate.length / updateBatchSize) : 0}`);
     console.log(`⏱️  Total processing time: ${totalTime.toFixed(2)} seconds`);
     console.log(`📈 Average time per order: ${(totalTime / externalData.length).toFixed(3)} seconds`);
     console.log(`📈 Orders per second: ${(externalData.length / totalTime).toFixed(2)}`);
+    console.log(`📈 Orders updated: ${totalUpdated > 0 ? `${((totalUpdated / externalData.length) * 100).toFixed(1)}%` : '0%'}`);
+    console.log(`📈 Orders inserted: ${totalInserted > 0 ? `${((totalInserted / externalData.length) * 100).toFixed(1)}%` : '0%'}`);
 
   } catch (error) {
     console.error('❌ Error during orders seed:', error);
@@ -469,23 +668,37 @@ async function fetchOrderDetailsFromGraphQL(orderId: number): Promise<GraphQLOrd
 }
 
 /**
- * Tries to fetch data from a specific GraphQL endpoint
+ * Tries to fetch data from a specific GraphQL endpoint with comprehensive debugging
  */
 async function tryGraphQLEndpoint(orderId: number, endpoint: string, login: string, password: string, endpointType: string): Promise<GraphQLOrderDetails | null> {
+  const startTime = Date.now();
+  
   try {
+    // Enforce 100 requests per minute rate limit
+    await enforceRateLimit();
+    
+    // Check for server-side rate limiting before making request
+    await checkRateLimit();
+    
     if (!login || !password) {
       console.log(`⚠️  ${endpointType} GraphQL credentials not configured.`);
       return null;
     }
 
+    console.log(`🔍 [DEBUG] Starting GraphQL request for order ${orderId} on ${endpointType} endpoint`);
+    console.log(`🔍 [DEBUG] Endpoint: ${endpoint}`);
+    console.log(`🔍 [DEBUG] Login: ${login}`);
+
     // First, get authentication token
+    console.log(`🔍 [DEBUG] Getting authentication token...`);
     const token = await getGraphQLToken(endpoint, login, password);
     if (!token) {
-      console.log(`❌ Failed to get token from ${endpointType} endpoint`);
+      console.log(`❌ Failed to get token from ${endpointType} endpoint for order ${orderId}`);
+      if (handleConsecutiveFailure()) return null;
       return null;
     }
 
-    console.log(`📡 Fetching from ${endpointType} GraphQL endpoint for order ${orderId}`);
+    console.log(`🔍 [DEBUG] Token obtained successfully (length: ${token.length})`);
 
     // GraphQL query based on the provided orderDetails.txt
     const query = `
@@ -601,6 +814,109 @@ async function tryGraphQLEndpoint(orderId: number, endpoint: string, login: stri
             status
             statusDescription
             confirmed
+            order {
+              id
+              code
+              extraInvoice
+              status
+              statusDescription
+              originOrdered
+              dateOrder
+              hourOrder
+              differentiatedMarginReleased
+              weightedAverageMargin
+              quantityDemanded
+              grossValueOrderFactoryPriceFloat
+              netValueOrderFactoryPriceFloat
+              grossAmountInvoicedFactoryPriceFloat
+              netValueBilledFactoryPriceFloat
+              billedQuantity
+              orderTotalValueFloat
+              orderProduct {
+                id
+                product {
+                  id
+                  monitorado
+                  name
+                  ean
+                  brand {
+                    id
+                    name
+                    active
+                    createdAt
+                    updatedAt
+                  }
+                  division {
+                    id
+                    description
+                  }
+                  active
+                  createdAt
+                  updatedAt
+                  curveABC
+                  excludedAt
+                  price
+                  sellingPrice
+                  assortment {
+                    id
+                    name
+                  }
+                  category {
+                    id
+                    name
+                  }
+                  shippingBox
+                }
+                quantityDemanded
+                grossValueOrder
+                netValueOrder
+                netValueBilled
+                grossAmountInvoiced
+                billedQuantity
+                discount
+                discountValue
+                discountInvoiceValue
+                discountPerc
+                discountPercInvoice
+                reasonBilling {
+                  id
+                  descriptionReason
+                  codeReason
+                  classification
+                }
+              }
+              wholesalerBranch {
+                id
+                code
+                name
+              }
+              billingCondition {
+                id
+                code
+                description
+                typeCondition
+                beginsOn
+                expiresOn
+                minimumItemsCount
+                minimumAmount
+                availability {
+                  labels
+                }
+                thumbnailImageUrl
+                smallImageUrl
+                imageUrl
+                fullDescription
+                status
+                deleted
+              }
+              shippingOrders {
+                priority
+                billing {
+                  type
+                  term
+                }
+              }
+            }
             subOrderInvoice {
               id
               reversalStatus
@@ -612,6 +928,7 @@ async function tryGraphQLEndpoint(orderId: number, endpoint: string, login: stri
             motive
             dateSubOrder
             hourSubOrder
+            billingCondition
           }
           customer {
             id
@@ -652,6 +969,9 @@ async function tryGraphQLEndpoint(orderId: number, endpoint: string, login: stri
       }
     `;
 
+    console.log(`🔍 [DEBUG] Making GraphQL request for order ${orderId}...`);
+    console.log(`🔍 [DEBUG] Query length: ${query.length} characters`);
+
     const response = await axios.post(endpoint, 
       { query }, 
       {
@@ -663,25 +983,114 @@ async function tryGraphQLEndpoint(orderId: number, endpoint: string, login: stri
       }
     );
 
+    const responseTime = Date.now() - startTime;
+    console.log(`🔍 [DEBUG] GraphQL response received in ${responseTime}ms`);
+    console.log(`🔍 [DEBUG] Response status: ${response.status}`);
+    console.log(`🔍 [DEBUG] Response headers:`, JSON.stringify(response.headers, null, 2));
+
+    // Log response data structure for debugging
+    console.log(`🔍 [DEBUG] Response data type: ${typeof response.data}`);
+    console.log(`🔍 [DEBUG] Response data keys:`, Object.keys(response.data || {}));
+    
+    if (response.data && typeof response.data === 'object') {
+      console.log(`🔍 [DEBUG] Response data structure:`, JSON.stringify(response.data, null, 2));
+    }
+
     const data = response.data as { data: { orderDetails: GraphQLOrderDetails } };
+
+    // Check for GraphQL errors
+    if (response.data.errors) {
+      console.error(`❌ GraphQL errors for order ${orderId}:`, response.data.errors);
+      return null;
+    }
+
+    // Check for rate limiting or other HTTP errors
+    if (response.status !== 200) {
+      console.error(`❌ HTTP error ${response.status} for order ${orderId}:`, response.statusText);
+      return null;
+    }
 
     if (data && data.data && data.data.orderDetails) {
       console.log(`✅ Successfully fetched data from ${endpointType} endpoint for order ${orderId}`);
+      console.log(`🔍 [DEBUG] Order details ID: ${data.data.orderDetails.id}`);
+      console.log(`🔍 [DEBUG] Order details code: ${data.data.orderDetails.code}`);
+      console.log(`🔍 [DEBUG] Order details status: ${data.data.orderDetails.status}`);
+      resetFailureCounter(); // Reset failure counter on success
       return data.data.orderDetails;
     }
 
+    // Detailed debugging for no data case
     console.log(`⚠️  No data returned from ${endpointType} endpoint for order ${orderId}`);
+    console.log(`🔍 [DEBUG] Data structure analysis:`);
+    console.log(`🔍 [DEBUG] - data exists: ${!!data}`);
+    console.log(`🔍 [DEBUG] - data.data exists: ${!!(data && data.data)}`);
+    console.log(`🔍 [DEBUG] - data.data.orderDetails exists: ${!!(data && data.data && data.data.orderDetails)}`);
+    
+    if (data && data.data) {
+      console.log(`🔍 [DEBUG] - data.data keys:`, Object.keys(data.data));
+    }
+    
+    if (data && data.data && data.data.orderDetails === null) {
+      console.log(`🔍 [DEBUG] - orderDetails is explicitly null (order may not exist in GraphQL system)`);
+    }
+
+    // This is not necessarily a failure - order might not exist in GraphQL system
+    // Only count as failure if we get an error response
     return null;
   } catch (error) {
-    console.error(`❌ Error fetching from ${endpointType} GraphQL endpoint for order ${orderId}:`, error);
+    const responseTime = Date.now() - startTime;
+    console.error(`❌ Error fetching from ${endpointType} GraphQL endpoint for order ${orderId} (${responseTime}ms):`, error);
+    
+    // Detailed error analysis
+    if (error.response) {
+      console.error(`🔍 [DEBUG] Error response status: ${error.response.status}`);
+      console.error(`🔍 [DEBUG] Error response headers:`, JSON.stringify(error.response.headers, null, 2));
+      console.error(`🔍 [DEBUG] Error response data:`, JSON.stringify(error.response.data, null, 2));
+      
+      // Check for rate limiting
+      if (error.response.status === 429) {
+        console.error(`🚨 RATE LIMITING DETECTED for order ${orderId}!`);
+        rateLimitDetected = true;
+        
+        // Try to extract retry-after header
+        const retryAfter = error.response.headers['retry-after'] || error.response.headers['Retry-After'];
+        if (retryAfter) {
+          rateLimitResetTime = Date.now() + (parseInt(retryAfter) * 1000);
+          console.error(`🚨 Rate limit will reset in ${retryAfter} seconds`);
+        } else {
+          // Default to 60 seconds if no retry-after header
+          rateLimitResetTime = Date.now() + (60 * 1000);
+          console.error(`🚨 Rate limit will reset in 60 seconds (default)`);
+        }
+      }
+      
+      // Check for authentication issues
+      if (error.response.status === 401 || error.response.status === 403) {
+        console.error(`🚨 AUTHENTICATION ISSUE for order ${orderId}!`);
+      }
+      
+      // Handle consecutive failures for actual errors (not rate limiting)
+      if (error.response.status !== 429) {
+        if (handleConsecutiveFailure()) return null;
+      }
+    } else if (error.request) {
+      console.error(`🔍 [DEBUG] No response received:`, error.request);
+      if (handleConsecutiveFailure()) return null;
+    } else {
+      console.error(`🔍 [DEBUG] Request setup error:`, error.message);
+      if (handleConsecutiveFailure()) return null;
+    }
+    
     return null;
   }
 }
 
 /**
- * Gets GraphQL authentication token with caching
+ * Gets GraphQL authentication token with caching and debugging
  */
 async function getGraphQLToken(endpoint: string, login: string, password: string): Promise<string | null> {
+  const startTime = Date.now();
+  
   try {
     // Create cache key
     const cacheKey = `${endpoint}:${login}`;
@@ -689,8 +1098,11 @@ async function getGraphQLToken(endpoint: string, login: string, password: string
     // Check if we have a valid cached token
     const cached = tokenCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
+      console.log(`🔍 [DEBUG] Using cached token for ${login} (expires in ${Math.round((cached.expiresAt - Date.now()) / 1000)}s)`);
       return cached.token;
     }
+    
+    console.log(`🔍 [DEBUG] Getting new authentication token for ${login}...`);
     
     const query = `
       mutation {
@@ -708,6 +1120,11 @@ async function getGraphQLToken(endpoint: string, login: string, password: string
       }
     );
 
+    const responseTime = Date.now() - startTime;
+    console.log(`🔍 [DEBUG] Auth response received in ${responseTime}ms`);
+    console.log(`🔍 [DEBUG] Auth response status: ${response.status}`);
+    console.log(`🔍 [DEBUG] Auth response data:`, JSON.stringify(response.data, null, 2));
+
     const result = response.data as { data: { createToken: { token: string } } };
 
     if (result && result.data && result.data.createToken) {
@@ -719,12 +1136,21 @@ async function getGraphQLToken(endpoint: string, login: string, password: string
         expiresAt: Date.now() + (50 * 60 * 1000)
       });
       
+      console.log(`🔍 [DEBUG] Token obtained and cached successfully (length: ${token.length})`);
       return token;
     }
 
+    console.error(`🔍 [DEBUG] Invalid auth response structure:`, result);
     return null;
   } catch (error) {
-    console.error('Error getting GraphQL token:', error);
+    const responseTime = Date.now() - startTime;
+    console.error(`🔍 [DEBUG] Error getting GraphQL token for ${login} (${responseTime}ms):`, error);
+    
+    if (error.response) {
+      console.error(`🔍 [DEBUG] Auth error response status: ${error.response.status}`);
+      console.error(`🔍 [DEBUG] Auth error response data:`, JSON.stringify(error.response.data, null, 2));
+    }
+    
     return null;
   }
 }

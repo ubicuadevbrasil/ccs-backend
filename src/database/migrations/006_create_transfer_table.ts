@@ -8,6 +8,7 @@ export async function up(knex: Knex): Promise<void> {
     table.boolean('checkOrder').notNullable().defaultTo(false);
     table.boolean('budget').notNullable().defaultTo(false);
     table.boolean('vaccine').notNullable().defaultTo(false);
+    table.boolean('timeout').notNullable().defaultTo(false);
     table.boolean('hasOrder').notNullable().defaultTo(false);
     table.text('intent').nullable();
     table.timestamp('createdAt').defaultTo(knex.fn.now());
@@ -22,6 +23,7 @@ export async function up(knex: Knex): Promise<void> {
     table.index(['checkOrder']);
     table.index(['budget']);
     table.index(['vaccine']);
+    table.index(['timeout']);
     table.index(['hasOrder']);
     table.index(['createdAt']);
   });
