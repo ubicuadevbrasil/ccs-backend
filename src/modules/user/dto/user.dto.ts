@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, MinLength, MaxLength } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserProfile, UserStatus } from '../entities/user.entity';
 
@@ -307,7 +307,7 @@ export class FindUserDto {
     description: 'User unique identifier',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
   id: string;
 }
@@ -317,7 +317,7 @@ export class UpdateUserByIdDto {
     description: 'User unique identifier',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
   id: string;
 
@@ -407,7 +407,7 @@ export class DeleteUserDto {
     description: 'User unique identifier',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
   id: string;
 }

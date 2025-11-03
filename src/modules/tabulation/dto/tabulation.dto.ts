@@ -3,7 +3,6 @@ import {
   IsNotEmpty, 
   IsOptional, 
   IsString, 
-  IsUUID, 
   IsArray,
   IsBoolean,
   MinLength, 
@@ -160,7 +159,7 @@ export class TabulationResponseDto {
     description: 'Whether tabulation handles orders',
     example: true,
   })
-  hasOrders: boolean;j
+  hasOrders: boolean;
 }
 
 export class TabulationQueryDto {
@@ -206,7 +205,7 @@ export class FindTabulationDto {
     description: 'Tabulation unique identifier',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
   id: string;
 }
@@ -216,7 +215,7 @@ export class UpdateTabulationByIdDto {
     description: 'Tabulation unique identifier',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
   id: string;
 
@@ -265,7 +264,7 @@ export class DeleteTabulationDto {
     description: 'Tabulation unique identifier',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
   id: string;
 }
