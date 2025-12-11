@@ -16,6 +16,7 @@ import { MessagesModule } from './modules/messages/messages.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { OrderModule } from './modules/order';
 import { DashboardModule } from './modules/dashboard';
+import { AtosBotModule } from './modules/atos-bot/atos-bot.module';
 
 @Module({
   imports: [
@@ -34,8 +35,9 @@ import { DashboardModule } from './modules/dashboard';
     VonageModule,
     MessagesModule,
     OrderModule,
-    ChatModule,
+    ChatModule.forRootAsync(),
     DashboardModule,
+    AtosBotModule,
   ],
   controllers: [AppController],
   providers: [AppService],

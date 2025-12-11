@@ -136,6 +136,15 @@ export class CreateCustomerDto {
   isGroup?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Whether to skip bot interaction for this customer',
+    example: false,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  skipBot?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Customer type',
     enum: CustomerType,
     example: CustomerType.CONTACT,
@@ -288,6 +297,14 @@ export class UpdateCustomerDto {
   @IsOptional()
   @IsBoolean()
   isGroup?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Whether to skip bot interaction for this customer',
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  skipBot?: boolean;
 
   @ApiPropertyOptional({
     description: 'Customer type',

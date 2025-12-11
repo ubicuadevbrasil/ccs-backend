@@ -462,14 +462,56 @@ export class CreateQueueWhatsAppDto {
   lastMessage?: Message;
 
   @ApiPropertyOptional({
-    description: 'WhatsApp-specific metadata',
-    example: { instance: 'instance_1', remoteJid: '5511999999999@s.whatsapp.net' },
+    description: 'WhatsApp-specific metadata including bot context',
+    example: { 
+      platform: 'vonage',
+      contactUid: '5511999999999',
+      bot: {
+        sessionBot: '1e33a04d-08a4-41ba-bb02-2793c47643ea',
+        sessionParameters: {
+          telefone: '5511999999999',
+          cnpj: '08056408000197',
+          email: 'customer@example.com',
+        },
+        origin: 'whatsapp',
+        destiny: 'bot',
+        transferChatweb: false,
+        context: {
+          contexts: [],
+          intentName: 'Default Welcome Intent',
+          responseMessages: [{ text: 'Olá! Como posso ajudar?' }],
+          fallbackCounters: 0,
+        },
+      }
+    },
   })
   @IsOptional()
   @IsObject()
   metadata?: {
+    platform?: string;
+    contactUid?: string;
     instance?: string;
     remoteJid?: string;
+    bot?: {
+      sessionBot: string;
+      sessionParameters?: {
+        telefone?: string;
+        cnpj?: string;
+        email?: string;
+        name?: string;
+        segmento?: string;
+        [key: string]: any;
+      };
+      origin: 'whatsapp' | 'chatweb';
+      destiny: 'bot' | 'human';
+      transferChatweb?: boolean;
+      context?: {
+        contexts: Array<{ name: string; parameters: Record<string, string> }>;
+        intentName: string;
+        responseMessages: Array<{ text: string }>;
+        fallbackCounters: number;
+      };
+    };
     [key: string]: any;
   };
 }

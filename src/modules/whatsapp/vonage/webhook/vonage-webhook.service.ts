@@ -15,6 +15,7 @@ import { CreateCustomerDto } from '../../../customer/dto/customer.dto';
 import { CreateQueueWhatsAppDto } from '../../../customer-queue/dto/queue.dto';
 import { MessagesService } from '../../../messages/messages.service';
 import { AddReactionDto } from '../../../messages/dto/message.dto';
+import { AtosBotService } from '../../../atos-bot/atos-bot.service';
 import { randomUUID } from 'crypto';
 
 /**
@@ -34,6 +35,7 @@ export class VonageWebhookService {
     private readonly queueService: QueueService,
     private readonly messageStorageService: MessageStorageService,
     private readonly messagesService: MessagesService,
+    private readonly atosBotService: AtosBotService,
   ) {}
 
   /**
@@ -131,17 +133,21 @@ export class VonageWebhookService {
         this.logger.log(`Customer found for ${contactUid} with ${customer.tags?.length || 0} tags`);
       }
 
-      // Step 3: Check if customer is already in queue
-      const isInQueue = await this.queueService.isCustomerInQueue(customer.id);
-      const isInService = await this.queueService.isCustomerInService(customer.id);
-
-      // Step 4: If not in queue or service, create queue entry
-      if (!isInQueue && !isInService) {
+      // Step 3: Check if customer already has a queue entry (any status: BOT, WAITING, or SERVICE)
+      let hasQueueEntry = false;
+      try {
+        const existingQueue = await this.queueService.findQueueByCustomerId(customer.id);
+        hasQueueEntry = true;
+        this.logger.log(`Customer ${customer.id} already has a queue entry (status: ${existingQueue.status}), skipping queue creation`);
+      } catch (error) {
+        // Customer doesn't have a queue entry, will create one
+        hasQueueEntry = false;
         this.logger.log(`Customer ${customer.id} not in queue, creating queue entry`);
-        
+      }
+
+      // Step 4: If customer doesn't have a queue entry, create one
+      if (!hasQueueEntry) {
         await this.createQueueEntryForCustomer(customer.id, contactUid, customer);
-      } else {
-        this.logger.log(`Customer ${customer.id} already in queue/service, skipping queue creation`);
       }
 
       // Step 5: Process the actual message
@@ -300,10 +306,45 @@ export class VonageWebhookService {
       await this.queueService.updateLastMessage(queue.sessionId, lastMessage.redisMessage);
 
       this.logger.debug(`Message processed and stored for customer ${customer.displayName}: ${messageText}`);
+
+      // Process message with Atos Bot if queue status is BOT
+      // The processMessage method will check the queue status internally
+      await this.processMessageWithAtosBot(customer, queue.sessionId, messageText);
       
     } catch (error) {
       this.logger.error(`Error processing message content for customer ${customer.id}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Process message with Atos Bot intent detection
+   * This method processes incoming messages with the Atos Bot
+   * Flow: User sends message -> check status -> detect intent if bot -> give proper response
+   * 
+   * @param customer - The customer who sent the message
+   * @param sessionId - The session ID for the conversation
+   * @param messageText - The message text to process
+   */
+  async processMessageWithAtosBot(
+    customer: Customer,
+    sessionId: string,
+    messageText: string,
+  ): Promise<void> {
+    try {
+      // Use the main processMessage method which handles:
+      // - Checking queue status (only processes if status is BOT)
+      // - Getting bot context from queue metadata
+      // - Detecting intent
+      // - Sending responses via VonageService and storing in MessagesService
+      await this.atosBotService.processMessage(
+        sessionId,
+        customer.id,
+        messageText,
+      );
+    } catch (error) {
+      this.logger.error(`Error processing message with Atos Bot:`, error);
+      // Don't throw - allow message to be stored even if bot processing fails
     }
   }
 
@@ -446,17 +487,21 @@ export class VonageWebhookService {
         this.logger.log(`Customer found for ${contactUid} with ${customer.tags?.length || 0} tags`);
       }
 
-      // Step 3: Check if customer is already in queue
-      const isInQueue = await this.queueService.isCustomerInQueue(customer.id);
-      const isInService = await this.queueService.isCustomerInService(customer.id);
-
-      // Step 4: If not in queue or service, create queue entry
-      if (!isInQueue && !isInService) {
+      // Step 3: Check if customer already has a queue entry (any status: BOT, WAITING, or SERVICE)
+      let hasQueueEntry = false;
+      try {
+        const existingQueue = await this.queueService.findQueueByCustomerId(customer.id);
+        hasQueueEntry = true;
+        this.logger.log(`Customer ${customer.id} already has a queue entry (status: ${existingQueue.status}), skipping queue creation`);
+      } catch (error) {
+        // Customer doesn't have a queue entry, will create one
+        hasQueueEntry = false;
         this.logger.log(`Customer ${customer.id} not in queue, creating queue entry`);
-        
+      }
+
+      // Step 4: If customer doesn't have a queue entry, create one
+      if (!hasQueueEntry) {
         await this.createQueueEntryForCustomer(customer.id, contactUid, customer);
-      } else {
-        this.logger.log(`Customer ${customer.id} already in queue/service, skipping queue creation`);
       }
 
       // Step 5: Process the actual message
@@ -635,6 +680,10 @@ export class VonageWebhookService {
       await this.queueService.updateLastMessage(queue.sessionId, lastMessage.redisMessage);
 
       this.logger.debug(`Sandbox message processed and stored for customer ${customer.displayName}: ${messageText}`);
+
+      // Process message with Atos Bot if queue status is BOT
+      // The processMessage method will check the queue status internally
+      await this.processMessageWithAtosBot(customer, queue.sessionId, messageText);
       
     } catch (error) {
       this.logger.error(`Error processing sandbox message content for customer ${customer.id}:`, error);

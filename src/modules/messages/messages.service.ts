@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectKnex } from 'nestjs-knex';
 import { Knex } from 'knex';
+import { randomUUID } from 'crypto';
 import { Message, MessageEntity, MessageStatus } from './entities/message.entity';
 import { CreateMessageDto, UpdateMessageDto, MessageQueryDto, AddReactionDto } from './dto/message.dto';
 
@@ -205,6 +206,7 @@ export class MessagesService {
 
     const [newMessage] = await this.knex('messages')
       .insert({
+        id: randomUUID(),
         ...createMessageDto,
         status: createMessageDto.status || MessageStatus.PENDING,
         sentAt: this.knex.fn.now(),

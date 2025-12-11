@@ -99,7 +99,7 @@ export class QueueService {
       userId: createQueueDto.userId,
       user: createQueueDto.user,
       platform: createQueueDto.platform,
-      status: QueueStatus.WAITING,
+      status: createQueueDto.status || QueueStatus.WAITING,
       createdAt: new Date(),
       attendedAt: createQueueDto.attendedAt ? new Date(createQueueDto.attendedAt) : undefined,
       lastMessage: createQueueDto.lastMessage,
