@@ -9,7 +9,7 @@ import {
   VonageMessageType,
   VonageTemplateParameters,
 } from './interfaces/vonage.interface';
-import { SendMessageDto } from './dto/vonage.dto';
+import { VonageSendMessageDto } from './dto/vonage.dto';
 
 /**
  * Vonage WhatsApp Business API Service
@@ -70,7 +70,7 @@ export class VonageService {
   /**
    * Send a message via Vonage Messages API v1
    */
-  async sendMessage(sendMessageDto: SendMessageDto): Promise<VonageSendMessageResponse> {
+  async sendMessage(sendMessageDto: VonageSendMessageDto): Promise<VonageSendMessageResponse> {
     try {
       this.logger.log(`Sending message to ${sendMessageDto.toNumber} via Vonage`);
 
@@ -113,7 +113,7 @@ export class VonageService {
   /**
    * Create message content based on message type for v1 API
    */
-  private createMessageContent(sendMessageDto: SendMessageDto): any {
+  private createMessageContent(sendMessageDto: VonageSendMessageDto): any {
     const { type, txtMessage, mediaUrl, mediaCaption, template_name, template_namespace, parameters, components, contextMessageUuid } = sendMessageDto;
 
     const baseMessage = {

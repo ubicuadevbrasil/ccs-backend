@@ -1,9 +1,9 @@
 import { IsString, IsNotEmpty, IsOptional, IsPhoneNumber, IsIn } from 'class-validator';
 
 /**
- * DTO for sending WhatsApp messages
+ * DTO for sending WhatsApp messages via Dashboard
  */
-export class SendMessageDto {
+export class DashboardSendMessageDto {
   @IsString()
   @IsNotEmpty()
   to: string;

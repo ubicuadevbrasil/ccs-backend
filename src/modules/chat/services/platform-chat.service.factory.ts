@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MessagePlatform } from '../../messages/entities/message.entity';
 import { ChatVonageService } from './chat.vonage.service';
+import { ChatOtimaService } from './chat.otima.service';
+import { ConfigService } from '@nestjs/config';
 
 export interface PlatformChatService {
   sendMessage(platformData: any): Promise<any>;
@@ -14,15 +16,18 @@ export class PlatformChatServiceFactory {
 
   constructor(
     private readonly chatVonageService: ChatVonageService,
+    private readonly chatOtimaService: ChatOtimaService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
    * Get platform-specific chat service
    */
   getService(platform: MessagePlatform): PlatformChatService {
+    const whatsappProvider = this.configService.get<string>('WHATSAPP_PROVIDER') ?? 'vonage';
     switch (platform) {
       case MessagePlatform.WHATSAPP:
-        return this.chatVonageService;
+        return whatsappProvider === 'otima' ? this.chatOtimaService : this.chatVonageService;
       case MessagePlatform.INSTAGRAM:
         // TODO: Implement Instagram service
         throw new Error('Instagram chat service not implemented yet');

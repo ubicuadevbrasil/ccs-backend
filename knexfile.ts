@@ -35,6 +35,7 @@ const config: { [key: string]: Knex.Config } = {
       user: process.env.DATABASE_USER || 'ccs_user',
       password: process.env.DATABASE_PASSWORD || 'ccs_password',
     },
+    searchPath: ['larmaria', 'public'],
     pool: {
       min: 2,
       max: 10,
@@ -57,6 +58,7 @@ const config: { [key: string]: Knex.Config } = {
       user: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
     },
+    searchPath: ['larmaria', 'public'],
     pool: {
       min: 2,
       max: 10,

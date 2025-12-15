@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { SendMessageDto } from './dto/send-message.dto';
+import { DashboardSendMessageDto } from './dto/send-message.dto';
 import { WhatsAppStatsDto } from './dto/whatsapp-stats.dto';
 import { GetMessagesDto } from './dto/get-messages.dto';
 
@@ -39,7 +39,7 @@ export class WhatsAppService {
   /**
    * Send a message via WhatsApp
    */
-  async sendMessage(sendMessageDto: SendMessageDto): Promise<any> {
+  async sendMessage(sendMessageDto: DashboardSendMessageDto): Promise<any> {
     // TODO: Implement message sending logic
     return {
       messageId: 'temp-id',

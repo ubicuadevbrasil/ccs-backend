@@ -7,7 +7,7 @@ import { VonageService } from '../whatsapp/vonage/vonage.service';
 import { MessagesService } from '../messages/messages.service';
 import { QueueService } from '../customer-queue/queue.service';
 import { CreateMessageDto } from '../messages/dto/message.dto';
-import { SendMessageDto } from '../whatsapp/vonage/dto/vonage.dto';
+import { VonageSendMessageDto } from '../whatsapp/vonage/dto/vonage.dto';
 import { MessagePlatform, MessageType, MessageStatus, SenderType, RecipientType } from '../messages/entities/message.entity';
 import { QueueStatus } from '../customer-queue/entities/queue.entity';
 import {
@@ -132,7 +132,7 @@ export class AtosBotService {
   ): Promise<void> {
     try {
       // Send via Vonage
-      const sendMessageDto: SendMessageDto = {
+      const sendMessageDto: VonageSendMessageDto = {
         type: 'text',
         toNumber: mobile,
         txtMessage: message,
@@ -177,7 +177,7 @@ export class AtosBotService {
     components: any[],
   ): Promise<void> {
     try {
-      const sendMessageDto: SendMessageDto = {
+      const sendMessageDto: VonageSendMessageDto = {
         type: 'template_custom',
         toNumber: mobile,
         template_name: templateName,
@@ -226,7 +226,7 @@ export class AtosBotService {
     cleoUrl: string,
   ): Promise<void> {
     try {
-      const sendMessageDto: SendMessageDto = {
+      const sendMessageDto: VonageSendMessageDto = {
         type: 'image',
         toNumber: mobile,
         mediaUrl: cleoUrl,

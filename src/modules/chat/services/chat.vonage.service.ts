@@ -7,7 +7,7 @@ import {
   SenderType, 
   RecipientType 
 } from '../../messages/entities/message.entity';
-import { SendMessageDto } from '../../whatsapp/vonage/dto/vonage.dto';
+import { VonageSendMessageDto } from '../../whatsapp/vonage/dto/vonage.dto';
 
 export interface VonageSendMessageResult {
   success: boolean;
@@ -72,8 +72,8 @@ export class ChatVonageService {
   /**
    * Convert VonageMessageData to SendMessageDto
    */
-  private convertToSendMessageDto(vonageData: VonageMessageData): SendMessageDto {
-    const dto: SendMessageDto = {
+  private convertToSendMessageDto(vonageData: VonageMessageData): VonageSendMessageDto {
+    const dto: VonageSendMessageDto = {
       toNumber: vonageData.toNumber,
       type: this.mapMessageTypeToVonageType(vonageData.messageType),
       contextMessageUuid: vonageData.replyMessageId,

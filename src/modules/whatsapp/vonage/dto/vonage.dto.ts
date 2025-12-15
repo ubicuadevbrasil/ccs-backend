@@ -1,12 +1,12 @@
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, ApiExtraModels } from '@nestjs/swagger';
 
 /**
  * DTOs for Vonage WhatsApp Business API
  */
 
-export class SendMessageDto {
+export class VonageSendMessageDto {
   @ApiProperty({ description: 'Recipient phone number' })
   @IsString()
   @IsNotEmpty()

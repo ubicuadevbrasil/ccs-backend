@@ -1,7 +1,7 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, Logger } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiExtraModels } from '@nestjs/swagger';
 import { VonageService } from './vonage.service';
-import { SendMessageDto } from './dto/vonage.dto';
+import { VonageSendMessageDto } from './dto/vonage.dto';
 import { VonageSendMessageResponse } from './interfaces/vonage.interface';
 
 /**
@@ -21,6 +21,7 @@ export class SendTemplateMessageDto {
  */
 @ApiTags('Vonage')
 @Controller('vonage')
+@ApiExtraModels(VonageSendMessageDto)
 export class VonageController {
   private readonly logger = new Logger(VonageController.name);
 
@@ -36,7 +37,7 @@ export class VonageController {
     description: 'Sends a WhatsApp message using Vonage Communications API. Supports text, image, and button messages.'
   })
   @ApiBody({ 
-    type: SendMessageDto,
+    type: VonageSendMessageDto,
     description: 'Message details including recipient, type, and content'
   })
   @ApiResponse({ 
@@ -62,7 +63,7 @@ export class VonageController {
     status: 500, 
     description: 'Internal server error - failed to send message' 
   })
-  async sendMessage(@Body() sendMessageDto: SendMessageDto): Promise<VonageSendMessageResponse> {
+  async sendMessage(@Body() sendMessageDto: VonageSendMessageDto): Promise<VonageSendMessageResponse> {
     this.logger.log(`Received send message request for ${sendMessageDto.toNumber}`);
     
     try {
@@ -115,8 +116,8 @@ export class VonageController {
     this.logger.log(`Received send template message request for ${templateDto.toNumber}`);
     
     try {
-      // Convert template DTO to regular SendMessageDto
-      const sendMessageDto: SendMessageDto = {
+      // Convert template DTO to regular VonageSendMessageDto
+      const sendMessageDto: VonageSendMessageDto = {
         toNumber: templateDto.toNumber,
         type: 'template_custom',
         template_name: templateDto.template_name,

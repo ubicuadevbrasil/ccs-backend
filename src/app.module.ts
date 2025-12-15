@@ -11,6 +11,7 @@ import { TabulationModule } from './modules/tabulation';
 import { HistoryModule } from './modules/history';
 import { QueueModule } from './modules/customer-queue';
 import { VonageModule } from './modules/whatsapp/vonage/vonage.module';
+import { OtimaModule } from './modules/whatsapp/otima/otima.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { ChatModule } from './modules/chat/chat.module';
@@ -32,12 +33,13 @@ import { AtosBotModule } from './modules/atos-bot/atos-bot.module';
     TabulationModule,
     HistoryModule,
     QueueModule,
-    VonageModule,
+    // VonageModule,
+    OtimaModule,
     MessagesModule,
     OrderModule,
     ChatModule.forRootAsync(),
     DashboardModule,
-    AtosBotModule,
+    // AtosBotModule,
   ],
   controllers: [AppController],
   providers: [AppService],
