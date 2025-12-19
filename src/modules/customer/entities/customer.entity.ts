@@ -29,6 +29,7 @@ export interface CustomerEntity {
   email?: string;
   cpf?: string;
   cnpj?: string;
+  donorCode?: string;
   priority: number;
   isGroup: boolean;
   skipBot: boolean;
@@ -51,6 +52,7 @@ export class Customer implements CustomerEntity {
   email?: string;
   cpf?: string;
   cnpj?: string;
+  donorCode?: string;
   priority: number;
   isGroup: boolean;
   skipBot: boolean;
@@ -137,6 +139,7 @@ export class Customer implements CustomerEntity {
       email: this.email,
       cpf: this.cpf,
       cnpj: this.cnpj,
+      donorCode: this.donorCode,
       priority: this.priority,
       isGroup: this.isGroup,
       skipBot: this.skipBot,

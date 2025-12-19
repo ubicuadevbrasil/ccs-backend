@@ -11,6 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { Logger, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { UserService } from '../user/user.service';
 
 /**
  * Socket Gateway for handling real-time communication
@@ -31,10 +32,12 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly logger = new Logger(SocketGateway.name);
   private readonly connectedUsers = new Map<string, string>(); // userId -> socketId mapping
+  private readonly connectionTimestamps = new Map<string, Date>(); // userId -> connectionTime mapping
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly userService: UserService,
   ) {}
 
   /**
@@ -59,6 +62,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Store user connection
       this.connectedUsers.set(payload.sub, client.id);
+      this.connectionTimestamps.set(payload.sub, new Date());
       client.data.userId = payload.sub;
       client.data.userProfile = payload.profile;
 
@@ -83,12 +87,19 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /**
    * Handle client disconnections
    */
-  handleDisconnect(client: Socket): void {
+  async handleDisconnect(client: Socket): Promise<void> {
     const userId = client.data.userId;
     
     if (userId) {
       this.connectedUsers.delete(userId);
+      this.connectionTimestamps.delete(userId);
       this.logger.log(`User ${userId} disconnected (socket ${client.id})`);
+      // Update last activity timestamp
+      try {
+        await this.userService.updateLastActivityAt(userId);
+      } catch (error) {
+        this.logger.error(`Failed to update lastActivityAt for user ${userId}:`, error);
+      }
     } else {
       this.logger.log(`Unknown client ${client.id} disconnected`);
     }
@@ -181,6 +192,27 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   getConnectedUsersCount(): number {
     return this.connectedUsers.size;
+  }
+
+  /**
+   * Get connection time for a specific user
+   */
+  getConnectionTime(userId: string): Date | null {
+    return this.connectionTimestamps.get(userId) || null;
+  }
+
+  /**
+   * Get all connected users with their connection timestamps
+   */
+  getAllConnectedUsersWithTimestamps(): Map<string, Date> {
+    return new Map(this.connectionTimestamps);
+  }
+
+  /**
+   * Get socket ID for a specific user
+   */
+  getSocketId(userId: string): string | null {
+    return this.connectedUsers.get(userId) || null;
   }
 
   /**

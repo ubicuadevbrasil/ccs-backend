@@ -29,7 +29,7 @@ import { User } from './entities/user.entity';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
+  @Post('create')
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({
     status: 201,
@@ -49,7 +49,7 @@ export class UserController {
     return user as UserResponseDto;
   }
 
-  @Get()
+  @Get('list')
   @ApiOperation({ summary: 'Get all users with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
@@ -94,7 +94,7 @@ export class UserController {
     return user as UserResponseDto;
   }
 
-  @Patch()
+  @Patch('update')
   @ApiOperation({ summary: 'Update user by ID' })
   @ApiResponse({
     status: 200,

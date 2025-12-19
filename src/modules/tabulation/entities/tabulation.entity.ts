@@ -10,7 +10,7 @@ export interface TabulationEntity {
   name: string;
   description?: string;
   status: TabulationStatus;
-  orders: boolean;
+  effective: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,7 +20,7 @@ export class Tabulation implements TabulationEntity {
   name: string;
   description?: string;
   status: TabulationStatus;
-  orders: boolean;
+  effective: boolean;
   createdAt: Date;
   updatedAt: Date;
 
@@ -39,7 +39,7 @@ export class Tabulation implements TabulationEntity {
   }
 
   @Expose()
-  get hasOrders(): boolean {
-    return this.orders;
+  get hasEffective(): boolean {
+    return this.effective;
   }
 }

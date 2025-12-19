@@ -42,7 +42,7 @@ export class MessageStorageService {
       this.logger.log(`Storing ${platform} message for session: ${sessionId}`);
 
       // Get platform-specific mapper
-      const platformType = rawMessage.platform; // This contains 'vonage' or 'vonage-sandbox'
+      const platformType = rawMessage.platform;
       const mapper = this.messageMapperService.getMapper(platform, platformType);
       
       // Map raw message to platform message data

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectKnex } from 'nestjs-knex';
 import { Knex } from 'knex';
+import { randomUUID } from 'crypto';
 import { History, HistoryEntity, HistoryPlatform } from './entities/history.entity';
 import { CreateHistoryDto, UpdateHistoryDto, HistoryQueryDto } from './dto/history.dto';
 
@@ -41,16 +42,6 @@ export class HistoryService {
       }
     }
 
-    if (createHistoryDto.transferId) {
-      const transferExists = await this.knex('transfer')
-        .where('id', createHistoryDto.transferId)
-        .first();
-      
-      if (!transferExists) {
-        throw new BadRequestException('Transfer not found');
-      }
-    }
-
     // Validate date consistency
     const startedAt = new Date(createHistoryDto.startedAt);
     const attendedAt = createHistoryDto.attendedAt ? new Date(createHistoryDto.attendedAt) : null;
@@ -70,6 +61,7 @@ export class HistoryService {
 
     const [newHistory] = await this.knex('history')
       .insert({
+        id: randomUUID(),
         ...createHistoryDto,
         startedAt,
         attendedAt,
@@ -97,6 +89,7 @@ export class HistoryService {
       queryBuilder = queryBuilder.where((builder) => {
         builder
           .whereILike('sessionId', `%${query.search}%`)
+          .orWhereILike('protocol', `%${query.search}%`)
           .orWhereILike('observations', `%${query.search}%`);
       });
     }
@@ -111,9 +104,9 @@ export class HistoryService {
       queryBuilder = queryBuilder.where('customerId', query.customerId);
     }
 
-    // Apply transfer filter
-    if (query.transferId) {
-      queryBuilder = queryBuilder.where('transferId', query.transferId);
+    // Apply protocol filter
+    if (query.protocol) {
+      queryBuilder = queryBuilder.where('protocol', query.protocol);
     }
 
     // Apply platform filter
@@ -242,16 +235,6 @@ export class HistoryService {
       
       if (!customerExists) {
         throw new BadRequestException('Customer not found');
-      }
-    }
-
-    if (updateHistoryDto.transferId) {
-      const transferExists = await this.knex('transfer')
-        .where('id', updateHistoryDto.transferId)
-        .first();
-      
-      if (!transferExists) {
-        throw new BadRequestException('Transfer not found');
       }
     }
 

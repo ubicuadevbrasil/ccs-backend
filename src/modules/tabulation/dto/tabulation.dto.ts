@@ -49,13 +49,13 @@ export class CreateTabulationDto {
   status?: TabulationStatus;
 
   @ApiPropertyOptional({
-    description: 'Whether tabulation handles orders',
+    description: 'Whether tabulation is effective',
     example: false,
     default: false,
   })
   @IsOptional()
   @IsBoolean()
-  orders?: boolean;
+  effective?: boolean;
 }
 
 export class UpdateTabulationDto {
@@ -91,12 +91,12 @@ export class UpdateTabulationDto {
   status?: TabulationStatus;
 
   @ApiPropertyOptional({
-    description: 'Whether tabulation handles orders',
+    description: 'Whether tabulation is effective',
     example: false,
   })
   @IsOptional()
   @IsBoolean()
-  orders?: boolean;
+  effective?: boolean;
 }
 
 export class TabulationResponseDto {
@@ -126,10 +126,10 @@ export class TabulationResponseDto {
   status: TabulationStatus;
 
   @ApiProperty({
-    description: 'Whether tabulation handles orders',
+    description: 'Whether tabulation is effective',
     example: false,
   })
-  orders: boolean;
+  effective: boolean;
 
   @ApiProperty({
     description: 'Tabulation creation timestamp',
@@ -156,10 +156,10 @@ export class TabulationResponseDto {
   hasDescription: boolean;
 
   @ApiProperty({
-    description: 'Whether tabulation handles orders',
+    description: 'Whether tabulation is effective',
     example: true,
   })
-  hasOrders: boolean;
+  hasEffective: boolean;
 }
 
 export class TabulationQueryDto {
@@ -251,12 +251,12 @@ export class UpdateTabulationByIdDto {
   status?: TabulationStatus;
 
   @ApiPropertyOptional({
-    description: 'Whether tabulation handles orders',
+    description: 'Whether tabulation is effective',
     example: false,
   })
   @IsOptional()
   @IsBoolean()
-  orders?: boolean;
+  effective?: boolean;
 }
 
 export class DeleteTabulationDto {

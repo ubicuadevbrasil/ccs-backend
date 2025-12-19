@@ -1,0 +1,6642 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Application is healthy"
+          }
+        },
+        "summary": "Health check endpoint",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/users/create": {
+      "post": {
+        "operationId": "UserController_createUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "409": {
+            "description": "User with this login, email, or contact already exists"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/list": {
+      "get": {
+        "operationId": "UserController_findAllUsers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 10,
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term",
+            "schema": {
+              "example": "john",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by status",
+            "schema": {
+              "example": "active",
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive"
+              ]
+            }
+          },
+          {
+            "name": "profile",
+            "required": false,
+            "in": "query",
+            "description": "Filter by profile",
+            "schema": {
+              "example": "operator",
+              "type": "string",
+              "enum": [
+                "admin",
+                "supervisor",
+                "operator"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UserResponseDto"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "page": {
+                      "type": "number"
+                    },
+                    "limit": {
+                      "type": "number"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all users with pagination and filtering",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/find": {
+      "get": {
+        "operationId": "UserController_findUserById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "query",
+            "description": "User ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Find user by ID",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/update": {
+      "patch": {
+        "operationId": "UserController_updateUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserByIdDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "409": {
+            "description": "User with this login, email, or contact already exists"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update user by ID",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users": {
+      "delete": {
+        "operationId": "UserController_deleteUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "User deleted successfully"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete user by ID",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        },
+        "summary": "User login",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid refresh token"
+          }
+        },
+        "summary": "Refresh access token",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/validate": {
+      "post": {
+        "operationId": "AuthController_validateToken",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token validation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Validate JWT token",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logged out successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "User logout",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/customers/create": {
+      "patch": {
+        "operationId": "CustomerController_createCustomer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "409": {
+            "description": "Customer with this platformId, email, CPF, or CNPJ already exists"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new customer with tags",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/customers/list": {
+      "get": {
+        "operationId": "CustomerController_findAllCustomers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 10,
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term",
+            "schema": {
+              "example": "john",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by status",
+            "schema": {
+              "example": "active",
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive",
+                "blocked"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Filter by type",
+            "schema": {
+              "example": "contact",
+              "type": "string",
+              "enum": [
+                "contact"
+              ]
+            }
+          },
+          {
+            "name": "platform",
+            "required": false,
+            "in": "query",
+            "description": "Filter by platform",
+            "schema": {
+              "example": "whatsapp",
+              "type": "string",
+              "enum": [
+                "whatsapp",
+                "telegram",
+                "instagram",
+                "facebook",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "priority",
+            "required": false,
+            "in": "query",
+            "description": "Filter by priority",
+            "schema": {
+              "minimum": 0,
+              "maximum": 10,
+              "example": 5,
+              "type": "number"
+            }
+          },
+          {
+            "name": "isGroup",
+            "required": false,
+            "in": "query",
+            "description": "Filter by group contacts",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Filter by tags (comma-separated)",
+            "schema": {
+              "example": "vip,premium",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customers retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CustomerResponseDto"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "page": {
+                      "type": "number"
+                    },
+                    "limit": {
+                      "type": "number"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all customers with pagination and filtering",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/customers/find": {
+      "get": {
+        "operationId": "CustomerController_findCustomerById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "query",
+            "description": "Customer ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Find customer by ID",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/customers/update": {
+      "patch": {
+        "operationId": "CustomerController_updateCustomer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerByIdDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Customer not found"
+          },
+          "409": {
+            "description": "Customer with this platformId, email, CPF, or CNPJ already exists"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update customer by ID with tags",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/customers/delete": {
+      "delete": {
+        "operationId": "CustomerController_deleteCustomer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Customer deleted successfully"
+          },
+          "404": {
+            "description": "Customer not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete customer by ID",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/customers/tags": {
+      "get": {
+        "operationId": "CustomerController_getAllTags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all unique customer tags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "vip",
+                    "premium",
+                    "new-customer"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all unique customer tags",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/tabulations/create": {
+      "post": {
+        "operationId": "TabulationController_createTabulation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTabulationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tabulation created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TabulationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "409": {
+            "description": "Tabulation with this name already exists"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new tabulation",
+        "tags": [
+          "Tabulations"
+        ]
+      }
+    },
+    "/tabulations/list": {
+      "get": {
+        "operationId": "TabulationController_findAllTabulations",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 10,
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term",
+            "schema": {
+              "example": "main",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by status",
+            "schema": {
+              "example": "active",
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tabulations retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TabulationResponseDto"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "page": {
+                      "type": "number"
+                    },
+                    "limit": {
+                      "type": "number"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all tabulations with pagination and filtering",
+        "tags": [
+          "Tabulations"
+        ]
+      }
+    },
+    "/tabulations/find": {
+      "get": {
+        "operationId": "TabulationController_findTabulationById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "query",
+            "description": "Tabulation ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tabulation retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TabulationResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tabulation not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Find tabulation by ID",
+        "tags": [
+          "Tabulations"
+        ]
+      }
+    },
+    "/tabulations/update": {
+      "patch": {
+        "operationId": "TabulationController_updateTabulation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTabulationByIdDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tabulation updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TabulationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Tabulation not found"
+          },
+          "409": {
+            "description": "Tabulation with this name already exists"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update tabulation by ID",
+        "tags": [
+          "Tabulations"
+        ]
+      }
+    },
+    "/tabulations/delete": {
+      "delete": {
+        "operationId": "TabulationController_deleteTabulation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteTabulationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Tabulation deleted successfully"
+          },
+          "404": {
+            "description": "Tabulation not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete tabulation by ID (soft delete - set status to inactive)",
+        "tags": [
+          "Tabulations"
+        ]
+      }
+    },
+    "/history/create": {
+      "post": {
+        "operationId": "HistoryController_createHistory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHistoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "History created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data or foreign key references"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new history record",
+        "tags": [
+          "History"
+        ]
+      }
+    },
+    "/history/list": {
+      "get": {
+        "operationId": "HistoryController_findAllHistory",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 10,
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term for sessionId or observations",
+            "schema": {
+              "example": "session_123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by user ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by customer ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "protocol",
+            "required": false,
+            "in": "query",
+            "description": "Filter by protocol",
+            "schema": {
+              "example": "20251218175106819",
+              "type": "string"
+            }
+          },
+          {
+            "name": "platform",
+            "required": false,
+            "in": "query",
+            "description": "Filter by platform",
+            "schema": {
+              "example": "whatsapp",
+              "type": "string",
+              "enum": [
+                "whatsapp",
+                "telegram",
+                "instagram",
+                "facebook",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "Filter by start date (ISO string)",
+            "schema": {
+              "example": "2024-01-01T00:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "Filter by end date (ISO string)",
+            "schema": {
+              "example": "2024-01-31T23:59:59.999Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "isActive",
+            "required": false,
+            "in": "query",
+            "description": "Filter by active interactions",
+            "schema": {
+              "example": true,
+              "type": "string"
+            }
+          },
+          {
+            "name": "isAttended",
+            "required": false,
+            "in": "query",
+            "description": "Filter by attended interactions",
+            "schema": {
+              "example": true,
+              "type": "string"
+            }
+          },
+          {
+            "name": "isFinished",
+            "required": false,
+            "in": "query",
+            "description": "Filter by finished interactions",
+            "schema": {
+              "example": true,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "History records retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/HistoryResponseDto"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "page": {
+                      "type": "number"
+                    },
+                    "limit": {
+                      "type": "number"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all history records with pagination and filtering",
+        "tags": [
+          "History"
+        ]
+      }
+    },
+    "/history/find": {
+      "get": {
+        "operationId": "HistoryController_findHistoryById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "query",
+            "description": "History ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "History record retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "History record not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Find history record by ID",
+        "tags": [
+          "History"
+        ]
+      }
+    },
+    "/history/update": {
+      "patch": {
+        "operationId": "HistoryController_updateHistory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHistoryByIdDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "History record updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data or foreign key references"
+          },
+          "404": {
+            "description": "History record not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update history record by ID",
+        "tags": [
+          "History"
+        ]
+      }
+    },
+    "/history/delete": {
+      "delete": {
+        "operationId": "HistoryController_deleteHistory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteHistoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "History record deleted successfully"
+          },
+          "404": {
+            "description": "History record not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete history record by ID",
+        "tags": [
+          "History"
+        ]
+      }
+    },
+    "/history/session": {
+      "get": {
+        "operationId": "HistoryController_findHistoryBySessionId",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "query",
+            "description": "Session ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "History records retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoryResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Find history records by session ID",
+        "tags": [
+          "History"
+        ]
+      }
+    },
+    "/history/session/active": {
+      "get": {
+        "operationId": "HistoryController_findActiveHistoryBySessionId",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "query",
+            "description": "Session ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active history record retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active history record found for this session"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Find active history record by session ID",
+        "tags": [
+          "History"
+        ]
+      }
+    },
+    "/history/mark-attended": {
+      "patch": {
+        "operationId": "HistoryController_markAsAttended",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "History record marked as attended successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid attendedAt date"
+          },
+          "404": {
+            "description": "History record not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark history record as attended",
+        "tags": [
+          "History"
+        ]
+      }
+    },
+    "/history/mark-finished": {
+      "patch": {
+        "operationId": "HistoryController_markAsFinished",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "History record marked as finished successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid finishedAt date"
+          },
+          "404": {
+            "description": "History record not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark history record as finished",
+        "tags": [
+          "History"
+        ]
+      }
+    },
+    "/history/statistics": {
+      "get": {
+        "operationId": "HistoryController_getHistoryStatistics",
+        "parameters": [
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "Filter by end date (ISO string)",
+            "schema": {}
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "Filter by start date (ISO string)",
+            "schema": {}
+          },
+          {
+            "name": "platform",
+            "required": false,
+            "in": "query",
+            "description": "Filter by platform",
+            "schema": {}
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by customer ID",
+            "schema": {}
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by user ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "History statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "number"
+                    },
+                    "active": {
+                      "type": "number"
+                    },
+                    "attended": {
+                      "type": "number"
+                    },
+                    "finished": {
+                      "type": "number"
+                    },
+                    "averageDuration": {
+                      "type": "number"
+                    },
+                    "averageAttendanceTime": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get history statistics",
+        "tags": [
+          "History"
+        ]
+      }
+    },
+    "/queue/create": {
+      "post": {
+        "operationId": "QueueController_createQueue",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQueueDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Queue item created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid data"
+          },
+          "409": {
+            "description": "Queue item with this sessionId already exists"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new queue item",
+        "tags": [
+          "Customer Queue"
+        ]
+      }
+    },
+    "/queue/list": {
+      "get": {
+        "operationId": "QueueController_findAllQueue",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 10,
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term for sessionId",
+            "schema": {
+              "example": "session_123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by user ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by customer ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "platform",
+            "required": false,
+            "in": "query",
+            "description": "Filter by platform",
+            "schema": {
+              "example": "whatsapp",
+              "type": "string",
+              "enum": [
+                "whatsapp",
+                "telegram",
+                "instagram",
+                "facebook",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by status",
+            "schema": {
+              "example": "waiting",
+              "type": "string",
+              "enum": [
+                "bot",
+                "waiting",
+                "service"
+              ]
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "Filter by start date",
+            "schema": {
+              "example": "2024-01-01T00:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "Filter by end date",
+            "schema": {
+              "example": "2024-01-31T23:59:59.999Z",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Queue items retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QueueResponseDto"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "page": {
+                      "type": "number"
+                    },
+                    "limit": {
+                      "type": "number"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all queue items with pagination and filtering",
+        "tags": [
+          "Customer Queue"
+        ]
+      }
+    },
+    "/queue/find": {
+      "get": {
+        "operationId": "QueueController_findQueueBySessionId",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "query",
+            "description": "Session ID to find",
+            "schema": {
+              "example": "session_123456789",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Queue item found successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Queue item not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Find queue item by session ID",
+        "tags": [
+          "Customer Queue"
+        ]
+      }
+    },
+    "/queue/update": {
+      "patch": {
+        "operationId": "QueueController_updateQueue",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQueueDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Queue item updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid data"
+          },
+          "404": {
+            "description": "Queue item not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update queue item by session ID",
+        "tags": [
+          "Customer Queue"
+        ]
+      }
+    },
+    "/queue": {
+      "delete": {
+        "operationId": "QueueController_deleteQueue",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "query",
+            "description": "Session identifier",
+            "schema": {
+              "example": "session_123456789",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Queue item deleted successfully"
+          },
+          "404": {
+            "description": "Queue item not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete queue item by session ID",
+        "tags": [
+          "Customer Queue"
+        ]
+      }
+    },
+    "/queue/end-service": {
+      "post": {
+        "operationId": "QueueController_endService",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndServiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service ended successfully - history created and queue item deleted"
+          },
+          "400": {
+            "description": "Bad request - invalid data"
+          },
+          "404": {
+            "description": "Queue item not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "End service - create history record and delete from queue",
+        "tags": [
+          "Customer Queue"
+        ]
+      }
+    },
+    "/queue/attend": {
+      "post": {
+        "operationId": "QueueController_markAsAttended",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "query",
+            "description": "Session identifier",
+            "schema": {
+              "example": "session_123456789",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Queue item marked as attended successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Queue item not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark queue item as attended by authenticated user",
+        "tags": [
+          "Customer Queue"
+        ]
+      }
+    },
+    "/queue/transfer": {
+      "post": {
+        "operationId": "QueueController_transferQueue",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferQueueDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Queue item transferred successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid data"
+          },
+          "404": {
+            "description": "Queue item not found or target user not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transfer queue item to another user",
+        "tags": [
+          "Customer Queue"
+        ]
+      }
+    },
+    "/queue/statistics": {
+      "get": {
+        "operationId": "QueueController_getQueueStatistics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Queue statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "number"
+                    },
+                    "bot": {
+                      "type": "number"
+                    },
+                    "waiting": {
+                      "type": "number"
+                    },
+                    "service": {
+                      "type": "number"
+                    },
+                    "averageWaitingTime": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get queue statistics",
+        "tags": [
+          "Customer Queue"
+        ]
+      }
+    },
+    "/queue/clear-all": {
+      "delete": {
+        "operationId": "QueueController_clearAllQueues",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "All queues and messages cleared successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "clearedCount": {
+                      "type": "number"
+                    },
+                    "messagesClearedCount": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Clear all Redis queues and messages",
+        "tags": [
+          "Customer Queue"
+        ]
+      }
+    },
+    "/otima/send-message": {
+      "post": {
+        "description": "Sends a WhatsApp message using Otima broker API. Supports text and media messages.",
+        "operationId": "OtimaController_sendMessage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Message details including recipient, type, and content",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtimaSendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message sent successfully"
+          },
+          "400": {
+            "description": "Bad request - invalid message data"
+          },
+          "500": {
+            "description": "Internal server error - failed to send message"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send WhatsApp message via Otima",
+        "tags": [
+          "Otima"
+        ]
+      }
+    },
+    "/otima/send-template": {
+      "post": {
+        "description": "Sends a WhatsApp template message using Otima broker API.",
+        "operationId": "OtimaController_sendTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Template message details including recipient, template id, and parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtimaSendTemplateMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Template message sent successfully"
+          },
+          "400": {
+            "description": "Bad request - invalid template data"
+          },
+          "500": {
+            "description": "Internal server error - failed to send template message"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send WhatsApp template message via Otima",
+        "tags": [
+          "Otima"
+        ]
+      }
+    },
+    "/otima/check-whatsapp": {
+      "post": {
+        "description": "Checks whether a given phone number is registered on WhatsApp using the Otima broker API.",
+        "operationId": "OtimaController_checkWhatsapp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Mobile number to verify",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtimaCheckWhatsappDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Check executed successfully"
+          },
+          "400": {
+            "description": "Bad request - invalid number"
+          },
+          "500": {
+            "description": "Internal server error - failed to check WhatsApp availability"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Check if WhatsApp is available for a number via Otima",
+        "tags": [
+          "Otima"
+        ]
+      }
+    },
+    "/otima/whatsapp/bulk/text": {
+      "post": {
+        "description": "Sends multiple WhatsApp text messages using Otima bulk text endpoint.",
+        "operationId": "OtimaController_sendBulkText",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Bulk text message payload as defined by Otima API",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtimaBulkTextMessagesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send bulk WhatsApp text messages via Otima",
+        "tags": [
+          "Otima"
+        ]
+      }
+    },
+    "/otima/whatsapp/bulk/file": {
+      "post": {
+        "description": "Sends multiple WhatsApp file/document messages using Otima bulk HSM endpoint.",
+        "operationId": "OtimaController_sendBulkFile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Bulk file/document message payload as defined by Otima API",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtimaBulkFileMessagesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send bulk WhatsApp file/document messages via Otima",
+        "tags": [
+          "Otima"
+        ]
+      }
+    },
+    "/otima/whatsapp/bulk/hsm": {
+      "post": {
+        "description": "Sends multiple WhatsApp HSM messages using Otima bulk HSM endpoint.",
+        "operationId": "OtimaController_sendBulkHsm",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Bulk HSM message payload as defined by Otima API",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtimaBulkHsmMessagesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send bulk WhatsApp HSM messages via Otima",
+        "tags": [
+          "Otima"
+        ]
+      }
+    },
+    "/otima/whatsapp/hsm/file-base64": {
+      "post": {
+        "description": "Sends a single WhatsApp HSM message with a base64 encoded file.",
+        "operationId": "OtimaController_sendSingleHsmBase64",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Single HSM base64 file payload as defined by Otima API",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtimaSingleHsmBase64FileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send single WhatsApp HSM message with base64 file via Otima",
+        "tags": [
+          "Otima"
+        ]
+      }
+    },
+    "/otima/whatsapp/mailman/hsm": {
+      "post": {
+        "description": "Sends a WhatsApp mailman HSM message (with boleto/linha digitável) using Otima mailman endpoint.",
+        "operationId": "OtimaController_sendMailmanHsm",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Mailman HSM payload as defined by Otima API",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtimaMailmanHsmDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send WhatsApp mailman HSM message via Otima",
+        "tags": [
+          "Otima"
+        ]
+      }
+    },
+    "/otima/whatsapp/templates": {
+      "post": {
+        "description": "Lists WhatsApp HSM templates configured in Otima for the given customer code or the default from configuration.",
+        "operationId": "OtimaController_listTemplates",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customerCode": {
+                    "type": "string",
+                    "description": "Otima customer code (optional)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List WhatsApp HSM templates via Otima",
+        "tags": [
+          "Otima"
+        ]
+      }
+    },
+    "/otima/whatsapp/credentials": {
+      "get": {
+        "description": "Retrieves a list of WhatsApp credentials configured in Otima, including limits and technology details.",
+        "operationId": "OtimaController_getCredentials",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Credentials retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "string"
+                      },
+                      "credential": {
+                        "type": "string"
+                      },
+                      "customer": {
+                        "type": "string"
+                      },
+                      "daily_message_limit": {
+                        "type": "string"
+                      },
+                      "direction": {
+                        "type": "string"
+                      },
+                      "monthly_message_limit": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "sender": {
+                        "type": "string"
+                      },
+                      "technology": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error - failed to get credentials"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get WhatsApp credentials from Otima",
+        "tags": [
+          "Otima"
+        ]
+      }
+    },
+    "/otima/whatsapp/customers": {
+      "get": {
+        "description": "Retrieves a list of WhatsApp customers configured in Otima, including callback URLs.",
+        "operationId": "OtimaController_getCustomers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Customers retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "callbacks": {
+                        "type": "object",
+                        "properties": {
+                          "mo": {
+                            "type": "string",
+                            "description": "Mobile Originated callback URL"
+                          },
+                          "status": {
+                            "type": "string",
+                            "description": "Status callback URL"
+                          }
+                        }
+                      },
+                      "code": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error - failed to get customers"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get WhatsApp customers from Otima",
+        "tags": [
+          "Otima"
+        ]
+      }
+    },
+    "/otima/webhook/messages": {
+      "post": {
+        "description": "Receives inbound WhatsApp messages from Otima broker and maps them into the internal message flow.",
+        "operationId": "OtimaWebhookController_handleMessages",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Inbound message array payload from Otima",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook processed successfully"
+          }
+        },
+        "summary": "Handle inbound WhatsApp messages from Otima",
+        "tags": [
+          "Otima Webhook"
+        ]
+      }
+    },
+    "/otima/webhook/ack": {
+      "post": {
+        "description": "Receives message status updates from Otima broker.",
+        "operationId": "OtimaWebhookController_handleAck",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Status update payload from Otima",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status webhook processed successfully"
+          }
+        },
+        "summary": "Handle WhatsApp ACK/status updates from Otima",
+        "tags": [
+          "Otima Webhook"
+        ]
+      }
+    },
+    "/messages/session": {
+      "get": {
+        "description": "Retrieve messages for a specific session from Redis storage. This endpoint provides fast access to recent messages stored in Redis.",
+        "operationId": "MessagesController_getSessionMessages",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "query",
+            "description": "Session ID to retrieve messages for",
+            "schema": {
+              "example": "session_123456789",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of messages to retrieve",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 50,
+              "example": 50,
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "Source to retrieve messages from (redis or postgres)",
+            "schema": {
+              "default": "redis",
+              "example": "redis",
+              "type": "string",
+              "enum": [
+                "redis",
+                "postgres"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session messages retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionMessagesResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid session ID or query parameters"
+          },
+          "404": {
+            "description": "Session not found or no messages available"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get session messages from Redis",
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/messages/session/statistics": {
+      "get": {
+        "description": "Retrieve statistics about messages for a specific session including counts from both Redis and PostgreSQL.",
+        "operationId": "MessagesController_getSessionStatistics",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "query",
+            "description": "Session ID to get statistics for",
+            "schema": {
+              "example": "session_123456789",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string",
+                      "example": "session_123456789"
+                    },
+                    "redisCount": {
+                      "type": "number",
+                      "example": 25
+                    },
+                    "postgresCount": {
+                      "type": "number",
+                      "example": 100
+                    },
+                    "lastMessageAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-01T10:00:00.000Z"
+                    },
+                    "firstMessageAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-01T09:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get session message statistics",
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/messages": {
+      "get": {
+        "description": "Retrieve messages from PostgreSQL with various filters and pagination options.",
+        "operationId": "MessagesController_getMessages",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number for pagination",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "example": 20,
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by session ID",
+            "schema": {
+              "example": "session_123456789",
+              "type": "string"
+            }
+          },
+          {
+            "name": "senderType",
+            "required": false,
+            "in": "query",
+            "description": "Filter by sender type",
+            "schema": {
+              "example": "customer",
+              "type": "string",
+              "enum": [
+                "system",
+                "bot",
+                "customer",
+                "user"
+              ]
+            }
+          },
+          {
+            "name": "recipientType",
+            "required": false,
+            "in": "query",
+            "description": "Filter by recipient type",
+            "schema": {
+              "example": "user",
+              "type": "string",
+              "enum": [
+                "system",
+                "bot",
+                "customer",
+                "user"
+              ]
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by customer ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by user ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "platform",
+            "required": false,
+            "in": "query",
+            "description": "Filter by platform",
+            "schema": {
+              "example": "whatsapp",
+              "type": "string",
+              "enum": [
+                "whatsapp",
+                "telegram",
+                "instagram",
+                "facebook",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Filter by message type",
+            "schema": {
+              "example": "text",
+              "type": "string",
+              "enum": [
+                "text",
+                "image",
+                "video",
+                "audio",
+                "document",
+                "location",
+                "contact",
+                "sticker",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by message status",
+            "schema": {
+              "example": "sent",
+              "type": "string",
+              "enum": [
+                "pending",
+                "sent",
+                "delivered",
+                "read",
+                "failed",
+                "deleted"
+              ]
+            }
+          },
+          {
+            "name": "fromMe",
+            "required": false,
+            "in": "query",
+            "description": "Filter by fromMe flag",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "system",
+            "required": false,
+            "in": "query",
+            "description": "Filter by system flag",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "isGroup",
+            "required": false,
+            "in": "query",
+            "description": "Filter by group flag",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search in message content",
+            "schema": {
+              "example": "hello",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Sort by field",
+            "schema": {
+              "default": "sentAt",
+              "example": "sentAt",
+              "type": "string",
+              "enum": [
+                "sentAt",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "Sort order",
+            "schema": {
+              "default": "desc",
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Messages retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedMessagesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get messages with filtering and pagination",
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/messages/sessions/active": {
+      "get": {
+        "description": "Retrieve list of all active sessions that have messages in Redis.",
+        "operationId": "MessagesController_getActiveSessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Active sessions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "session_123456789"
+                      }
+                    },
+                    "count": {
+                      "type": "number",
+                      "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get active sessions",
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/chat/sendMessage": {
+      "post": {
+        "description": "Send a message from the authenticated user to a customer on the specified platform. The user information is automatically extracted from the JWT token. Supports all WhatsApp message types including text, images, videos, audio, documents, locations, contacts, and stickers.",
+        "operationId": "ChatController_sendMessage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Message data with platform-specific information",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              },
+              "examples": {
+                "textMessage": {
+                  "summary": "Text Message",
+                  "description": "Send a simple text message",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789",
+                    "message": "Hello! Thank you for contacting us. How can I assist you today?",
+                    "type": "text"
+                  }
+                },
+                "imageMessage": {
+                  "summary": "Image Message",
+                  "description": "Send an image with optional caption",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789",
+                    "message": "Here is the product image you requested",
+                    "media": "https://example.com/images/product.jpg",
+                    "type": "image"
+                  }
+                },
+                "videoMessage": {
+                  "summary": "Video Message",
+                  "description": "Send a video with optional caption",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789",
+                    "message": "Here is the tutorial video you requested",
+                    "media": "https://example.com/videos/tutorial.mp4",
+                    "type": "video"
+                  }
+                },
+                "audioMessage": {
+                  "summary": "Audio Message",
+                  "description": "Send an audio file",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789",
+                    "media": "https://example.com/audio/voice-message.mp3",
+                    "type": "audio"
+                  }
+                },
+                "documentMessage": {
+                  "summary": "Document Message",
+                  "description": "Send a document (PDF, DOC, etc.) with optional caption",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789",
+                    "message": "Please find attached the invoice you requested",
+                    "media": "https://example.com/documents/invoice.pdf",
+                    "type": "document"
+                  }
+                },
+                "locationMessage": {
+                  "summary": "Location Message",
+                  "description": "Send a location with coordinates and address",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789",
+                    "message": "lat:-23.550520,lng:-46.633308,name:São Paulo Office,address:Rua Augusta, 123 - São Paulo, SP",
+                    "type": "location"
+                  }
+                },
+                "contactMessage": {
+                  "summary": "Contact Message",
+                  "description": "Send contact information",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789",
+                    "message": "name:Support Team,number:+5511888888888",
+                    "type": "contact"
+                  }
+                },
+                "stickerMessage": {
+                  "summary": "Sticker Message",
+                  "description": "Send a sticker",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789",
+                    "media": "https://example.com/stickers/happy-face.webp",
+                    "type": "sticker"
+                  }
+                },
+                "replyMessage": {
+                  "summary": "Reply Message",
+                  "description": "Reply to an existing message",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789",
+                    "message": "Thank you for your question. Here is the answer...",
+                    "type": "text",
+                    "replyMessageId": "msg_123456789_abc123"
+                  }
+                },
+                "groupMessage": {
+                  "summary": "Group Message",
+                  "description": "Send a message to a WhatsApp group",
+                  "value": {
+                    "sessionId": "session_whatsapp_group_123456789",
+                    "message": "Hello everyone! This is an important announcement.",
+                    "type": "text",
+                    "isGroup": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendMessageResponseDto"
+                },
+                "example": {
+                  "id": "123e4567-e89b-12d3-a456-426614174000",
+                  "messageId": "whatsapp_123456789_abc123",
+                  "sessionId": "session_whatsapp_123456789",
+                  "senderType": "user",
+                  "recipientType": "customer",
+                  "customerId": "123e4567-e89b-12d3-a456-426614174000",
+                  "userId": "123e4567-e89b-12d3-a456-426614174000",
+                  "fromMe": true,
+                  "system": false,
+                  "isGroup": false,
+                  "message": "Hello! Thank you for contacting us.",
+                  "type": "text",
+                  "platform": "whatsapp",
+                  "status": "sent",
+                  "metadata": null,
+                  "sentAt": "2024-01-01T10:00:00.000Z",
+                  "createdAt": "2024-01-01T10:00:00.000Z",
+                  "updatedAt": "2024-01-01T10:00:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data or missing required fields",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 400,
+                  "message": "Either message text or media must be provided",
+                  "error": "Bad Request"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User not authenticated",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "Unauthorized",
+                  "error": "Unauthorized"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 500,
+                  "message": "Platform service error for whatsapp: Evolution API connection failed",
+                  "error": "Internal Server Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send a message to a customer",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/chat/history": {
+      "get": {
+        "description": "Retrieve the chat history for a specific session from Redis storage. Reactions are updated in real-time and stored in Redis for fast access.",
+        "operationId": "ChatController_getChatHistory",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "query",
+            "description": "Session ID to retrieve chat history for",
+            "schema": {
+              "example": "session_123456789",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of messages to retrieve",
+            "schema": {
+              "default": 50,
+              "example": 50,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat history retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string",
+                      "example": "session_123456789"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "Message object with all message properties including reactions",
+                        "properties": {
+                          "reactions": {
+                            "type": "array",
+                            "description": "Array of reactions for this message",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "emoji": {
+                                  "type": "string",
+                                  "example": "❤️"
+                                },
+                                "reactorId": {
+                                  "type": "string",
+                                  "example": "customer-uuid"
+                                },
+                                "reactedAt": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "count": {
+                      "type": "number",
+                      "example": 25
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid session ID or query parameters"
+          },
+          "401": {
+            "description": "User not authenticated"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get chat history for a session",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/chat/statistics": {
+      "get": {
+        "description": "Retrieve statistics about messages for a specific session including counts from both Redis and PostgreSQL.",
+        "operationId": "ChatController_getSessionStatistics",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "query",
+            "description": "Session ID to get statistics for",
+            "schema": {
+              "example": "session_123456789",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string",
+                      "example": "session_123456789"
+                    },
+                    "redisCount": {
+                      "type": "number",
+                      "example": 25
+                    },
+                    "postgresCount": {
+                      "type": "number",
+                      "example": 100
+                    },
+                    "lastMessageAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-01T10:00:00.000Z"
+                    },
+                    "firstMessageAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-01T09:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid session ID"
+          },
+          "401": {
+            "description": "User not authenticated"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get session statistics",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/chat/customer": {
+      "get": {
+        "description": "Retrieve customer information and queue status for a specific session ID. This includes customer details, queue status, and metadata.",
+        "operationId": "ChatController_getCustomerData",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "query",
+            "description": "Session ID to get customer data for",
+            "schema": {
+              "example": "session_whatsapp_123456789",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string",
+                      "example": "session_whatsapp_123456789"
+                    },
+                    "customerId": {
+                      "type": "string",
+                      "example": "123e4567-e89b-12d3-a456-426614174000"
+                    },
+                    "customer": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "123e4567-e89b-12d3-a456-426614174000"
+                        },
+                        "platformId": {
+                          "type": "string",
+                          "example": "5511999999999@s.whatsapp.net"
+                        },
+                        "pushName": {
+                          "type": "string",
+                          "example": "João Silva"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "João Silva"
+                        },
+                        "profilePicUrl": {
+                          "type": "string",
+                          "example": "https://example.com/profile-pics/joao.jpg"
+                        },
+                        "contact": {
+                          "type": "string",
+                          "example": "+5511999999999"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "joao.silva@email.com"
+                        },
+                        "priority": {
+                          "type": "number",
+                          "example": 5
+                        },
+                        "isGroup": {
+                          "type": "boolean",
+                          "example": false
+                        },
+                        "type": {
+                          "type": "string",
+                          "example": "contact"
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "active"
+                        },
+                        "platform": {
+                          "type": "string",
+                          "example": "whatsapp"
+                        },
+                        "observations": {
+                          "type": "string",
+                          "example": "VIP customer"
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "tag_123"
+                              },
+                              "tag": {
+                                "type": "string",
+                                "example": "VIP"
+                              },
+                              "normalizedTag": {
+                                "type": "string",
+                                "example": "vip"
+                              },
+                              "isSystemTag": {
+                                "type": "boolean",
+                                "example": true
+                              },
+                              "isUserTag": {
+                                "type": "boolean",
+                                "example": false
+                              }
+                            }
+                          }
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-01T10:00:00.000Z"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-01T10:00:00.000Z"
+                        }
+                      }
+                    },
+                    "userId": {
+                      "type": "string",
+                      "example": "user_123e4567-e89b-12d3-a456-426614174000"
+                    },
+                    "platform": {
+                      "type": "string",
+                      "example": "whatsapp"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "bot",
+                        "waiting",
+                        "service"
+                      ],
+                      "example": "service"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-01T10:00:00.000Z"
+                    },
+                    "attendedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-01T10:05:00.000Z"
+                    },
+                    "lastMessage": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "msg_123"
+                        },
+                        "messageId": {
+                          "type": "string",
+                          "example": "whatsapp_123456789_abc123"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Hello, I need help with my order"
+                        },
+                        "type": {
+                          "type": "string",
+                          "example": "text"
+                        },
+                        "fromMe": {
+                          "type": "boolean",
+                          "example": false
+                        },
+                        "sentAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-01T10:00:00.000Z"
+                        }
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "instance": {
+                          "type": "string",
+                          "example": "default"
+                        },
+                        "number": {
+                          "type": "string",
+                          "example": "+5511999999999"
+                        },
+                        "customerName": {
+                          "type": "string",
+                          "example": "João Silva"
+                        },
+                        "customerPhone": {
+                          "type": "string",
+                          "example": "+5511999999999"
+                        },
+                        "queuePosition": {
+                          "type": "number",
+                          "example": 1
+                        },
+                        "waitingTime": {
+                          "type": "number",
+                          "example": 300000
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid session ID",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 400,
+                  "message": "Session ID is required",
+                  "error": "Bad Request"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User not authenticated",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "Unauthorized",
+                  "error": "Unauthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found in queue",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 404,
+                  "message": "Queue item not found",
+                  "error": "Not Found"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get customer data from queue",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/chat/list": {
+      "get": {
+        "description": "Retrieve all queue items assigned to the authenticated user. Supports filtering by queue status.",
+        "operationId": "ChatController_listUserQueues",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number for pagination",
+            "schema": {
+              "example": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "example": 20,
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by queue status",
+            "schema": {
+              "enum": [
+                "bot",
+                "waiting",
+                "service"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User queues retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sessionId": {
+                            "type": "string",
+                            "example": "session_whatsapp_123456789"
+                          },
+                          "customerId": {
+                            "type": "string",
+                            "example": "123e4567-e89b-12d3-a456-426614174000"
+                          },
+                          "customer": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "123e4567-e89b-12d3-a456-426614174000"
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "João Silva"
+                              },
+                              "contact": {
+                                "type": "string",
+                                "example": "+5511999999999"
+                              },
+                              "platform": {
+                                "type": "string",
+                                "example": "whatsapp"
+                              },
+                              "priority": {
+                                "type": "number",
+                                "example": 5
+                              },
+                              "isGroup": {
+                                "type": "boolean",
+                                "example": false
+                              },
+                              "status": {
+                                "type": "string",
+                                "example": "active"
+                              }
+                            }
+                          },
+                          "userId": {
+                            "type": "string",
+                            "example": "user_123e4567-e89b-12d3-a456-426614174000"
+                          },
+                          "platform": {
+                            "type": "string",
+                            "example": "whatsapp"
+                          },
+                          "status": {
+                            "type": "string",
+                            "example": "service"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2024-01-01T10:00:00.000Z"
+                          },
+                          "attendedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2024-01-01T10:05:00.000Z"
+                          },
+                          "lastMessage": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "msg_123"
+                              },
+                              "message": {
+                                "type": "string",
+                                "example": "Hello, I need help with my order"
+                              },
+                              "type": {
+                                "type": "string",
+                                "example": "text"
+                              },
+                              "fromMe": {
+                                "type": "boolean",
+                                "example": false
+                              },
+                              "sentAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2024-01-01T10:00:00.000Z"
+                              }
+                            }
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "nullable": true
+                          },
+                          "isBot": {
+                            "type": "boolean",
+                            "example": false
+                          },
+                          "isWaiting": {
+                            "type": "boolean",
+                            "example": false
+                          },
+                          "isInService": {
+                            "type": "boolean",
+                            "example": true
+                          },
+                          "isAttended": {
+                            "type": "boolean",
+                            "example": true
+                          },
+                          "waitingTime": {
+                            "type": "number",
+                            "example": 300000
+                          }
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "number",
+                      "example": 5
+                    },
+                    "page": {
+                      "type": "number",
+                      "example": 1
+                    },
+                    "limit": {
+                      "type": "number",
+                      "example": 20
+                    },
+                    "totalPages": {
+                      "type": "number",
+                      "example": 1
+                    },
+                    "userId": {
+                      "type": "string",
+                      "example": "user_123e4567-e89b-12d3-a456-426614174000"
+                    },
+                    "userName": {
+                      "type": "string",
+                      "example": "John Doe"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User not authenticated",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "Unauthorized",
+                  "error": "Unauthorized"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all queues assigned to current user",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/dashboard/analytics/cards": {
+      "get": {
+        "operationId": "AnalyticsController_getCardsMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Cards metrics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardsMetricsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get dashboard cards metrics",
+        "tags": [
+          "Dashboard Analytics"
+        ]
+      }
+    },
+    "/dashboard/analytics/operators": {
+      "get": {
+        "operationId": "AnalyticsController_getOperators",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "default": 10,
+              "example": 10,
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term for user name, email, or contact",
+            "schema": {
+              "example": "john",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operators retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get operators with pagination and filtering",
+        "tags": [
+          "Dashboard Analytics"
+        ]
+      }
+    },
+    "/dashboard/analytics/services": {
+      "get": {
+        "operationId": "AnalyticsController_getActiveServices",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "default": 10,
+              "example": 10,
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term for protocol, customer name, or customer number",
+            "schema": {
+              "example": "john",
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Filter by direction (inbound/outbound)",
+            "schema": {
+              "enum": [
+                "inbound",
+                "outbound"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active services retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveServicesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get active services with pagination and filtering",
+        "tags": [
+          "Dashboard Analytics"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "CCS Backend API",
+    "description": "Multi platform CRM API for customer service",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      },
+      "Typebot-API-Key": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "Typebot API Key (Bearer token)"
+      }
+    },
+    "schemas": {
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "login": {
+            "type": "string",
+            "description": "User login identifier",
+            "example": "john.doe",
+            "minLength": 3,
+            "maxLength": 50
+          },
+          "password": {
+            "type": "string",
+            "description": "User password",
+            "example": "SecurePassword123!",
+            "minLength": 8
+          },
+          "name": {
+            "type": "string",
+            "description": "User full name",
+            "example": "John Doe",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "john.doe@example.com"
+          },
+          "contact": {
+            "type": "string",
+            "description": "User contact information (phone, etc.)",
+            "example": "+1234567890",
+            "minLength": 10,
+            "maxLength": 20
+          },
+          "profilePicture": {
+            "type": "string",
+            "description": "User profile picture URL",
+            "example": "https://example.com/profile.jpg"
+          },
+          "profile": {
+            "type": "string",
+            "description": "User profile/role",
+            "enum": [
+              "admin",
+              "supervisor",
+              "operator"
+            ],
+            "example": "operator"
+          },
+          "status": {
+            "type": "string",
+            "description": "User status",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "example": "active",
+            "default": "active"
+          }
+        },
+        "required": [
+          "login",
+          "password",
+          "name",
+          "email",
+          "contact",
+          "profile"
+        ]
+      },
+      "UserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "login": {
+            "type": "string",
+            "description": "User login identifier",
+            "example": "john.doe"
+          },
+          "name": {
+            "type": "string",
+            "description": "User full name",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "john.doe@example.com"
+          },
+          "contact": {
+            "type": "string",
+            "description": "User contact information",
+            "example": "+1234567890"
+          },
+          "profilePicture": {
+            "type": "string",
+            "description": "User profile picture URL",
+            "example": "https://example.com/profile.jpg"
+          },
+          "status": {
+            "type": "string",
+            "description": "User status",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "example": "active"
+          },
+          "profile": {
+            "type": "string",
+            "description": "User profile/role",
+            "enum": [
+              "admin",
+              "supervisor",
+              "operator"
+            ],
+            "example": "operator"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "User creation timestamp",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "User last update timestamp",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether user is active",
+            "example": true
+          },
+          "isAdmin": {
+            "type": "boolean",
+            "description": "Whether user is admin",
+            "example": false
+          },
+          "isSupervisor": {
+            "type": "boolean",
+            "description": "Whether user is supervisor",
+            "example": false
+          },
+          "isOperator": {
+            "type": "boolean",
+            "description": "Whether user is operator",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "login",
+          "name",
+          "email",
+          "contact",
+          "status",
+          "profile",
+          "createdAt",
+          "updatedAt",
+          "isActive",
+          "isAdmin",
+          "isSupervisor",
+          "isOperator"
+        ]
+      },
+      "UpdateUserByIdDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "login": {
+            "type": "string",
+            "description": "User login identifier",
+            "example": "john.doe",
+            "minLength": 3,
+            "maxLength": 50
+          },
+          "password": {
+            "type": "string",
+            "description": "User password",
+            "example": "NewSecurePassword123!",
+            "minLength": 8
+          },
+          "name": {
+            "type": "string",
+            "description": "User full name",
+            "example": "John Doe",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "john.doe@example.com"
+          },
+          "contact": {
+            "type": "string",
+            "description": "User contact information (phone, etc.)",
+            "example": "+1234567890",
+            "minLength": 10,
+            "maxLength": 20
+          },
+          "profilePicture": {
+            "type": "string",
+            "description": "User profile picture URL",
+            "example": "https://example.com/profile.jpg"
+          },
+          "profile": {
+            "type": "string",
+            "description": "User profile/role",
+            "enum": [
+              "admin",
+              "supervisor",
+              "operator"
+            ],
+            "example": "operator"
+          },
+          "status": {
+            "type": "string",
+            "description": "User status",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "example": "active"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "DeleteUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "login": {
+            "type": "string",
+            "description": "User login",
+            "example": "ubc.supervisor"
+          },
+          "password": {
+            "type": "string",
+            "description": "User password",
+            "example": "123456Ab!"
+          }
+        },
+        "required": [
+          "login",
+          "password"
+        ]
+      },
+      "LoginResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Access token"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token"
+          },
+          "tokenType": {
+            "type": "string",
+            "description": "Token type",
+            "example": "Bearer"
+          },
+          "expiresIn": {
+            "type": "number",
+            "description": "Token expiration time in seconds"
+          },
+          "user": {
+            "type": "object",
+            "description": "User information"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "tokenType",
+          "expiresIn",
+          "user"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "ValidateTokenDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "JWT token to validate"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ValidateResponseDto": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "description": "Token validity status"
+          },
+          "user": {
+            "type": "object",
+            "description": "User information if token is valid"
+          }
+        },
+        "required": [
+          "valid",
+          "user"
+        ]
+      },
+      "CreateCustomerDto": {
+        "type": "object",
+        "properties": {
+          "platformId": {
+            "type": "string",
+            "description": "Platform-specific ID (WhatsApp phone, Telegram user_id, etc.)",
+            "example": "5511999999999",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "pushName": {
+            "type": "string",
+            "description": "Display name from platform",
+            "example": "John Doe",
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "description": "Customer name",
+            "example": "John Doe",
+            "maxLength": 100
+          },
+          "profilePicUrl": {
+            "type": "string",
+            "description": "Profile picture URL",
+            "example": "https://example.com/profile.jpg",
+            "maxLength": 500
+          },
+          "contact": {
+            "type": "string",
+            "description": "Platform phone number",
+            "example": "+5511999999999",
+            "maxLength": 20
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address",
+            "example": "john.doe@example.com"
+          },
+          "cpf": {
+            "type": "string",
+            "description": "CPF (Brazilian individual tax ID)",
+            "example": "12345678901",
+            "maxLength": 14
+          },
+          "cnpj": {
+            "type": "string",
+            "description": "CNPJ (Brazilian company tax ID)",
+            "example": "12345678000195",
+            "maxLength": 18
+          },
+          "donorCode": {
+            "type": "string",
+            "description": "Donor code",
+            "example": "DONOR123",
+            "maxLength": 100
+          },
+          "priority": {
+            "type": "number",
+            "description": "Priority level for customer service",
+            "example": 5,
+            "minimum": 0,
+            "maximum": 10,
+            "default": 0
+          },
+          "isGroup": {
+            "type": "boolean",
+            "description": "Whether this is a group contact",
+            "example": false,
+            "default": false
+          },
+          "skipBot": {
+            "type": "boolean",
+            "description": "Whether to skip bot interaction for this customer",
+            "example": false,
+            "default": false
+          },
+          "type": {
+            "type": "string",
+            "description": "Customer type",
+            "enum": [
+              "contact"
+            ],
+            "example": "contact",
+            "default": "contact"
+          },
+          "status": {
+            "type": "string",
+            "description": "Customer status",
+            "enum": [
+              "active",
+              "inactive",
+              "blocked"
+            ],
+            "example": "active",
+            "default": "active"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform type",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp",
+            "default": "whatsapp"
+          },
+          "observations": {
+            "type": "string",
+            "description": "Internal notes/observations",
+            "example": "VIP customer, prefers morning calls",
+            "maxLength": 1000
+          },
+          "tags": {
+            "description": "Customer tags",
+            "example": [
+              "vip",
+              "premium"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "platformId"
+        ]
+      },
+      "CustomerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Customer unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "platformId": {
+            "type": "string",
+            "description": "Platform-specific ID",
+            "example": "5511999999999"
+          },
+          "pushName": {
+            "type": "string",
+            "description": "Display name from platform",
+            "example": "John Doe"
+          },
+          "name": {
+            "type": "string",
+            "description": "Customer name",
+            "example": "John Doe"
+          },
+          "profilePicUrl": {
+            "type": "string",
+            "description": "Profile picture URL",
+            "example": "https://example.com/profile.jpg"
+          },
+          "contact": {
+            "type": "string",
+            "description": "Platform phone number",
+            "example": "+5511999999999"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address",
+            "example": "john.doe@example.com"
+          },
+          "cpf": {
+            "type": "string",
+            "description": "CPF (Brazilian individual tax ID)",
+            "example": "12345678901"
+          },
+          "cnpj": {
+            "type": "string",
+            "description": "CNPJ (Brazilian company tax ID)",
+            "example": "12345678000195"
+          },
+          "donorCode": {
+            "type": "string",
+            "description": "Donor code",
+            "example": "DONOR123"
+          },
+          "priority": {
+            "type": "number",
+            "description": "Priority level for customer service",
+            "example": 5
+          },
+          "isGroup": {
+            "type": "boolean",
+            "description": "Whether this is a group contact",
+            "example": false
+          },
+          "type": {
+            "type": "string",
+            "description": "Customer type",
+            "enum": [
+              "contact"
+            ],
+            "example": "contact"
+          },
+          "status": {
+            "type": "string",
+            "description": "Customer status",
+            "enum": [
+              "active",
+              "inactive",
+              "blocked"
+            ],
+            "example": "active"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform type",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp"
+          },
+          "observations": {
+            "type": "string",
+            "description": "Internal notes/observations",
+            "example": "VIP customer, prefers morning calls"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Customer creation timestamp",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Customer last update timestamp",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether customer is active",
+            "example": true
+          },
+          "isBlocked": {
+            "type": "boolean",
+            "description": "Whether customer is blocked",
+            "example": false
+          },
+          "isHighPriority": {
+            "type": "boolean",
+            "description": "Whether customer has high priority",
+            "example": true
+          },
+          "isGroupContact": {
+            "type": "boolean",
+            "description": "Whether this is a group contact",
+            "example": false
+          },
+          "hasProfilePicture": {
+            "type": "boolean",
+            "description": "Whether customer has profile picture",
+            "example": true
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Display name for the customer",
+            "example": "John Doe"
+          },
+          "tags": {
+            "type": "array",
+            "description": "Customer tags",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "vip",
+              "premium"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "platformId",
+          "priority",
+          "isGroup",
+          "type",
+          "status",
+          "platform",
+          "createdAt",
+          "updatedAt",
+          "isActive",
+          "isBlocked",
+          "isHighPriority",
+          "isGroupContact",
+          "hasProfilePicture",
+          "displayName",
+          "tags"
+        ]
+      },
+      "UpdateCustomerByIdDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Customer unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "platformId": {
+            "type": "string",
+            "description": "Platform-specific ID (WhatsApp phone, Telegram user_id, etc.)",
+            "example": "5511999999999",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "pushName": {
+            "type": "string",
+            "description": "Display name from platform",
+            "example": "John Doe",
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "description": "Customer name",
+            "example": "John Doe",
+            "maxLength": 100
+          },
+          "profilePicUrl": {
+            "type": "string",
+            "description": "Profile picture URL",
+            "example": "https://example.com/profile.jpg",
+            "maxLength": 500
+          },
+          "contact": {
+            "type": "string",
+            "description": "Platform phone number",
+            "example": "+5511999999999",
+            "maxLength": 20
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address",
+            "example": "john.doe@example.com"
+          },
+          "cpf": {
+            "type": "string",
+            "description": "CPF (Brazilian individual tax ID)",
+            "example": "12345678901",
+            "maxLength": 14
+          },
+          "cnpj": {
+            "type": "string",
+            "description": "CNPJ (Brazilian company tax ID)",
+            "example": "12345678000195",
+            "maxLength": 18
+          },
+          "donorCode": {
+            "type": "string",
+            "description": "Donor code",
+            "example": "DONOR123",
+            "maxLength": 100
+          },
+          "priority": {
+            "type": "number",
+            "description": "Priority level for customer service",
+            "example": 5,
+            "minimum": 0,
+            "maximum": 10
+          },
+          "isGroup": {
+            "type": "boolean",
+            "description": "Whether this is a group contact",
+            "example": false
+          },
+          "type": {
+            "type": "string",
+            "description": "Customer type",
+            "enum": [
+              "contact"
+            ],
+            "example": "contact"
+          },
+          "status": {
+            "type": "string",
+            "description": "Customer status",
+            "enum": [
+              "active",
+              "inactive",
+              "blocked"
+            ],
+            "example": "active"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform type",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp"
+          },
+          "observations": {
+            "type": "string",
+            "description": "Internal notes/observations",
+            "example": "VIP customer, prefers morning calls",
+            "maxLength": 1000
+          },
+          "tags": {
+            "description": "Customer tags",
+            "example": [
+              "vip",
+              "premium"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "DeleteCustomerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Customer unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "CreateTabulationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Tabulation name",
+            "example": "Main Tabulation",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "description": "Tabulation description",
+            "example": "Description for main tabulation",
+            "maxLength": 500
+          },
+          "status": {
+            "type": "string",
+            "description": "Tabulation status",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "example": "active",
+            "default": "active"
+          },
+          "effective": {
+            "type": "boolean",
+            "description": "Whether tabulation is effective",
+            "example": false,
+            "default": false
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "TabulationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Tabulation unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tabulation name",
+            "example": "Main Tabulation"
+          },
+          "description": {
+            "type": "string",
+            "description": "Tabulation description",
+            "example": "Description for main tabulation"
+          },
+          "status": {
+            "type": "string",
+            "description": "Tabulation status",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "example": "active"
+          },
+          "effective": {
+            "type": "boolean",
+            "description": "Whether tabulation is effective",
+            "example": false
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Tabulation creation timestamp",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Tabulation last update timestamp",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether tabulation is active",
+            "example": true
+          },
+          "hasDescription": {
+            "type": "boolean",
+            "description": "Whether tabulation has description",
+            "example": true
+          },
+          "hasEffective": {
+            "type": "boolean",
+            "description": "Whether tabulation is effective",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "effective",
+          "createdAt",
+          "updatedAt",
+          "isActive",
+          "hasDescription",
+          "hasEffective"
+        ]
+      },
+      "UpdateTabulationByIdDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Tabulation unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tabulation name",
+            "example": "Updated Tabulation",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "description": "Tabulation description",
+            "example": "Updated description for tabulation",
+            "maxLength": 500
+          },
+          "status": {
+            "type": "string",
+            "description": "Tabulation status",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "example": "active"
+          },
+          "effective": {
+            "type": "boolean",
+            "description": "Whether tabulation is effective",
+            "example": false
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "DeleteTabulationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Tabulation unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "CreateHistoryDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier for tracking interactions",
+            "example": "session_123456789",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Friendly session identifier (e.g., 20251218175106819)",
+            "example": "20251218175106819",
+            "maxLength": 255
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID who handled the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID involved in the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "observations": {
+            "type": "string",
+            "description": "Internal notes/observations about the interaction",
+            "example": "Customer was very satisfied with the service",
+            "maxLength": 1000
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform where the interaction occurred",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp",
+            "default": "whatsapp"
+          },
+          "startedAt": {
+            "type": "string",
+            "description": "When the interaction started",
+            "example": "2024-01-01T10:00:00.000Z"
+          },
+          "attendedAt": {
+            "type": "string",
+            "description": "When the customer was attended (nullable)",
+            "example": "2024-01-01T10:05:00.000Z"
+          },
+          "finishedAt": {
+            "type": "string",
+            "description": "When the interaction finished (nullable)",
+            "example": "2024-01-01T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "sessionId",
+          "platform",
+          "startedAt"
+        ]
+      },
+      "HistoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "History unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier",
+            "example": "session_123456789"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Friendly session identifier (e.g., 20251218175106819)",
+            "example": "20251218175106819"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID who handled the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID involved in the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "observations": {
+            "type": "string",
+            "description": "Internal notes/observations",
+            "example": "Customer was very satisfied with the service"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform where the interaction occurred",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the interaction started",
+            "example": "2024-01-01T10:00:00.000Z"
+          },
+          "attendedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the customer was attended",
+            "example": "2024-01-01T10:05:00.000Z"
+          },
+          "finishedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the interaction finished",
+            "example": "2024-01-01T10:30:00.000Z"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "History creation timestamp",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "History last update timestamp",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether interaction is still active",
+            "example": false
+          },
+          "isAttended": {
+            "type": "boolean",
+            "description": "Whether customer was attended",
+            "example": true
+          },
+          "isFinished": {
+            "type": "boolean",
+            "description": "Whether interaction is finished",
+            "example": true
+          },
+          "duration": {
+            "type": "number",
+            "description": "Total duration in milliseconds",
+            "example": 1800000
+          },
+          "attendanceTime": {
+            "type": "number",
+            "description": "Time to attend customer in milliseconds",
+            "example": 300000
+          },
+          "hasObservations": {
+            "type": "boolean",
+            "description": "Whether interaction has observations",
+            "example": true
+          },
+          "isWhatsApp": {
+            "type": "boolean",
+            "description": "Whether platform is WhatsApp",
+            "example": true
+          },
+          "isTelegram": {
+            "type": "boolean",
+            "description": "Whether platform is Telegram",
+            "example": false
+          },
+          "isInstagram": {
+            "type": "boolean",
+            "description": "Whether platform is Instagram",
+            "example": false
+          },
+          "isFacebook": {
+            "type": "boolean",
+            "description": "Whether platform is Facebook",
+            "example": false
+          }
+        },
+        "required": [
+          "id",
+          "sessionId",
+          "platform",
+          "startedAt",
+          "createdAt",
+          "updatedAt",
+          "isActive",
+          "isAttended",
+          "isFinished",
+          "hasObservations",
+          "isWhatsApp",
+          "isTelegram",
+          "isInstagram",
+          "isFacebook"
+        ]
+      },
+      "UpdateHistoryByIdDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "History unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier for tracking interactions",
+            "example": "session_123456789",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID who handled the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID involved in the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Friendly session identifier (e.g., 20251218175106819)",
+            "example": "20251218175106819",
+            "maxLength": 255
+          },
+          "observations": {
+            "type": "string",
+            "description": "Internal notes/observations about the interaction",
+            "example": "Customer was very satisfied with the service",
+            "maxLength": 1000
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform where the interaction occurred",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp"
+          },
+          "startedAt": {
+            "type": "string",
+            "description": "When the interaction started",
+            "example": "2024-01-01T10:00:00.000Z"
+          },
+          "attendedAt": {
+            "type": "string",
+            "description": "When the customer was attended (nullable)",
+            "example": "2024-01-01T10:05:00.000Z"
+          },
+          "finishedAt": {
+            "type": "string",
+            "description": "When the interaction finished (nullable)",
+            "example": "2024-01-01T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "DeleteHistoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "History unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {}
+      },
+      "User": {
+        "type": "object",
+        "properties": {}
+      },
+      "Message": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateQueueDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier for tracking interactions",
+            "example": "session_123456789",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID involved in the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "customer": {
+            "description": "Customer object with actual customer data",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Customer"
+              }
+            ]
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID who will handle the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "user": {
+            "description": "User object with actual user data",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ]
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform where the interaction occurred",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the queue item",
+            "enum": [
+              "bot",
+              "waiting",
+              "service"
+            ],
+            "example": "bot",
+            "default": "bot"
+          },
+          "attendedAt": {
+            "type": "string",
+            "description": "When the customer was attended (nullable)",
+            "example": "2024-01-01T10:05:00.000Z"
+          },
+          "lastMessage": {
+            "description": "Last message in the conversation",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Message"
+              }
+            ]
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional platform-specific metadata",
+            "example": {
+              "instance": "instance_1",
+              "remoteJid": "5511999999999@s.whatsapp.net"
+            }
+          }
+        },
+        "required": [
+          "sessionId",
+          "customerId",
+          "userId",
+          "platform",
+          "status"
+        ]
+      },
+      "QueueResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier",
+            "example": "session_123456789"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID involved in the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID who will handle the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform where the interaction occurred",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the queue item",
+            "enum": [
+              "bot",
+              "waiting",
+              "service"
+            ],
+            "example": "waiting"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Queue creation timestamp",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "attendedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the customer was attended",
+            "example": "2024-01-01T10:05:00.000Z"
+          },
+          "isBot": {
+            "type": "boolean",
+            "description": "Whether status is bot",
+            "example": false
+          },
+          "isWaiting": {
+            "type": "boolean",
+            "description": "Whether status is waiting",
+            "example": true
+          },
+          "isInService": {
+            "type": "boolean",
+            "description": "Whether status is in service",
+            "example": false
+          },
+          "isAttended": {
+            "type": "boolean",
+            "description": "Whether customer was attended",
+            "example": true
+          },
+          "waitingTime": {
+            "type": "number",
+            "description": "Waiting time in milliseconds",
+            "example": 300000
+          },
+          "isWhatsApp": {
+            "type": "boolean",
+            "description": "Whether platform is WhatsApp",
+            "example": true
+          },
+          "isTelegram": {
+            "type": "boolean",
+            "description": "Whether platform is Telegram",
+            "example": false
+          },
+          "isInstagram": {
+            "type": "boolean",
+            "description": "Whether platform is Instagram",
+            "example": false
+          },
+          "isFacebook": {
+            "type": "boolean",
+            "description": "Whether platform is Facebook",
+            "example": false
+          }
+        },
+        "required": [
+          "sessionId",
+          "customerId",
+          "userId",
+          "platform",
+          "status",
+          "createdAt",
+          "isBot",
+          "isWaiting",
+          "isInService",
+          "isAttended",
+          "isWhatsApp",
+          "isTelegram",
+          "isInstagram",
+          "isFacebook"
+        ]
+      },
+      "UpdateQueueDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier for tracking interactions",
+            "example": "session_123456789",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID involved in the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID who will handle the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform where the interaction occurred",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the queue item",
+            "enum": [
+              "bot",
+              "waiting",
+              "service"
+            ],
+            "example": "waiting"
+          },
+          "attendedAt": {
+            "type": "string",
+            "description": "When the customer was attended (nullable)",
+            "example": "2024-01-01T10:05:00.000Z"
+          }
+        },
+        "required": [
+          "sessionId"
+        ]
+      },
+      "EndServiceDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier",
+            "example": "session_123456789"
+          },
+          "observations": {
+            "type": "string",
+            "description": "Internal notes/observations about the interaction",
+            "example": "Customer was very satisfied with the service",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "sessionId"
+        ]
+      },
+      "TransferQueueDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier of the queue to transfer",
+            "example": "session_123456789",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID to transfer the queue to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "sessionId",
+          "userId"
+        ]
+      },
+      "OtimaSendMessageDto": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string",
+            "description": "Recipient phone number in international format"
+          },
+          "type": {
+            "type": "string",
+            "description": "WhatsApp message type",
+            "enum": [
+              "text",
+              "image",
+              "video",
+              "audio",
+              "document"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "description": "Text message body"
+          },
+          "mediaUrl": {
+            "type": "string",
+            "description": "Media URL for image/video/audio/document"
+          },
+          "caption": {
+            "type": "string",
+            "description": "Caption for media content"
+          }
+        },
+        "required": [
+          "to",
+          "type"
+        ]
+      },
+      "OtimaSendTemplateMessageDto": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string",
+            "description": "Recipient phone number in international format"
+          },
+          "templateId": {
+            "type": "string",
+            "description": "Template identifier/name in Otima"
+          },
+          "parameters": {
+            "description": "Template parameters to interpolate in the message",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "to",
+          "templateId"
+        ]
+      },
+      "OtimaCheckWhatsappDto": {
+        "type": "object",
+        "properties": {
+          "mobileExist": {
+            "type": "string",
+            "description": "Phone number to check WhatsApp availability for"
+          }
+        },
+        "required": [
+          "mobileExist"
+        ]
+      },
+      "OtimaBulkTextMessageItemDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Message date in format YYYY-MM-DD HH:mm:ss"
+          },
+          "document": {
+            "type": "string",
+            "description": "Document identifier for tracking"
+          },
+          "text": {
+            "type": "string",
+            "description": "Text content of the message"
+          },
+          "whatsapp": {
+            "type": "string",
+            "description": "Recipient WhatsApp number in international format"
+          }
+        },
+        "required": [
+          "date",
+          "text",
+          "whatsapp"
+        ]
+      },
+      "OtimaBulkTextMessagesDto": {
+        "type": "object",
+        "properties": {
+          "brokerCode": {
+            "type": "string",
+            "description": "Broker code configured in Otima"
+          },
+          "customerCode": {
+            "type": "string",
+            "description": "Customer code configured in Otima"
+          },
+          "messages": {
+            "description": "Array of text messages to send in bulk",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OtimaBulkTextMessageItemDto"
+            }
+          }
+        },
+        "required": [
+          "messages"
+        ]
+      },
+      "OtimaBulkFileMessageItemDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Message date in format YYYY-MM-DD HH:mm:ss"
+          },
+          "document": {
+            "type": "string",
+            "description": "Document identifier for tracking"
+          },
+          "file": {
+            "type": "object",
+            "description": "File information to be sent",
+            "example": {
+              "caption": "myfile",
+              "file": "http://mydomain.com/myfile.pdf",
+              "mime_type": "application/pdf"
+            }
+          },
+          "whatsapp": {
+            "type": "string",
+            "description": "Recipient WhatsApp number in international format"
+          }
+        },
+        "required": [
+          "date",
+          "file",
+          "whatsapp"
+        ]
+      },
+      "OtimaBulkFileMessagesDto": {
+        "type": "object",
+        "properties": {
+          "brokerCode": {
+            "type": "string",
+            "description": "Broker code configured in Otima"
+          },
+          "customerCode": {
+            "type": "string",
+            "description": "Customer code configured in Otima"
+          },
+          "messages": {
+            "description": "Array of file/document messages to send in bulk",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OtimaBulkFileMessageItemDto"
+            }
+          }
+        },
+        "required": [
+          "messages"
+        ]
+      },
+      "OtimaBulkHsmMessageItemDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Message date in format YYYY-MM-DD HH:mm:ss"
+          },
+          "document": {
+            "type": "string",
+            "description": "Document identifier for tracking"
+          },
+          "hsm_file": {
+            "type": "object",
+            "description": "Optional HSM file (image or document) associated with the message",
+            "example": {
+              "name": "file.jpg",
+              "url": "https://mydomain.com/file.jpg"
+            }
+          },
+          "url_callback_mo": {
+            "type": "string",
+            "description": "Callback URL for MO (inbound) events"
+          },
+          "url_callback_status": {
+            "type": "string",
+            "description": "Callback URL for status events"
+          },
+          "variables": {
+            "type": "object",
+            "description": "Template variables map, e.g. { \"-var1-\": \"name\" }"
+          },
+          "whatsapp": {
+            "type": "string",
+            "description": "Recipient WhatsApp number in international format"
+          }
+        },
+        "required": [
+          "date",
+          "whatsapp"
+        ]
+      },
+      "OtimaBulkHsmMessagesDto": {
+        "type": "object",
+        "properties": {
+          "brokerCode": {
+            "type": "string",
+            "description": "Broker code configured in Otima"
+          },
+          "customerCode": {
+            "type": "string",
+            "description": "Customer code configured in Otima"
+          },
+          "templateCode": {
+            "type": "string",
+            "description": "Template code configured in Otima"
+          },
+          "messages": {
+            "description": "Array of HSM messages to send in bulk",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OtimaBulkHsmMessageItemDto"
+            }
+          }
+        },
+        "required": [
+          "templateCode",
+          "messages"
+        ]
+      },
+      "OtimaSingleHsmBase64FileDto": {
+        "type": "object",
+        "properties": {
+          "brokerCode": {
+            "type": "string",
+            "description": "Broker code configured in Otima"
+          },
+          "customerCode": {
+            "type": "string",
+            "description": "Customer code configured in Otima"
+          },
+          "date": {
+            "type": "string",
+            "description": "Message date in format YYYY-MM-DD HH:mm:ss"
+          },
+          "document": {
+            "type": "string",
+            "description": "Document identifier for tracking"
+          },
+          "file": {
+            "type": "object",
+            "description": "File data in base64 format",
+            "example": {
+              "base64_data": "JVBERi0xLjUK...",
+              "mime_type": "application/pdf",
+              "name": "file.pdf"
+            }
+          },
+          "templateCode": {
+            "type": "string",
+            "description": "Template code configured in Otima"
+          },
+          "variables": {
+            "type": "object",
+            "description": "Template variables map, e.g. { \"-var1-\": \"name\" }"
+          },
+          "whatsapp": {
+            "type": "string",
+            "description": "Recipient WhatsApp number in international format"
+          }
+        },
+        "required": [
+          "date",
+          "file",
+          "templateCode",
+          "whatsapp"
+        ]
+      },
+      "OtimaMailmanHsmDto": {
+        "type": "object",
+        "properties": {
+          "brokerCode": {
+            "type": "string",
+            "description": "Broker code configured in Otima"
+          },
+          "customerCode": {
+            "type": "string",
+            "description": "Customer code configured in Otima"
+          },
+          "date": {
+            "type": "string",
+            "description": "Message date in format YYYY-MM-DD HH:mm:ss"
+          },
+          "document": {
+            "type": "string",
+            "description": "Document identifier for tracking"
+          },
+          "failed_message": {
+            "type": "string",
+            "description": "Fallback text used when message fails"
+          },
+          "file": {
+            "type": "object",
+            "description": "File data in base64 format",
+            "example": {
+              "base64_data": "JVBERi0xLjUK...",
+              "mime_type": "application/pdf",
+              "name": "file.pdf"
+            }
+          },
+          "linha_digitavel": {
+            "type": "string",
+            "description": "Line digit (linha digitável) of the document"
+          },
+          "templateCode": {
+            "type": "string",
+            "description": "Template code configured in Otima"
+          },
+          "variables": {
+            "type": "object",
+            "description": "Template variables map, e.g. { \"-var1-\": \"name\" }"
+          },
+          "whatsapp": {
+            "type": "string",
+            "description": "Recipient WhatsApp number in international format"
+          }
+        },
+        "required": [
+          "date",
+          "file",
+          "linha_digitavel",
+          "templateCode",
+          "whatsapp"
+        ]
+      },
+      "MessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Message ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "messageId": {
+            "type": "string",
+            "description": "Platform-specific message identifier",
+            "example": "msg_123456789"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier",
+            "example": "session_123456789"
+          },
+          "senderType": {
+            "type": "string",
+            "description": "Sender type",
+            "enum": [
+              "system",
+              "bot",
+              "customer",
+              "user"
+            ],
+            "example": "customer"
+          },
+          "recipientType": {
+            "type": "string",
+            "description": "Recipient type",
+            "enum": [
+              "system",
+              "bot",
+              "customer",
+              "user"
+            ],
+            "example": "user"
+          },
+          "customerId": {
+            "type": "object",
+            "description": "Customer ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "userId": {
+            "type": "object",
+            "description": "User ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "fromMe": {
+            "type": "boolean",
+            "description": "From me flag",
+            "example": false
+          },
+          "system": {
+            "type": "boolean",
+            "description": "System message flag",
+            "example": false
+          },
+          "isGroup": {
+            "type": "boolean",
+            "description": "Group message flag",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "description": "Message content",
+            "example": "Hello, how can I help you?"
+          },
+          "media": {
+            "type": "string",
+            "description": "Media URL",
+            "example": "https://example.com/image.jpg"
+          },
+          "type": {
+            "type": "string",
+            "description": "Message type",
+            "enum": [
+              "text",
+              "image",
+              "video",
+              "audio",
+              "document",
+              "location",
+              "contact",
+              "sticker",
+              "other"
+            ],
+            "example": "text"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp"
+          },
+          "status": {
+            "type": "string",
+            "description": "Message status",
+            "enum": [
+              "pending",
+              "sent",
+              "delivered",
+              "read",
+              "failed",
+              "deleted"
+            ],
+            "example": "sent"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata (optional) - may contain platform response data",
+            "example": null,
+            "nullable": true
+          },
+          "replyMessageId": {
+            "type": "string",
+            "description": "Reply message ID",
+            "example": "msg_123456789"
+          },
+          "sentAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Sent timestamp",
+            "example": "2024-01-01T10:00:00.000Z"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Created timestamp",
+            "example": "2024-01-01T10:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Updated timestamp",
+            "example": "2024-01-01T10:00:00.000Z"
+          },
+          "isText": {
+            "type": "boolean",
+            "description": "Is text message",
+            "example": true
+          },
+          "isMedia": {
+            "type": "boolean",
+            "description": "Is media message",
+            "example": false
+          },
+          "isFromCustomer": {
+            "type": "boolean",
+            "description": "Is from customer",
+            "example": true
+          },
+          "isGroupMessage": {
+            "type": "boolean",
+            "description": "Is group message",
+            "example": false
+          },
+          "hasReply": {
+            "type": "boolean",
+            "description": "Has reply",
+            "example": false
+          },
+          "hasMedia": {
+            "type": "boolean",
+            "description": "Has media",
+            "example": false
+          }
+        },
+        "required": [
+          "id",
+          "messageId",
+          "sessionId",
+          "senderType",
+          "recipientType",
+          "customerId",
+          "userId",
+          "fromMe",
+          "system",
+          "isGroup",
+          "type",
+          "platform",
+          "status",
+          "sentAt",
+          "createdAt",
+          "updatedAt",
+          "isText",
+          "isMedia",
+          "isFromCustomer",
+          "isGroupMessage",
+          "hasReply",
+          "hasMedia"
+        ]
+      },
+      "SessionMessagesResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier",
+            "example": "session_123456789"
+          },
+          "messages": {
+            "description": "Array of messages",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageResponseDto"
+            }
+          },
+          "count": {
+            "type": "number",
+            "description": "Number of messages",
+            "example": 25
+          },
+          "source": {
+            "type": "string",
+            "description": "Data source",
+            "example": "redis"
+          }
+        },
+        "required": [
+          "sessionId",
+          "messages",
+          "count",
+          "source"
+        ]
+      },
+      "PaginatedMessagesResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Array of messages",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of messages",
+            "example": 100
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of messages per page",
+            "example": 20
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 5
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "SendMessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Message ID in PostgreSQL",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "messageId": {
+            "type": "string",
+            "description": "Platform-specific message identifier",
+            "example": "msg_123456789"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier",
+            "example": "session_123456789"
+          },
+          "senderType": {
+            "type": "string",
+            "description": "Sender type",
+            "enum": [
+              "system",
+              "bot",
+              "customer",
+              "user"
+            ],
+            "example": "user"
+          },
+          "recipientType": {
+            "type": "string",
+            "description": "Recipient type",
+            "enum": [
+              "system",
+              "bot",
+              "customer",
+              "user"
+            ],
+            "example": "customer"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID who sent the message",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "fromMe": {
+            "type": "boolean",
+            "description": "From me flag",
+            "example": true
+          },
+          "system": {
+            "type": "boolean",
+            "description": "System message flag",
+            "example": false
+          },
+          "isGroup": {
+            "type": "boolean",
+            "description": "Group message flag",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "description": "Message content",
+            "example": "Hello, how can I help you?"
+          },
+          "media": {
+            "type": "string",
+            "description": "Media URL",
+            "example": "https://example.com/image.jpg"
+          },
+          "type": {
+            "type": "string",
+            "description": "Message type",
+            "enum": [
+              "text",
+              "image",
+              "video",
+              "audio",
+              "document",
+              "location",
+              "contact",
+              "sticker",
+              "other"
+            ],
+            "example": "text"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp"
+          },
+          "status": {
+            "type": "string",
+            "description": "Message status",
+            "example": "pending"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata",
+            "example": {
+              "customData": "value"
+            }
+          },
+          "replyMessageId": {
+            "type": "string",
+            "description": "Reply message ID",
+            "example": "msg_123456789"
+          },
+          "sentAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Sent timestamp",
+            "example": "2024-01-01T10:00:00.000Z"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Created timestamp",
+            "example": "2024-01-01T10:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Updated timestamp",
+            "example": "2024-01-01T10:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "messageId",
+          "sessionId",
+          "senderType",
+          "recipientType",
+          "customerId",
+          "userId",
+          "fromMe",
+          "system",
+          "isGroup",
+          "type",
+          "platform",
+          "status",
+          "sentAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CardsMetricsResponseDto": {
+        "type": "object",
+        "properties": {
+          "customersWaitingInQueue": {
+            "type": "number",
+            "description": "Number of customers waiting in queue",
+            "example": 5
+          },
+          "customersInService": {
+            "type": "number",
+            "description": "Number of customers in service",
+            "example": 12
+          },
+          "finishedServices": {
+            "type": "number",
+            "description": "Number of finished services today",
+            "example": 45
+          },
+          "receivedMessages": {
+            "type": "number",
+            "description": "Number of received messages today",
+            "example": 234
+          },
+          "sentMessages": {
+            "type": "number",
+            "description": "Number of sent messages today",
+            "example": 198
+          },
+          "readMessages": {
+            "type": "number",
+            "description": "Number of read messages today",
+            "example": 156
+          },
+          "total": {
+            "type": "number",
+            "description": "Total messages (received + sent) today",
+            "example": 432
+          }
+        },
+        "required": [
+          "customersWaitingInQueue",
+          "customersInService",
+          "finishedServices",
+          "receivedMessages",
+          "sentMessages",
+          "readMessages",
+          "total"
+        ]
+      },
+      "OperatorResponseDto": {
+        "type": "object",
+        "properties": {
+          "socketId": {
+            "type": "string",
+            "description": "Socket ID",
+            "example": "socket_abc123"
+          },
+          "socketOnlineTime": {
+            "type": "number",
+            "description": "Socket online time in milliseconds",
+            "example": 3600000
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "userName": {
+            "type": "string",
+            "description": "User name",
+            "example": "John Doe"
+          },
+          "userEmail": {
+            "type": "string",
+            "description": "User email",
+            "example": "john.doe@example.com"
+          },
+          "userContact": {
+            "type": "string",
+            "description": "User contact",
+            "example": "+1234567890"
+          },
+          "userAvatar": {
+            "type": "string",
+            "description": "User avatar/profile picture",
+            "example": "https://example.com/avatar.jpg"
+          },
+          "userLoginAt": {
+            "type": "object",
+            "description": "User last login timestamp",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "userLogoutAt": {
+            "type": "object",
+            "description": "User last logout timestamp",
+            "example": "2024-01-15T18:00:00Z"
+          },
+          "userLastActivityAt": {
+            "type": "object",
+            "description": "User last activity timestamp",
+            "example": "2024-01-15T17:45:00Z"
+          },
+          "customersInService": {
+            "type": "number",
+            "description": "Number of customers in service for this user today",
+            "example": 3
+          },
+          "finishedServices": {
+            "type": "number",
+            "description": "Number of finished services for this user today",
+            "example": 8
+          }
+        },
+        "required": [
+          "socketId",
+          "socketOnlineTime",
+          "userId",
+          "userName",
+          "userEmail",
+          "userContact",
+          "userAvatar",
+          "userLoginAt",
+          "userLogoutAt",
+          "userLastActivityAt",
+          "customersInService",
+          "finishedServices"
+        ]
+      },
+      "OperatorsResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Array of operators",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperatorResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of operators",
+            "example": 25
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of operators per page",
+            "example": 10
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 3
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "ActiveServiceResponseDto": {
+        "type": "object",
+        "properties": {
+          "protocol": {
+            "type": "object",
+            "description": "Service protocol",
+            "example": "20251218175106819"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session ID",
+            "example": "session_123456789"
+          },
+          "customerName": {
+            "type": "object",
+            "description": "Customer name",
+            "example": "Jane Smith"
+          },
+          "customerNumber": {
+            "type": "object",
+            "description": "Customer number/contact",
+            "example": "+1234567890"
+          },
+          "donorCode": {
+            "type": "object",
+            "description": "Donor code",
+            "example": "DONOR123"
+          },
+          "operatorName": {
+            "type": "object",
+            "description": "Operator name",
+            "example": "John Doe"
+          },
+          "direction": {
+            "type": "string",
+            "description": "Service direction",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "example": "inbound"
+          },
+          "attendedAt": {
+            "type": "object",
+            "description": "When the service was attended",
+            "example": "2024-01-15T10:30:00Z"
+          }
+        },
+        "required": [
+          "protocol",
+          "sessionId",
+          "customerName",
+          "customerNumber",
+          "donorCode",
+          "operatorName",
+          "direction",
+          "attendedAt"
+        ]
+      },
+      "ActiveServicesResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Array of active services",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActiveServiceResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of active services",
+            "example": 15
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of services per page",
+            "example": 10
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 2
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      }
+    }
+  }
+}

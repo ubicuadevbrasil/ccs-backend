@@ -13,6 +13,9 @@ export async function up(knex: Knex): Promise<void> {
     table.enum('profile', ['admin', 'supervisor', 'operator']).notNullable();
     table.timestamp('createdAt').defaultTo(knex.fn.now());
     table.timestamp('updatedAt').defaultTo(knex.fn.now());
+    table.timestamp('loginAt').nullable(); // When the user last logged in
+    table.timestamp('logoutAt').nullable(); // When the user last logged out
+    table.timestamp('lastActivityAt').nullable(); // When the user was last active
     
     // Indexes for better performance
     table.index(['login']);
@@ -20,6 +23,7 @@ export async function up(knex: Knex): Promise<void> {
     table.index(['contact']);
     table.index(['status']);
     table.index(['profile']);
+    table.index(['lastActivityAt']);
   });
 }
 

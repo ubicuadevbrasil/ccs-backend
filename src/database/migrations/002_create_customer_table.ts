@@ -11,6 +11,7 @@ export async function up(knex: Knex): Promise<void> {
     table.text('email'); // Optional email
     table.text('cpf'); // Optional CPF (Brazilian individual tax ID)
     table.text('cnpj'); // Optional CNPJ (Brazilian company tax ID)
+    table.text('donorCode'); // Optional Donor Code (Brazilian donor code)
     table.integer('priority').defaultTo(0); // Priority level for customer service
     table.boolean('isGroup').notNullable().defaultTo(false);
     table.enum('type', ['contact']).notNullable().defaultTo('contact');
@@ -33,6 +34,7 @@ export async function up(knex: Knex): Promise<void> {
     table.index(['email']);
     table.index(['cpf']);
     table.index(['cnpj']);
+    table.index(['donorCode']);
     table.index(['isGroup']);
   });
 }

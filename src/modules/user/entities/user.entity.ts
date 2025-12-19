@@ -23,6 +23,9 @@ export interface UserEntity {
   profile: UserProfile;
   createdAt: Date;
   updatedAt: Date;
+  loginAt?: Date;
+  logoutAt?: Date;
+  lastActivityAt?: Date;
 }
 
 export class User implements UserEntity {
@@ -40,6 +43,9 @@ export class User implements UserEntity {
   profile: UserProfile;
   createdAt: Date;
   updatedAt: Date;
+  loginAt?: Date;
+  logoutAt?: Date;
+  lastActivityAt?: Date;
 
   constructor(partial: Partial<User>) {
     Object.assign(this, partial);

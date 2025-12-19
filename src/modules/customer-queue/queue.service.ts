@@ -442,7 +442,6 @@ export class QueueService {
       sessionId: queue.sessionId,
       userId: queue.userId,
       customerId: queue.customerId,
-      transferId: endServiceDto.transferId,
       observations: endServiceDto.observations,
       platform: queue.platform,
       startedAt: queue.createdAt.toISOString(),
@@ -749,6 +748,25 @@ export class QueueService {
       clearedCount: allSessionIds.length,
       messagesClearedCount
     };
+  }
+
+  /**
+   * Get session IDs by status
+   */
+  async getSessionIdsByStatus(status: QueueStatus): Promise<string[]> {
+    const allSessionIds = await this.redis.zrevrange(this.QUEUE_INDEX_KEY, 0, -1);
+    const sessionIds: string[] = [];
+
+    for (const sessionId of allSessionIds) {
+      const queueKey = `${this.QUEUE_KEY_PREFIX}${sessionId}`;
+      const queueData = await this.redis.hgetall(queueKey);
+
+      if (Object.keys(queueData).length > 0 && queueData.status === status) {
+        sessionIds.push(sessionId);
+      }
+    }
+
+    return sessionIds;
   }
 
   /**

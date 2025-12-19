@@ -143,4 +143,19 @@ export class CustomerController {
   async deleteCustomer(@Body() deleteCustomerDto: DeleteCustomerDto): Promise<void> {
     return this.customerService.deleteCustomer(deleteCustomerDto.id);
   }
+
+  @Get('tags')
+  @ApiOperation({ summary: 'Get all unique customer tags' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all unique customer tags',
+    schema: {
+      type: 'array',
+      items: { type: 'string' },
+      example: ['vip', 'premium', 'new-customer'],
+    },
+  })
+  async getAllTags(): Promise<string[]> {
+    return this.customerService.getAllTags();
+  }
 }

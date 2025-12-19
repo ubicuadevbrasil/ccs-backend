@@ -14,9 +14,7 @@ import {
 import { PlatformMessageData } from '../messages/message-mapper';
 import { PlatformChatServiceFactory } from './services/platform-chat.service.factory';
 import { EvolutionMessageData } from './services/chat.evolution.service';
-import { VonageMessageData } from './services/chat.vonage.service';
 import { EvolutionMessageMapperService } from '../whatsapp/evolution/evolution-mapper';
-import { VonageMessageMapperService } from '../whatsapp/vonage/vonage-mapper';
 
 @Injectable()
 export class ChatService {
@@ -27,7 +25,6 @@ export class ChatService {
         private readonly platformChatServiceFactory: PlatformChatServiceFactory,
         private readonly queueService: QueueService,
         private readonly configService: ConfigService,
-        @Inject('VONAGE_MAPPER') private readonly vonageMapper: VonageMessageMapperService | null,
         @Inject('EVOLUTION_MAPPER') @Optional() private readonly evolutionMapper?: EvolutionMessageMapperService | null,
     ) { }
 
@@ -209,20 +206,12 @@ export class ChatService {
             case MessagePlatform.WHATSAPP:
                 // Check which WhatsApp provider is enabled
                 const isEvolutionEnabled = this.configService.get<boolean>('EVOLUTION_WHATSAPP', false);
-                const isVonageEnabled = this.configService.get<boolean>('VONAGE_WHATSAPP', true); // Default to true for backward compatibility
                 
-                // Determine which provider to use based on platform type or flags
-                if (customerData.platformType === 'vonage' || customerData.platformType === 'vonage-sandbox') {
-                    if (!isVonageEnabled || !this.vonageMapper) {
-                        throw new Error('Vonage WhatsApp is disabled. Please enable VONAGE_WHATSAPP=true or use Evolution provider');
-                    }
-                    return this.vonageMapper.createVonageData(sendMessageDto, user, customerData);
-                } else {
-                    if (!isEvolutionEnabled || !this.evolutionMapper) {
-                        throw new Error('Evolution WhatsApp is disabled. Please enable EVOLUTION_WHATSAPP=true or use Vonage provider');
-                    }
-                    return this.evolutionMapper.createEvolutionData(sendMessageDto, user, customerData);
+                // Use Evolution provider
+                if (!isEvolutionEnabled || !this.evolutionMapper) {
+                    throw new Error('Evolution WhatsApp is disabled. Please enable EVOLUTION_WHATSAPP=true');
                 }
+                return this.evolutionMapper.createEvolutionData(sendMessageDto, user, customerData);
             case MessagePlatform.INSTAGRAM:
                 // TODO: Implement Instagram data creation
                 throw new Error('Instagram platform data creation not implemented yet');

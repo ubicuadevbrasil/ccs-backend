@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CustomerService } from '../../../customer/customer.service';
 import { QueueService } from '../../../customer-queue/queue.service';
 import { MessageStorageService } from '../../../messages/message-storage.service';
-import { AtosBotService } from '../../../atos-bot/atos-bot.service';
 import { Customer, CustomerPlatform, CustomerStatus, CustomerType } from '../../../customer/entities/customer.entity';
 import { MessagePlatform } from '../../../messages/entities/message.entity';
 import { CreateCustomerDto } from '../../../customer/dto/customer.dto';
@@ -19,7 +18,6 @@ export class OtimaWebhookService {
     private readonly customerService: CustomerService,
     private readonly queueService: QueueService,
     private readonly messageStorageService: MessageStorageService,
-    private readonly atosBotService: AtosBotService,
   ) {}
 
   async processInboundMessages(payload: OtimaWebhookMessagePayload[]): Promise<void> {
@@ -72,10 +70,6 @@ export class OtimaWebhookService {
       queue.sessionId,
     );
     await this.queueService.updateLastMessage(queue.sessionId, lastMessage.redisMessage);
-    const text = lastMessage.redisMessage?.message ?? '';
-    if (text) {
-      await this.atosBotService.processMessage(queue.sessionId, customer.id, text);
-    }
   }
 
   private async processStatusUpdate(status: OtimaStatusWebhookPayload): Promise<void> {

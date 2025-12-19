@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MessageType, MessagePlatform, MessageStatus, SenderType, RecipientType } from './entities/message.entity';
 import { EvolutionMessageMapperService } from '../whatsapp/evolution/evolution-mapper';
-import { VonageMessageMapperService } from '../whatsapp/vonage/vonage-mapper';
 import { OtimaMessageMapperService } from '../whatsapp/otima/otima-mapper';
 
 /**
@@ -94,13 +93,11 @@ export class TelegramMessageMapper implements PlatformMessageMapper {
 @Injectable()
 export class MessageMapperService {
   private readonly evolutionMapper: EvolutionMessageMapperService;
-  private readonly vonageMapper: VonageMessageMapperService;
   private readonly otimaMapper: OtimaMessageMapperService;
 
   constructor() {
     // Create instances directly to avoid circular dependencies
     this.evolutionMapper = new EvolutionMessageMapperService();
-    this.vonageMapper = new VonageMessageMapperService();
     this.otimaMapper = new OtimaMessageMapperService();
   }
 
@@ -108,11 +105,6 @@ export class MessageMapperService {
    * Get the appropriate mapper for a platform and platform type
    */
   getMapper(platform: MessagePlatform, platformType?: string): PlatformMessageMapper {
-    // Check if this is a Vonage platform (production or sandbox)
-    if (platformType === 'vonage' || platformType === 'vonage-sandbox') {
-      return this.vonageMapper;
-    }
-
     // Check if this is an Otima platform
     if (platformType === 'otima') {
       return this.otimaMapper;

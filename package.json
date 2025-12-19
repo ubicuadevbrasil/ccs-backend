@@ -20,9 +20,13 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:migrate": "knex migrate:latest",
     "db:migrate:rollback": "knex migrate:rollback",
+    "db:migrate:rollback:all": "knex migrate:rollback --all",
+    "db:migrate:reset": "knex migrate:rollback --all && knex migrate:latest",
+    "db:reset": "ts-node -r tsconfig-paths/register src/database/reset-database.ts",
     "db:seed": "knex seed:run",
     "db:make:migration": "knex migrate:make",
-    "db:make:seed": "knex seed:make"
+    "db:make:seed": "knex seed:make",
+    "swagger:export": "ts-node -r tsconfig-paths/register scripts/export-swagger-schema.ts"
   },
   "dependencies": {
     "@golevelup/nestjs-rabbitmq": "^6.0.2",

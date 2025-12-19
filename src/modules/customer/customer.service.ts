@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectKnex } from 'nestjs-knex';
 import { Knex } from 'knex';
+import { randomUUID } from 'crypto';
 import { Customer, CustomerEntity, CustomerStatus, CustomerType, CustomerPlatform } from './entities/customer.entity';
 import { CustomerTag } from './entities/customer-tag.entity';
 import { CreateCustomerDto, UpdateCustomerDto, CustomerQueryDto } from './dto/customer.dto';
@@ -73,6 +74,7 @@ export class CustomerService {
       // Insert customer
       const [newCustomer] = await trx('customer')
         .insert({
+          id: randomUUID(),
           ...customerData,
           priority: customerData.priority || 0,
           isGroup: customerData.isGroup || false,
@@ -87,6 +89,7 @@ export class CustomerService {
       // Insert tags if provided
       if (tags && tags.length > 0) {
         const tagInserts = tags.map(tag => ({
+          id: randomUUID(),
           customerId: newCustomer.id,
           tag: tag.trim(),
           createdAt: this.knex.fn.now(),
@@ -126,7 +129,8 @@ export class CustomerService {
           .orWhereILike('email', `%${query.search}%`)
           .orWhereILike('contact', `%${query.search}%`)
           .orWhereILike('platformId', `%${query.search}%`)
-          .orWhereILike('pushName', `%${query.search}%`);
+          .orWhereILike('pushName', `%${query.search}%`)
+          .orWhereILike('donorCode', `%${query.search}%`);
       });
     }
 
@@ -380,6 +384,7 @@ export class CustomerService {
         // Add new tags
         if (tagsToAdd.length > 0) {
           const tagInserts = tagsToAdd.map(tag => ({
+            id: randomUUID(),
             customerId: id,
             tag: tag,
             createdAt: this.knex.fn.now(),
@@ -440,6 +445,7 @@ export class CustomerService {
 
     const [newTag] = await this.knex('customerTags')
       .insert({
+        id: randomUUID(),
         customerId,
         tag: tag.trim(),
         createdAt: this.knex.fn.now(),
@@ -510,6 +516,7 @@ export class CustomerService {
 
     if (newTags.length > 0) {
       const tagInserts = newTags.map(tag => ({
+        id: randomUUID(),
         customerId,
         tag: tag.trim(),
         createdAt: this.knex.fn.now(),
@@ -532,5 +539,17 @@ export class CustomerService {
     if (deletedRows === 0) {
       throw new NotFoundException('No tags found for this customer');
     }
+  }
+
+  /**
+   * Get all unique customer tags from the database
+   */
+  async getAllTags(): Promise<string[]> {
+    const tags = await this.knex('customerTags')
+      .select('tag')
+      .distinct('tag')
+      .orderBy('tag', 'asc');
+
+    return tags.map(t => t.tag);
   }
 }

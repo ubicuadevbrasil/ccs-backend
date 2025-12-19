@@ -25,6 +25,16 @@ export class CreateHistoryDto {
   sessionId: string;
 
   @ApiPropertyOptional({
+    description: 'Friendly session identifier (e.g., 20251218175106819)',
+    example: '20251218175106819',
+    maxLength: 255,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  protocol?: string;
+
+  @ApiPropertyOptional({
     description: 'User ID who handled the interaction',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
@@ -39,14 +49,6 @@ export class CreateHistoryDto {
   @IsOptional()
   @IsUUID()
   customerId?: string;
-
-  @ApiPropertyOptional({
-    description: 'Tabulation ID used in the interaction',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @IsOptional()
-  @IsUUID()
-  transferId?: string;
 
   @ApiPropertyOptional({
     description: 'Internal notes/observations about the interaction',
@@ -122,12 +124,14 @@ export class UpdateHistoryDto {
   customerId?: string;
 
   @ApiPropertyOptional({
-    description: 'Tabulation ID used in the interaction',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Friendly session identifier (e.g., 20251218175106819)',
+    example: '20251218175106819',
+    maxLength: 255,
   })
   @IsOptional()
-  @IsUUID()
-  transferId?: string;
+  @IsString()
+  @MaxLength(255)
+  protocol?: string;
 
   @ApiPropertyOptional({
     description: 'Internal notes/observations about the interaction',
@@ -187,6 +191,12 @@ export class HistoryResponseDto {
   sessionId: string;
 
   @ApiPropertyOptional({
+    description: 'Friendly session identifier (e.g., 20251218175106819)',
+    example: '20251218175106819',
+  })
+  protocol?: string;
+
+  @ApiPropertyOptional({
     description: 'User ID who handled the interaction',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
@@ -197,12 +207,6 @@ export class HistoryResponseDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   customerId?: string;
-
-  @ApiPropertyOptional({
-    description: 'Tabulation ID used in the interaction',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  transferId?: string;
 
   @ApiPropertyOptional({
     description: 'Internal notes/observations',
@@ -353,12 +357,12 @@ export class HistoryQueryDto {
   customerId?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by tabulation ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Filter by protocol',
+    example: '20251218175106819',
   })
   @IsOptional()
-  @IsUUID()
-  transferId?: string;
+  @IsString()
+  protocol?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by platform',
@@ -458,12 +462,14 @@ export class UpdateHistoryByIdDto {
   customerId?: string;
 
   @ApiPropertyOptional({
-    description: 'Tabulation ID used in the interaction',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Friendly session identifier (e.g., 20251218175106819)',
+    example: '20251218175106819',
+    maxLength: 255,
   })
   @IsOptional()
-  @IsUUID()
-  transferId?: string;
+  @IsString()
+  @MaxLength(255)
+  protocol?: string;
 
   @ApiPropertyOptional({
     description: 'Internal notes/observations about the interaction',

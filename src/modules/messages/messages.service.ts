@@ -274,6 +274,7 @@ export class MessagesService {
       // Create new reaction
       await this.knex('messageReactions')
         .insert({
+          id: randomUUID(),
           messageId: addReactionDto.messageId,
           reactorId: addReactionDto.reactorId,
           emoji: addReactionDto.emoji,

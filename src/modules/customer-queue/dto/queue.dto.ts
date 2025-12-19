@@ -366,14 +366,6 @@ export class EndServiceDto {
   @IsString()
   @MaxLength(1000)
   observations?: string;
-
-  @ApiPropertyOptional({
-    description: 'Tabulation ID used in the interaction',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @IsOptional()
-  @IsUUID()
-  transferId?: string;
 }
 
 export class TransferQueueDto {
@@ -464,7 +456,7 @@ export class CreateQueueWhatsAppDto {
   @ApiPropertyOptional({
     description: 'WhatsApp-specific metadata including bot context',
     example: { 
-      platform: 'vonage',
+      platform: 'otima',
       contactUid: '5511999999999',
       bot: {
         sessionBot: '1e33a04d-08a4-41ba-bb02-2793c47643ea',

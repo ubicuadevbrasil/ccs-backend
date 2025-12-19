@@ -1,6 +1,5 @@
 import { MessageType, MessagePlatform, MessageStatus, SenderType, RecipientType } from '../../messages/entities/message.entity';
 import { OtimaWebhookMessagePayload } from './interfaces/otima.interface';
-import { VonageMessageData as ChatVonageMessageData } from '../../chat/services/chat.vonage.service';
 
 export interface OtimaMessageMapper {
   mapToPlatformMessageData(rawMessage: any, platform: MessagePlatform): OtimaMessageData;
@@ -106,7 +105,14 @@ export class OtimaMessageMapperService implements OtimaMessageMapper {
     return undefined;
   }
 
-  createOtimaData(sendMessageDto: any, user: any, customerData: any): ChatVonageMessageData {
+  createOtimaData(sendMessageDto: any, user: any, customerData: any): {
+    toNumber: string;
+    text?: string;
+    mediaUrl?: string;
+    messageType: MessageType;
+    replyMessageId?: string;
+    isGroup: boolean;
+  } {
     const toNumber = customerData.number || customerData.customerPhone;
     if (!toNumber) {
       throw new Error('Phone number is required for sending messages via Otima');
@@ -115,7 +121,6 @@ export class OtimaMessageMapperService implements OtimaMessageMapper {
       toNumber,
       text: sendMessageDto.message,
       mediaUrl: sendMessageDto.media,
-      mediaType: undefined,
       messageType: sendMessageDto.type || MessageType.TEXT,
       replyMessageId: sendMessageDto.replyMessageId,
       isGroup: sendMessageDto.isGroup ?? customerData.isGroup,

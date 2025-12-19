@@ -231,4 +231,40 @@ export class UserService {
     }
   }
 
+  /**
+   * Update user login timestamp
+   */
+  async updateLoginAt(userId: string): Promise<void> {
+    await this.knex('user')
+      .where('id', userId)
+      .update({
+        loginAt: this.knex.fn.now(),
+        updatedAt: this.knex.fn.now(),
+      });
+  }
+
+  /**
+   * Update user logout timestamp
+   */
+  async updateLogoutAt(userId: string): Promise<void> {
+    await this.knex('user')
+      .where('id', userId)
+      .update({
+        logoutAt: this.knex.fn.now(),
+        updatedAt: this.knex.fn.now(),
+      });
+  }
+
+  /**
+   * Update user last activity timestamp
+   */
+  async updateLastActivityAt(userId: string): Promise<void> {
+    await this.knex('user')
+      .where('id', userId)
+      .update({
+        lastActivityAt: this.knex.fn.now(),
+        updatedAt: this.knex.fn.now(),
+      });
+  }
+
 }

@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SocketGateway } from './socket.gateway';
 import { SocketService } from './socket.service';
+import { UserModule } from '../user/user.module';
 
 /**
  * Socket Module
@@ -20,6 +21,7 @@ import { SocketService } from './socket.service';
 @Module({
   imports: [
     ConfigModule,
+    UserModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -32,6 +34,6 @@ import { SocketService } from './socket.service';
     }),
   ],
   providers: [SocketGateway, SocketService],
-  exports: [SocketService],
+  exports: [SocketService, SocketGateway],
 })
 export class SocketModule {}

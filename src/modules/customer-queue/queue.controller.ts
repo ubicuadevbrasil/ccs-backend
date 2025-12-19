@@ -40,7 +40,7 @@ import { User } from '../user/entities/user.entity';
 export class QueueController {
   constructor(private readonly queueService: QueueService) {}
 
-  @Post()
+  @Post('create')
   @ApiOperation({ summary: 'Create a new queue item' })
   @ApiResponse({
     status: 201,
@@ -60,7 +60,7 @@ export class QueueController {
     return queue as QueueResponseDto;
   }
 
-  @Get()
+  @Get('list')
   @ApiOperation({ summary: 'Get all queue items with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
@@ -113,7 +113,7 @@ export class QueueController {
     return queue as QueueResponseDto;
   }
 
-  @Patch()
+  @Patch('update')
   @ApiOperation({ summary: 'Update queue item by session ID' })
   @ApiResponse({
     status: 200,

@@ -99,3 +99,18 @@ export function getMonthNameFromNumber(monthNumber: number): string {
   return monthNames[monthIndex] || 'Unknown';
 }
 
+/**
+ * Generate a protocol identifier from current date/time
+ * 
+ * Removes all non-numeric characters from ISO date string to create
+ * a friendly session identifier (e.g., "20251218175106819")
+ * 
+ * @returns Protocol string with only digits from ISO date format
+ * 
+ * @example
+ * getProtocol() // Returns: "20251218175106819" (format: YYYYMMDDHHmmssSSS)
+ */
+export function getProtocol(): string {
+  return new Date().toISOString().replace(/[^\d]/g, '');
+}
+

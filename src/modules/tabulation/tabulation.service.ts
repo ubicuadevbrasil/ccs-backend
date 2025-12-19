@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectKnex } from 'nestjs-knex';
 import { Knex } from 'knex';
+import { randomUUID } from 'crypto';
 import { Tabulation, TabulationEntity, TabulationStatus } from './entities/tabulation.entity';
 import { CreateTabulationDto, UpdateTabulationDto, TabulationQueryDto } from './dto/tabulation.dto';
 
@@ -38,9 +39,10 @@ export class TabulationService {
       // Insert tabulation
       const [newTabulation] = await trx('tabulation')
         .insert({
+          id: randomUUID(),
           ...tabulationData,
           status: tabulationData.status || TabulationStatus.ACTIVE,
-          orders: tabulationData.orders || false,
+          effective: tabulationData.effective || false,
           createdAt: this.knex.fn.now(),
           updatedAt: this.knex.fn.now(),
         })

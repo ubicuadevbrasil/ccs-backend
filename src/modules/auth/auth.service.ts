@@ -40,6 +40,9 @@ export class AuthService {
       throw new UnauthorizedException('User account is inactive');
     }
 
+    // Update login timestamp
+    await this.userService.updateLoginAt(user.id);
+
     const payload = { 
       sub: user.id, 
       login: user.login,
@@ -141,6 +144,8 @@ export class AuthService {
   }
 
   async logout(userId: string) {
+    // Update logout timestamp
+    await this.userService.updateLogoutAt(userId);
     // In a real application, you might want to blacklist the token
     // For now, we'll just return a success response
     return { message: 'Logged out successfully' };

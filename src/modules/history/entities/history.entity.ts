@@ -11,9 +11,9 @@ export enum HistoryPlatform {
 export interface HistoryEntity {
   id: string;
   sessionId: string;
+  protocol?: string;
   userId?: string;
   customerId?: string;
-  transferId?: string;
   observations?: string;
   platform: HistoryPlatform;
   startedAt: Date;
@@ -26,9 +26,9 @@ export interface HistoryEntity {
 export class History implements HistoryEntity {
   id: string;
   sessionId: string;
+  protocol?: string;
   userId?: string;
   customerId?: string;
-  transferId?: string;
   observations?: string;
   platform: HistoryPlatform;
   startedAt: Date;

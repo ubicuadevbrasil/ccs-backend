@@ -114,6 +114,16 @@ export class CreateCustomerDto {
   cnpj?: string;
 
   @ApiPropertyOptional({
+    description: 'Donor code',
+    example: 'DONOR123',
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  donorCode?: string;
+
+  @ApiPropertyOptional({
     description: 'Priority level for customer service',
     example: 5,
     minimum: 0,
@@ -279,6 +289,16 @@ export class UpdateCustomerDto {
   cnpj?: string;
 
   @ApiPropertyOptional({
+    description: 'Donor code',
+    example: 'DONOR123',
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  donorCode?: string;
+
+  @ApiPropertyOptional({
     description: 'Priority level for customer service',
     example: 5,
     minimum: 0,
@@ -410,6 +430,12 @@ export class CustomerResponseDto {
     example: '12345678000195',
   })
   cnpj?: string;
+
+  @ApiPropertyOptional({
+    description: 'Donor code',
+    example: 'DONOR123',
+  })
+  donorCode?: string;
 
   @ApiProperty({
     description: 'Priority level for customer service',
@@ -689,6 +715,16 @@ export class UpdateCustomerByIdDto {
   @IsString()
   @MaxLength(18)
   cnpj?: string;
+
+  @ApiPropertyOptional({
+    description: 'Donor code',
+    example: 'DONOR123',
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  donorCode?: string;
 
   @ApiPropertyOptional({
     description: 'Priority level for customer service',
