@@ -6,6 +6,11 @@ import { MessagesModule } from '../messages/messages.module';
 import { EvolutionModule } from '../whatsapp/evolution/evolution.module';
 import { OtimaModule } from '../whatsapp/otima/otima.module';
 import { QueueModule } from '../customer-queue/queue.module';
+import { UserModule } from '../user';
+import { CustomerModule } from '../customer/customer.module';
+import { HistoryModule } from '../history/history.module';
+import { TemplatesModule } from '../templates/templates.module';
+import { SocketModule } from '../socket/socket.module';
 import { ChatOtimaService } from './services/chat.otima.service';
 import { PlatformChatServiceFactory } from './services/platform-chat.service.factory';
 import { EvolutionMessageMapperService } from '../whatsapp/evolution/evolution-mapper';
@@ -21,6 +26,11 @@ export class ChatModule {
         MessagesModule,
         OtimaModule,
         QueueModule,
+        UserModule,
+        CustomerModule,
+        HistoryModule,
+        TemplatesModule,
+        SocketModule,
       ],
       controllers: [ChatController],
       providers: [
@@ -40,6 +50,11 @@ export class ChatModule {
         MessagesModule,
         OtimaModule,
         QueueModule,
+        UserModule,
+        CustomerModule,
+        HistoryModule,
+        TemplatesModule,
+        SocketModule,
       ],
       controllers: [ChatController],
       providers: [

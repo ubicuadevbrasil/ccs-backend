@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger, Inject, NotFoundException, ConflictException } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { MessagesService } from './messages.service';
 import { MessageType, MessagePlatform, MessageStatus, Message } from './entities/message.entity';
@@ -67,22 +67,53 @@ export class MessageStorageService {
     try {
       this.logger.log(`Storing message for session: ${platformMessageData.sessionId}`);
 
-      // Store in Redis (mimics PostgreSQL schema)
-      const redisMessage = await this.storeMessageInRedis(platformMessageData);
-      
-      // Store in PostgreSQL
-      const postgresMessage = await this.storeMessageInPostgreSQL(platformMessageData);
+      let postgresMessage: Message;
+      let redisMessage: any;
+      try {
+        postgresMessage = await this.storeMessageInPostgreSQL(platformMessageData);
+      } catch (error) {
+        if (error instanceof ConflictException) {
+          this.logger.warn(`Duplicate messageId ${platformMessageData.messageId}, returning existing (idempotent)`);
+          postgresMessage = await this.messagesService.findMessageByMessageId(platformMessageData.messageId);
+          redisMessage = this.buildRedisMessageFromPostgres(postgresMessage);
+          return { redisMessage, postgresMessage };
+        }
+        throw error;
+      }
 
+      redisMessage = await this.storeMessageInRedis(platformMessageData);
       this.logger.debug(`Message stored successfully for session: ${platformMessageData.sessionId}`);
-      
-      return {
-        redisMessage,
-        postgresMessage,
-      };
+      return { redisMessage, postgresMessage };
     } catch (error) {
       this.logger.error(`Error storing message for session ${platformMessageData.sessionId}:`, error);
       throw error;
     }
+  }
+
+  private buildRedisMessageFromPostgres(message: Message): any {
+    return {
+      id: message.id,
+      messageId: message.messageId,
+      sessionId: message.sessionId,
+      senderType: message.senderType,
+      recipientType: message.recipientType,
+      customerId: message.customerId,
+      userId: message.userId,
+      fromMe: message.fromMe,
+      system: message.system,
+      isGroup: message.isGroup,
+      message: message.message,
+      media: message.media,
+      type: message.type,
+      platform: message.platform,
+      status: message.status,
+      replyMessageId: message.replyMessageId,
+      sentAt: message.sentAt instanceof Date ? message.sentAt.toISOString() : message.sentAt,
+      createdAt: message.createdAt instanceof Date ? message.createdAt.toISOString() : message.createdAt,
+      updatedAt: message.updatedAt instanceof Date ? message.updatedAt.toISOString() : message.updatedAt,
+      redisTimestamp: Date.now(),
+      metadata: message.metadata,
+    };
   }
 
   /**
@@ -179,11 +210,9 @@ export class MessageStorageService {
     try {
       const redisKey = `${this.REDIS_MESSAGE_KEY_PREFIX}${sessionId}`;
       
-      // Get messages from Redis (most recent first)
+      // Get messages from Redis (newest at head via lpush), return ascending (oldest first)
       const messages = await this.redis.lrange(redisKey, 0, limit - 1);
-      
-      // Parse JSON strings back to objects
-      return messages.map(msg => JSON.parse(msg));
+      return messages.map(msg => JSON.parse(msg)).reverse();
     } catch (error) {
       this.logger.error(`Error retrieving messages from Redis for session ${sessionId}:`, error);
       throw error;
@@ -390,25 +419,22 @@ export class MessageStorageService {
     try {
       this.logger.log(`Handling Evolution message update for messageId: ${messageId} with status: ${evolutionStatus}`);
 
-      // Map Evolution API status to MessageStatus enum
-      const messageStatus = this.mapEvolutionStatusToMessageStatus(evolutionStatus);
-      
+      const messageStatus = this.messageMapperService.mapAckStatusToMessageStatus('evolution', evolutionStatus);
+
       if (!messageStatus) {
         this.logger.warn(`Unknown Evolution status: ${evolutionStatus}, skipping update`);
         return;
       }
 
-      // Find the message in PostgreSQL to get sessionId
       const message = await this.messagesService.findMessageByMessageId(messageId);
-      
+
       if (!message) {
-        this.logger.warn(`Message not found for messageId: ${messageId}`);
-        return;
+        throw new NotFoundException(
+          `Message not found for messageId: ${messageId}. ACK must only update existing messages; ensure the message webhook runs before the ACK webhook.`,
+        );
       }
 
-      // Update message status in both Redis and PostgreSQL
       await this.updateMessageStatus(message.sessionId, messageId, messageStatus);
-
       this.logger.log(`Successfully updated message ${messageId} to status ${messageStatus}`);
     } catch (error) {
       this.logger.error(`Error handling Evolution message update for ${messageId}:`, error);
@@ -417,20 +443,38 @@ export class MessageStorageService {
   }
 
   /**
-   * Map Evolution API status to MessageStatus enum
+   * Handle Otima ACK status update.
+   * Maps Otima CallbackStatus (Portuguese) to MessageStatus and updates existing message.
+   * @returns Session ID, message ID and new status when update succeeded, for socket emission; null otherwise.
    */
-  private mapEvolutionStatusToMessageStatus(evolutionStatus: string): MessageStatus | null {
-    switch (evolutionStatus) {
-      case 'SERVER_ACK':
-        return MessageStatus.SENT;
-      case 'DELIVERY_ACK':
-        return MessageStatus.DELIVERED;
-      case 'READ':
-        return MessageStatus.READ;
-      case 'PLAYED':
-        return MessageStatus.READ; // Treat played as read
-      default:
+  async handleOtimaMessageUpdate(
+    messageId: string,
+    otimaStatus: string,
+  ): Promise<{ sessionId: string; messageId: string; status: MessageStatus } | null> {
+    try {
+      this.logger.log(`Handling Otima message update for messageId: ${messageId} with status: ${otimaStatus}`);
+
+      const messageStatus = this.messageMapperService.mapAckStatusToMessageStatus('otima', otimaStatus);
+
+      if (!messageStatus) {
+        this.logger.warn(`Unknown Otima status: ${otimaStatus}, skipping update`);
         return null;
+      }
+
+      const message = await this.messagesService.findMessageByMessageId(messageId);
+
+      if (!message) {
+        throw new NotFoundException(
+          `Message not found for messageId: ${messageId}. ACK must only update existing messages; ensure the message webhook runs before the ACK webhook.`,
+        );
+      }
+
+      await this.updateMessageStatus(message.sessionId, messageId, messageStatus);
+      this.logger.log(`Successfully updated message ${messageId} to status ${messageStatus}`);
+      return { sessionId: message.sessionId, messageId, status: messageStatus };
+    } catch (error) {
+      this.logger.error(`Error handling Otima message update for ${messageId}:`, error);
+      throw error;
     }
   }
 

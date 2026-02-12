@@ -2,8 +2,8 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { InjectKnex } from 'nestjs-knex';
 import { Knex } from 'knex';
 import { randomUUID } from 'crypto';
-import { History, HistoryEntity, HistoryPlatform } from './entities/history.entity';
-import { CreateHistoryDto, UpdateHistoryDto, HistoryQueryDto } from './dto/history.dto';
+import { History, HistoryEntity, HistoryPlatform, HistoryDirection } from './entities/history.entity';
+import { CreateHistoryDto, UpdateHistoryDto, HistoryQueryDto, HistoryListResponseDto, HistoryListItemDto } from './dto/history.dto';
 
 export interface PaginatedResult<T> {
   data: T[];
@@ -77,87 +77,214 @@ export class HistoryService {
   /**
    * Find all history records with pagination and filtering
    */
-  async findAllHistory(query: HistoryQueryDto): Promise<PaginatedResult<History>> {
+  async findAllHistory(query: HistoryQueryDto): Promise<HistoryListResponseDto> {
     const page = parseInt(query.page || '1');
     const limit = parseInt(query.limit || '10');
     const offset = (page - 1) * limit;
 
-    let queryBuilder = this.knex('history');
+    let queryBuilder = this.knex('history')
+      .leftJoin('customer', 'history.customerId', 'customer.id')
+      .leftJoin('user', 'history.userId', 'user.id');
 
-    // Apply search filter
+    // Apply search filter - expanded to include customer name, donorCode, history donorCode, and user name
     if (query.search) {
       queryBuilder = queryBuilder.where((builder) => {
         builder
-          .whereILike('sessionId', `%${query.search}%`)
-          .orWhereILike('protocol', `%${query.search}%`)
-          .orWhereILike('observations', `%${query.search}%`);
+          .whereILike('history.sessionId', `%${query.search}%`)
+          .orWhereILike('history.protocol', `%${query.search}%`)
+          .orWhereILike('history.observations', `%${query.search}%`)
+          .orWhereILike('history.donorCode', `%${query.search}%`)
+          .orWhereILike('customer.name', `%${query.search}%`)
+          .orWhereILike('customer.donorCode', `%${query.search}%`)
+          .orWhereILike('user.name', `%${query.search}%`);
       });
     }
 
     // Apply user filter
     if (query.userId) {
-      queryBuilder = queryBuilder.where('userId', query.userId);
+      queryBuilder = queryBuilder.where('history.userId', query.userId);
     }
 
     // Apply customer filter
     if (query.customerId) {
-      queryBuilder = queryBuilder.where('customerId', query.customerId);
+      queryBuilder = queryBuilder.where('history.customerId', query.customerId);
     }
 
     // Apply protocol filter
     if (query.protocol) {
-      queryBuilder = queryBuilder.where('protocol', query.protocol);
+      queryBuilder = queryBuilder.where('history.protocol', query.protocol);
     }
 
     // Apply platform filter
     if (query.platform) {
-      queryBuilder = queryBuilder.where('platform', query.platform);
+      queryBuilder = queryBuilder.where('history.platform', query.platform);
+    }
+
+    // Apply direction filter
+    if (query.direction) {
+      queryBuilder = queryBuilder.where('history.direction', query.direction);
     }
 
     // Apply date range filters
     if (query.startDate) {
-      queryBuilder = queryBuilder.where('startedAt', '>=', new Date(query.startDate));
+      queryBuilder = queryBuilder.where('history.startedAt', '>=', new Date(query.startDate));
     }
 
     if (query.endDate) {
-      queryBuilder = queryBuilder.where('startedAt', '<=', new Date(query.endDate));
+      queryBuilder = queryBuilder.where('history.startedAt', '<=', new Date(query.endDate));
     }
 
     // Apply status filters
     if (query.isActive === 'true') {
-      queryBuilder = queryBuilder.whereNull('finishedAt');
+      queryBuilder = queryBuilder.whereNull('history.finishedAt');
     } else if (query.isActive === 'false') {
-      queryBuilder = queryBuilder.whereNotNull('finishedAt');
+      queryBuilder = queryBuilder.whereNotNull('history.finishedAt');
     }
 
     if (query.isAttended === 'true') {
-      queryBuilder = queryBuilder.whereNotNull('attendedAt');
+      queryBuilder = queryBuilder.whereNotNull('history.attendedAt');
     } else if (query.isAttended === 'false') {
-      queryBuilder = queryBuilder.whereNull('attendedAt');
+      queryBuilder = queryBuilder.whereNull('history.attendedAt');
     }
 
     if (query.isFinished === 'true') {
-      queryBuilder = queryBuilder.whereNotNull('finishedAt');
+      queryBuilder = queryBuilder.whereNotNull('history.finishedAt');
     } else if (query.isFinished === 'false') {
-      queryBuilder = queryBuilder.whereNull('finishedAt');
+      queryBuilder = queryBuilder.whereNull('history.finishedAt');
     }
 
     // Get total count
     const totalQuery = queryBuilder.clone();
-    const [{ count }] = await totalQuery.count('* as count');
+    const [{ count }] = await totalQuery.countDistinct('history.id as count');
     const total = parseInt(count as string);
 
-    // Get paginated results
-    const histories = await queryBuilder
-      .select('*')
-      .orderBy('startedAt', 'desc')
+    // Get paginated history IDs first to avoid duplicates from joins
+    const historyIdsQuery = queryBuilder.clone()
+      .select('history.id', 'history.finishedAt', 'history.startedAt')
+      .distinct('history.id', 'history.finishedAt', 'history.startedAt')
+      .orderBy('history.finishedAt', 'desc')
+      .orderBy('history.startedAt', 'desc')
       .limit(limit)
       .offset(offset);
 
-    const historyEntities = histories.map(history => new History(history));
+    const historyIds = (await historyIdsQuery).map((row: any) => row.id);
+
+    // Get full history records for the selected IDs
+    const histories = historyIds.length > 0
+      ? await this.knex('history')
+          .whereIn('id', historyIds)
+          .select(
+            'id',
+            'sessionId',
+            'protocol',
+            'platform',
+            'direction',
+            'donorCode',
+            'observations',
+            'startedAt',
+            'attendedAt',
+            'finishedAt',
+            'customerId',
+            'userId',
+            'tabulationId'
+          )
+          .orderBy('finishedAt', 'desc')
+          .orderBy('startedAt', 'desc')
+      : [];
+
+    // Get customer, user, and tabulation data for each history record
+    const customerIds = [...new Set(histories.map(h => h.customerId).filter(Boolean))];
+    const userIds = [...new Set(histories.map(h => h.userId).filter(Boolean))];
+    const tabulationIds = [...new Set(histories.map(h => h.tabulationId).filter(Boolean))];
+
+    // Fetch customers with their tags
+    const customers = customerIds.length > 0
+      ? await this.knex('customer')
+          .whereIn('id', customerIds)
+          .select('id', 'platformId', 'name', 'email', 'cpf', 'profilePicUrl as profilePicture', 'donorCode', 'observations')
+      : [];
+
+    // Fetch customer tags
+    const customerTagsMap = new Map<string, string[]>();
+    if (customerIds.length > 0) {
+      const customerTags = await this.knex('customerTags')
+        .whereIn('customerId', customerIds)
+        .select('customerId', 'tag');
+
+      customerTags.forEach(tag => {
+        if (!customerTagsMap.has(tag.customerId)) {
+          customerTagsMap.set(tag.customerId, []);
+        }
+        customerTagsMap.get(tag.customerId)!.push(tag.tag);
+      });
+    }
+
+    // Fetch users
+    const users = userIds.length > 0
+      ? await this.knex('user')
+          .whereIn('id', userIds)
+          .select('id', 'name', 'profilePicture', 'email', 'contact')
+      : [];
+
+    // Fetch tabulations
+    const tabulations = tabulationIds.length > 0
+      ? await this.knex('tabulation')
+          .whereIn('id', tabulationIds)
+          .select('id', 'name', 'description', 'effective')
+      : [];
+
+    // Create maps for quick lookup
+    const customerMap = new Map(customers.map(c => [c.id, c]));
+    const userMap = new Map(users.map(u => [u.id, u]));
+    const tabulationMap = new Map(tabulations.map(t => [t.id, t]));
+
+    // Build response items
+    const data: HistoryListItemDto[] = histories.map(history => {
+      const customer = history.customerId ? customerMap.get(history.customerId) : undefined;
+      const user = history.userId ? userMap.get(history.userId) : undefined;
+      const tabulation = history.tabulationId ? tabulationMap.get(history.tabulationId) : undefined;
+      const tags = history.customerId ? customerTagsMap.get(history.customerId) || [] : undefined;
+
+      return {
+        id: history.id,
+        sessionId: history.sessionId,
+        protocol: history.protocol,
+        platform: history.platform,
+        direction: history.direction,
+        donorCode: history.donorCode,
+        observations: history.observations,
+        startedAt: history.startedAt,
+        attendedAt: history.attendedAt,
+        finishedAt: history.finishedAt,
+        customer: customer ? {
+          id: customer.id,
+          platformId: customer.platformId,
+          name: customer.name,
+          email: customer.email,
+          cpf: customer.cpf,
+          profilePicture: customer.profilePicture,
+          donorCode: customer.donorCode,
+          observations: customer.observations,
+          tags: tags,
+        } : undefined,
+        user: user ? {
+          id: user.id,
+          name: user.name,
+          profilePicture: user.profilePicture,
+          email: user.email,
+          contact: user.contact,
+        } : undefined,
+        tabulation: tabulation ? {
+          id: tabulation.id,
+          name: tabulation.name,
+          description: tabulation.description,
+          effective: tabulation.effective,
+        } : undefined,
+      };
+    });
 
     return {
-      data: historyEntities,
+      data,
       total,
       page,
       limit,
@@ -168,7 +295,7 @@ export class HistoryService {
   /**
    * Find history by ID
    */
-  async findHistoryById(id: string): Promise<History> {
+  async findHistoryById(id: string): Promise<any[]> {
     const history = await this.knex('history')
       .where('id', id)
       .first();
@@ -177,31 +304,66 @@ export class HistoryService {
       throw new NotFoundException('History not found');
     }
 
-    return new History(history);
+    // Fetch messages from PostgreSQL with customer and user names
+    const messages = await this.knex('messages')
+      .leftJoin('customer', 'messages.customerId', 'customer.id')
+      .leftJoin('user', 'messages.userId', 'user.id')
+      .where('messages.sessionId', history.sessionId)
+      .select(
+        'messages.*',
+        'customer.name as customerName',
+        'user.name as userName'
+      )
+      .orderBy('messages.sentAt', 'asc');
+
+    return messages;
   }
 
   /**
    * Find history by session ID
    */
-  async findHistoryBySessionId(sessionId: string): Promise<History[]> {
-    const histories = await this.knex('history')
-      .where('sessionId', sessionId)
-      .select('*')
-      .orderBy('startedAt', 'desc');
+  async findHistoryBySessionId(sessionId: string): Promise<any[]> {
+    // Fetch messages from PostgreSQL for this session with customer and user names
+    const messages = await this.knex('messages')
+      .leftJoin('customer', 'messages.customerId', 'customer.id')
+      .leftJoin('user', 'messages.userId', 'user.id')
+      .where('messages.sessionId', sessionId)
+      .select(
+        'messages.*',
+        'customer.name as customerName',
+        'user.name as userName'
+      )
+      .orderBy('messages.sentAt', 'asc');
 
-    return histories.map(history => new History(history));
+    return messages;
   }
 
   /**
    * Find active history by session ID
    */
-  async findActiveHistoryBySessionId(sessionId: string): Promise<History | null> {
+  async findActiveHistoryBySessionId(sessionId: string): Promise<any[] | null> {
     const history = await this.knex('history')
       .where('sessionId', sessionId)
       .whereNull('finishedAt')
       .first();
 
-    return history ? new History(history) : null;
+    if (!history) {
+      return null;
+    }
+
+    // Fetch messages from PostgreSQL with customer and user names
+    const messages = await this.knex('messages')
+      .leftJoin('customer', 'messages.customerId', 'customer.id')
+      .leftJoin('user', 'messages.userId', 'user.id')
+      .where('messages.sessionId', sessionId)
+      .select(
+        'messages.*',
+        'customer.name as customerName',
+        'user.name as userName'
+      )
+      .orderBy('messages.sentAt', 'asc');
+
+    return messages;
   }
 
   /**

@@ -15,7 +15,7 @@ export interface OtimaSendMessageResponse {
 }
 
 export interface OtimaWebhookMessagePayload {
-  message_id: string;
+  message_id?: string | null;
   phone: string;
   username?: string;
   type: string;

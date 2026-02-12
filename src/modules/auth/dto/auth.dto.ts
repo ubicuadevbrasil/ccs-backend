@@ -47,6 +47,7 @@ export class LoginResponseDto {
     name: string;
     email: string;
     contact: string;
+    profilePicture?: string;
     profile: string;
     status: string;
   };
@@ -63,6 +64,7 @@ export class ValidateResponseDto {
     name: string;
     email: string;
     contact: string;
+    profilePicture?: string;
     profile: string;
     status: string;
   };

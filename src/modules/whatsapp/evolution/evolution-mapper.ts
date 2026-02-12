@@ -114,6 +114,26 @@ export class EvolutionMessageMapperService implements EvolutionMessageMapper {
   }
 
   /**
+   * Map Evolution API ACK status to MessageStatus enum
+   */
+  mapAckStatusToMessageStatus(evolutionStatus: string): MessageStatus | null {
+    const normalized = evolutionStatus?.toLowerCase();
+    switch (normalized) {
+      case 'server_ack':
+      case 'sent':
+        return MessageStatus.SENT;
+      case 'delivery_ack':
+      case 'delivered':
+        return MessageStatus.DELIVERED;
+      case 'read':
+      case 'played':
+        return MessageStatus.READ;
+      default:
+        return null;
+    }
+  }
+
+  /**
    * Create Evolution API specific data for sending messages
    */
   createEvolutionData(sendMessageDto: any, user: any, customerData: any): ChatEvolutionMessageData {

@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { MessageType, MessagePlatform, MessageStatus, SenderType, RecipientType } from '../../messages/entities/message.entity';
 import { OtimaWebhookMessagePayload } from './interfaces/otima.interface';
 
@@ -33,8 +34,10 @@ export class OtimaMessageMapperService implements OtimaMessageMapper {
     const customer = rawMessage.customer;
     const sessionId = rawMessage.sessionId;
     const messageType = this.determineMessageType(payload.payload.type);
+    // Otima may send session ID instead of message_id for inbound; use UUID until confirmed
+    const messageId = randomUUID();
     return {
-      messageId: payload.message_id,
+      messageId,
       sessionId,
       senderType: SenderType.CUSTOMER,
       recipientType: RecipientType.SYSTEM,
@@ -103,6 +106,34 @@ export class OtimaMessageMapperService implements OtimaMessageMapper {
       return body.text;
     }
     return undefined;
+  }
+
+  /**
+   * Map Otima CallbackStatus to MessageStatus enum.
+   * Otima values: blacklist, cancelado, entregue, enviado, inválido, lido,
+   * não entregue, não Enviado, repetido, válido, Indisponível
+   */
+  mapAckStatusToMessageStatus(otimaStatus: string): MessageStatus | null {
+    const normalized = otimaStatus?.toLowerCase().trim();
+    switch (normalized) {
+      case 'enviado':
+      case 'válido':
+        return MessageStatus.SENT;
+      case 'entregue':
+        return MessageStatus.DELIVERED;
+      case 'lido':
+        return MessageStatus.READ;
+      case 'blacklist':
+      case 'cancelado':
+      case 'inválido':
+      case 'não entregue':
+      case 'não enviado':
+      case 'repetido':
+      case 'indisponível':
+        return MessageStatus.FAILED;
+      default:
+        return null;
+    }
   }
 
   createOtimaData(sendMessageDto: any, user: any, customerData: any): {

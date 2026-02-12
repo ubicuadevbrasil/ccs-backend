@@ -15,6 +15,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { DashboardModule } from './modules/dashboard';
+import { TemplatesModule } from './modules/templates/templates.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { DashboardModule } from './modules/dashboard';
     MessagesModule,
     ChatModule.forRootAsync(),
     DashboardModule,
+    TemplatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

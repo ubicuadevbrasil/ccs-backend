@@ -13,12 +13,18 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { SendMessageDto, SendMessageResponseDto } from './dto/send-message.dto';
+import { TransferChatDto, TransferChatResponseDto } from './dto/transfer-chat.dto';
+import { ChatEndServiceDto, EndServiceResponseDto } from './dto/end-service.dto';
+import { WaitingQueueResponseDto } from './dto/queue.dto';
+import { AttendDto, AttendResponseDto } from './dto/attend.dto';
+import { StartServiceDto, StartServiceResponseDto } from './dto/start-service.dto';
 import { WhatsAppMessageExamples } from './dto/whatsapp-examples';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../user/entities/user.entity';
 import { QueueService } from '../customer-queue/queue.service';
 import { QueueStatus } from '../customer-queue/entities/queue.entity';
+import { CustomerService } from '../customer/customer.service';
 
 @ApiTags('Chat')
 @Controller('chat')
@@ -29,6 +35,7 @@ export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly queueService: QueueService,
+    private readonly customerService: CustomerService,
   ) {}
 
   /**
@@ -423,6 +430,12 @@ export class ChatController {
             queuePosition: { type: 'number', example: 1 },
             waitingTime: { type: 'number', example: 300000 }
           }
+        },
+        direction: {
+          type: 'string',
+          enum: ['inbound', 'outbound'],
+          description: 'Queue direction: inbound (customer-initiated) or outbound (agent-initiated)',
+          example: 'inbound',
         }
       },
     },
@@ -512,7 +525,8 @@ export class ChatController {
                   platform: { type: 'string', example: 'whatsapp' },
                   priority: { type: 'number', example: 5 },
                   isGroup: { type: 'boolean', example: false },
-                  status: { type: 'string', example: 'active' }
+                  status: { type: 'string', example: 'active' },
+                  tags: { type: 'array', items: { type: 'string' }, example: ['vip', 'premium'] }
                 }
               },
               userId: { type: 'string', example: 'user_123e4567-e89b-12d3-a456-426614174000' },
@@ -535,7 +549,13 @@ export class ChatController {
               isWaiting: { type: 'boolean', example: false },
               isInService: { type: 'boolean', example: true },
               isAttended: { type: 'boolean', example: true },
-              waitingTime: { type: 'number', example: 300000 }
+              waitingTime: { type: 'number', example: 300000 },
+              direction: {
+                type: 'string',
+                enum: ['inbound', 'outbound'],
+                description: 'Queue direction: inbound (customer-initiated) or outbound (agent-initiated)',
+                example: 'inbound',
+              },
             }
           }
         },
@@ -583,11 +603,383 @@ export class ChatController {
     };
 
     const result = await this.queueService.findAllQueue(query);
-    
+
+    const dataWithDirection = await Promise.all(
+      result.data.map(async (queue) => {
+        const direction = queue.metadata?.direction?.toLowerCase() === 'outbound' ? 'outbound' : 'inbound';
+        let tags: string[] = [];
+        if (queue.customerId) {
+          try {
+            tags = await this.customerService.getCustomerTagsAsArray(queue.customerId);
+          } catch {
+            tags = [];
+          }
+        }
+        const baseCustomer = queue.customer && typeof queue.customer === 'object' ? queue.customer : {};
+        const customer = { ...baseCustomer, tags };
+        return {
+          sessionId: queue.sessionId,
+          customerId: queue.customerId,
+          userId: queue.userId,
+          platform: queue.platform,
+          status: queue.status,
+          createdAt: queue.createdAt,
+          attendedAt: queue.attendedAt,
+          lastMessage: queue.lastMessage,
+          metadata: queue.metadata,
+          customer,
+          direction,
+          isBot: queue.isBot,
+          isWaiting: queue.isWaiting,
+          isInService: queue.isInService,
+          isAttended: queue.isAttended,
+          waitingTime: queue.waitingTime,
+        };
+      }),
+    );
+
     return {
       ...result,
+      data: dataWithDirection,
       userId: user.id,
       userName: user.name || user.login,
     };
+  }
+
+  /**
+   * Transfer chat session to a different user
+   */
+  @Post('transfer')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Transfer chat session to a different user',
+    description: 'Transfer a chat session from the current user to another user. The customer will be notified with a system message: "Atendimento transferido para *NOMECONSULTOR*".',
+  })
+  @ApiBody({
+    description: 'Transfer data with session ID and new user ID',
+    type: TransferChatDto,
+    examples: {
+      transfer: {
+        summary: 'Transfer Chat',
+        description: 'Transfer a chat session to another user',
+        value: {
+          sessionId: 'session_whatsapp_123456789',
+          userId: '123e4567-e89b-12d3-a456-426614174000',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Chat session transferred successfully',
+    type: TransferChatResponseDto,
+    example: {
+      sessionId: 'session_whatsapp_123456789',
+      previousUserId: '123e4567-e89b-12d3-a456-426614174000',
+      newUserId: '987e6543-e21b-34c5-b678-123456789012',
+      newUserName: 'John Doe',
+      transferMessage: 'Atendimento transferido para *John Doe*',
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid request data or missing required fields',
+    example: {
+      statusCode: 400,
+      message: 'Session ID is required',
+      error: 'Bad Request',
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Session or user not found',
+    example: {
+      statusCode: 404,
+      message: 'Queue entry not found',
+      error: 'Not Found',
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User not authenticated',
+    example: {
+      statusCode: 401,
+      message: 'Unauthorized',
+      error: 'Unauthorized',
+    },
+  })
+  async transferChat(@Body() transferChatDto: TransferChatDto): Promise<TransferChatResponseDto> {
+    return await this.chatService.transferChat(transferChatDto);
+  }
+
+  /**
+   * End service for a chat session
+   */
+  @Post('end-service')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'End service for a chat session',
+    description: 'Ends the current chat session service, sends a notification message to the customer ("*NOME* encerrou o atendimento"), creates a history record with tabulationId, and removes the session from the queue.',
+  })
+  @ApiBody({
+    description: 'End service data with session ID, tabulation ID, and optional observations',
+    type: ChatEndServiceDto,
+    examples: {
+      endService: {
+        summary: 'End Service',
+        description: 'End a chat session service',
+        value: {
+          sessionId: 'session_whatsapp_123456789',
+          tabulationId: '123e4567-e89b-12d3-a456-426614174000',
+          observations: 'Customer was very satisfied with the service',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Service ended successfully',
+    type: EndServiceResponseDto,
+    example: {
+      sessionId: 'session_whatsapp_123456789',
+      tabulationId: '123e4567-e89b-12d3-a456-426614174000',
+      endServiceMessage: '*John Doe* encerrou o atendimento',
+      message: 'Service ended successfully',
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid request data or missing required fields',
+    example: {
+      statusCode: 400,
+      message: 'Session ID is required',
+      error: 'Bad Request',
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Session not found in queue',
+    example: {
+      statusCode: 404,
+      message: 'Queue entry not found',
+      error: 'Not Found',
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User not authenticated',
+    example: {
+      statusCode: 401,
+      message: 'Unauthorized',
+      error: 'Unauthorized',
+    },
+  })
+  async endService(
+    @Body() endServiceDto: ChatEndServiceDto,
+    @CurrentUser() user: User,
+  ): Promise<EndServiceResponseDto> {
+    return await this.chatService.endService(endServiceDto, user);
+  }
+
+  /**
+   * Get waiting customers in queue
+   */
+  @Get('queue')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get waiting customers in queue',
+    description: 'Retrieve a list of all customers waiting in queue with simple data (customer info + sessionId).',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Waiting customers retrieved successfully',
+    type: WaitingQueueResponseDto,
+    example: {
+      data: [
+        {
+          sessionId: 'session_whatsapp_123456789',
+          customerId: '123e4567-e89b-12d3-a456-426614174000',
+          customer: {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'John Doe',
+            pushName: 'John',
+            contact: '+5511999999999',
+            platform: 'whatsapp',
+            profilePicUrl: 'https://example.com/profile.jpg',
+          },
+        },
+      ],
+      total: 1,
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User not authenticated',
+    example: {
+      statusCode: 401,
+      message: 'Unauthorized',
+      error: 'Unauthorized',
+    },
+  })
+  async getWaitingQueue(): Promise<WaitingQueueResponseDto> {
+    return await this.chatService.getWaitingQueue();
+  }
+
+  /**
+   * Attend a customer (start service)
+   */
+  @Post('attend')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Attend a customer and start service',
+    description: 'Attend a customer from the waiting queue and start the service. If sessionId is provided, attend that specific customer. Otherwise, get the oldest waiting customer. Sends a notification message to the customer: "*NOME* iniciou o atendimento".',
+  })
+  @ApiBody({
+    description: 'Attend data with optional sessionId',
+    type: AttendDto,
+    examples: {
+      attendSpecific: {
+        summary: 'Attend Specific Customer',
+        description: 'Attend a specific customer by sessionId',
+        value: {
+          sessionId: 'session_whatsapp_123456789',
+        },
+      },
+      attendOldest: {
+        summary: 'Attend Oldest Customer',
+        description: 'Attend the oldest waiting customer (no sessionId provided)',
+        value: {},
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Customer attended successfully',
+    type: AttendResponseDto,
+    example: {
+      sessionId: 'session_whatsapp_123456789',
+      customerId: '123e4567-e89b-12d3-a456-426614174000',
+      userId: '987e6543-e21b-34c5-b678-123456789012',
+      userName: 'John Doe',
+      attendMessage: '*John Doe* iniciou o atendimento',
+      message: 'Service started successfully',
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'No customers waiting in queue or session not found',
+    example: {
+      statusCode: 404,
+      message: 'No customers waiting in queue',
+      error: 'Not Found',
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid request or customer is not waiting',
+    example: {
+      statusCode: 400,
+      message: 'Customer with sessionId session_123 is not waiting in queue',
+      error: 'Bad Request',
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User not authenticated',
+    example: {
+      statusCode: 401,
+      message: 'Unauthorized',
+      error: 'Unauthorized',
+    },
+  })
+  async attendCustomer(
+    @Body() attendDto: AttendDto,
+    @CurrentUser() user: User,
+  ): Promise<AttendResponseDto> {
+    return await this.chatService.attendCustomer(attendDto, user);
+  }
+
+  /**
+   * Start service for a customer by sending HSM message
+   */
+  @Post('start-service')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Start service for a customer by sending HSM message',
+    description: 'Sends an HSM (High Structure Message) template message to a customer using Otima service and creates a queue entry to start the session. The customer must have a valid WhatsApp contact.',
+  })
+  @ApiBody({
+    description: 'Start service data with customer ID and template code',
+    type: StartServiceDto,
+    examples: {
+      startService: {
+        summary: 'Start Service',
+        description: 'Start service for a customer with HSM template',
+        value: {
+          customerId: '123e4567-e89b-12d3-a456-426614174000',
+          templateCode: 'welcome_template',
+          parameters: ['John', 'Doe'],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Service started successfully',
+    type: StartServiceResponseDto,
+    example: {
+      sessionId: 'session_whatsapp_5511999999999',
+      customerId: '123e4567-e89b-12d3-a456-426614174000',
+      userId: '987e6543-e21b-34c5-b678-123456789012',
+      templateCode: 'welcome_template',
+      messageSent: true,
+      message: 'Service started successfully',
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid request, customer missing required data, or customer already in service',
+    examples: {
+      customerInService: {
+        summary: 'Customer Already in Service',
+        value: {
+          statusCode: 400,
+          message: 'Customer is already in service',
+          error: 'Bad Request',
+        },
+      },
+      missingPhone: {
+        summary: 'Missing Phone Number',
+        value: {
+          statusCode: 400,
+          message: 'Customer must have a valid phone number to send HSM message',
+          error: 'Bad Request',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Customer not found',
+    example: {
+      statusCode: 404,
+      message: 'Customer not found',
+      error: 'Not Found',
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User not authenticated',
+    example: {
+      statusCode: 401,
+      message: 'Unauthorized',
+      error: 'Unauthorized',
+    },
+  })
+  async startService(
+    @Body() startServiceDto: StartServiceDto,
+    @CurrentUser() user: User,
+  ): Promise<StartServiceResponseDto> {
+    return await this.chatService.startService(startServiceDto, user);
   }
 }

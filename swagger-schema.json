@@ -415,7 +415,7 @@
       }
     },
     "/customers/create": {
-      "patch": {
+      "post": {
         "operationId": "CustomerController_createCustomer",
         "parameters": [],
         "requestBody": {
@@ -1099,7 +1099,7 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "Search term for sessionId or observations",
+            "description": "Search term for sessionId, protocol, observations, donorCode, customer name, customer donorCode, or user name",
             "schema": {
               "example": "session_123",
               "type": "string"
@@ -1201,6 +1201,20 @@
               "example": true,
               "type": "string"
             }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Filter by direction (inbound/outbound)",
+            "schema": {
+              "example": "inbound",
+              "type": "string",
+              "enum": [
+                "inbound",
+                "outbound"
+              ]
+            }
           }
         ],
         "responses": {
@@ -1209,27 +1223,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/HistoryResponseDto"
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    },
-                    "page": {
-                      "type": "number"
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "totalPages": {
-                      "type": "number"
-                    }
-                  }
+                  "$ref": "#/components/schemas/HistoryListResponseDto"
                 }
               }
             }
@@ -1263,11 +1257,17 @@
         ],
         "responses": {
           "200": {
-            "description": "History record retrieved successfully",
+            "description": "Messages retrieved successfully",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HistoryResponseDto"
+                  "$ref": "#/components/schemas/"
                 }
               }
             }
@@ -1281,7 +1281,7 @@
             "bearer": []
           }
         ],
-        "summary": "Find history record by ID",
+        "summary": "Get messages for history record by ID",
         "tags": [
           "History"
         ]
@@ -1379,14 +1379,17 @@
         ],
         "responses": {
           "200": {
-            "description": "History records retrieved successfully",
+            "description": "Messages retrieved successfully",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/HistoryResponseDto"
-                  }
+                  "$ref": "#/components/schemas/"
                 }
               }
             }
@@ -1397,7 +1400,7 @@
             "bearer": []
           }
         ],
-        "summary": "Find history records by session ID",
+        "summary": "Get messages for session ID",
         "tags": [
           "History"
         ]
@@ -1419,11 +1422,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Active history record retrieved successfully",
+            "description": "Messages retrieved successfully",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HistoryResponseDto"
+                  "$ref": "#/components/schemas/"
                 }
               }
             }
@@ -1437,7 +1446,7 @@
             "bearer": []
           }
         ],
-        "summary": "Find active history record by session ID",
+        "summary": "Get messages for active history record by session ID",
         "tags": [
           "History"
         ]
@@ -3856,6 +3865,454 @@
         ]
       }
     },
+    "/chat/transfer": {
+      "post": {
+        "description": "Transfer a chat session from the current user to another user. The customer will be notified with a system message: \"Atendimento transferido para *NOMECONSULTOR*\".",
+        "operationId": "ChatController_transferChat",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Transfer data with session ID and new user ID",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferChatDto"
+              },
+              "examples": {
+                "transfer": {
+                  "summary": "Transfer Chat",
+                  "description": "Transfer a chat session to another user",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789",
+                    "userId": "123e4567-e89b-12d3-a456-426614174000"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat session transferred successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferChatResponseDto"
+                },
+                "example": {
+                  "sessionId": "session_whatsapp_123456789",
+                  "previousUserId": "123e4567-e89b-12d3-a456-426614174000",
+                  "newUserId": "987e6543-e21b-34c5-b678-123456789012",
+                  "newUserName": "John Doe",
+                  "transferMessage": "Atendimento transferido para *John Doe*"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data or missing required fields",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 400,
+                  "message": "Session ID is required",
+                  "error": "Bad Request"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User not authenticated",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "Unauthorized",
+                  "error": "Unauthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session or user not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 404,
+                  "message": "Queue entry not found",
+                  "error": "Not Found"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transfer chat session to a different user",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/chat/end-service": {
+      "post": {
+        "description": "Ends the current chat session service, sends a notification message to the customer (\"*NOME* encerrou o atendimento\"), creates a history record with tabulationId, and removes the session from the queue.",
+        "operationId": "ChatController_endService",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "End service data with session ID, tabulation ID, and optional observations",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndServiceDto"
+              },
+              "examples": {
+                "endService": {
+                  "summary": "End Service",
+                  "description": "End a chat session service",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789",
+                    "tabulationId": "123e4567-e89b-12d3-a456-426614174000",
+                    "observations": "Customer was very satisfied with the service"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service ended successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndServiceResponseDto"
+                },
+                "example": {
+                  "sessionId": "session_whatsapp_123456789",
+                  "tabulationId": "123e4567-e89b-12d3-a456-426614174000",
+                  "endServiceMessage": "*John Doe* encerrou o atendimento",
+                  "message": "Service ended successfully"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data or missing required fields",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 400,
+                  "message": "Session ID is required",
+                  "error": "Bad Request"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User not authenticated",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "Unauthorized",
+                  "error": "Unauthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found in queue",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 404,
+                  "message": "Queue entry not found",
+                  "error": "Not Found"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "End service for a chat session",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/chat/queue": {
+      "get": {
+        "description": "Retrieve a list of all customers waiting in queue with simple data (customer info + sessionId).",
+        "operationId": "ChatController_getWaitingQueue",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Waiting customers retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueResponseDto"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "sessionId": "session_whatsapp_123456789",
+                      "customerId": "123e4567-e89b-12d3-a456-426614174000",
+                      "customer": {
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "name": "John Doe",
+                        "pushName": "John",
+                        "contact": "+5511999999999",
+                        "platform": "whatsapp",
+                        "profilePicUrl": "https://example.com/profile.jpg"
+                      }
+                    }
+                  ],
+                  "total": 1
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User not authenticated",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "Unauthorized",
+                  "error": "Unauthorized"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get waiting customers in queue",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/chat/attend": {
+      "post": {
+        "description": "Attend a customer from the waiting queue and start the service. If sessionId is provided, attend that specific customer. Otherwise, get the oldest waiting customer. Sends a notification message to the customer: \"*NOME* iniciou o atendimento\".",
+        "operationId": "ChatController_attendCustomer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Attend data with optional sessionId",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendDto"
+              },
+              "examples": {
+                "attendSpecific": {
+                  "summary": "Attend Specific Customer",
+                  "description": "Attend a specific customer by sessionId",
+                  "value": {
+                    "sessionId": "session_whatsapp_123456789"
+                  }
+                },
+                "attendOldest": {
+                  "summary": "Attend Oldest Customer",
+                  "description": "Attend the oldest waiting customer (no sessionId provided)",
+                  "value": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer attended successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendResponseDto"
+                },
+                "example": {
+                  "sessionId": "session_whatsapp_123456789",
+                  "customerId": "123e4567-e89b-12d3-a456-426614174000",
+                  "userId": "987e6543-e21b-34c5-b678-123456789012",
+                  "userName": "John Doe",
+                  "attendMessage": "*John Doe* iniciou o atendimento",
+                  "message": "Service started successfully"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or customer is not waiting",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 400,
+                  "message": "Customer with sessionId session_123 is not waiting in queue",
+                  "error": "Bad Request"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User not authenticated",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "Unauthorized",
+                  "error": "Unauthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No customers waiting in queue or session not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 404,
+                  "message": "No customers waiting in queue",
+                  "error": "Not Found"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Attend a customer and start service",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/chat/start-service": {
+      "post": {
+        "description": "Sends an HSM (High Structure Message) template message to a customer using Otima service and creates a queue entry to start the session. The customer must have a valid WhatsApp contact.",
+        "operationId": "ChatController_startService",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Start service data with customer ID and template code",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartServiceDto"
+              },
+              "examples": {
+                "startService": {
+                  "summary": "Start Service",
+                  "description": "Start service for a customer with HSM template",
+                  "value": {
+                    "customerId": "123e4567-e89b-12d3-a456-426614174000",
+                    "templateCode": "welcome_template",
+                    "parameters": [
+                      "John",
+                      "Doe"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service started successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartServiceResponseDto"
+                },
+                "example": {
+                  "sessionId": "session_whatsapp_5511999999999",
+                  "customerId": "123e4567-e89b-12d3-a456-426614174000",
+                  "userId": "987e6543-e21b-34c5-b678-123456789012",
+                  "templateCode": "welcome_template",
+                  "messageSent": true,
+                  "message": "Service started successfully"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request, customer missing required data, or customer already in service",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "customerInService": {
+                    "summary": "Customer Already in Service",
+                    "value": {
+                      "statusCode": 400,
+                      "message": "Customer is already in service",
+                      "error": "Bad Request"
+                    }
+                  },
+                  "missingPhone": {
+                    "summary": "Missing Phone Number",
+                    "value": {
+                      "statusCode": 400,
+                      "message": "Customer must have a valid phone number to send HSM message",
+                      "error": "Bad Request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User not authenticated",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 401,
+                  "message": "Unauthorized",
+                  "error": "Unauthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "statusCode": 404,
+                  "message": "Customer not found",
+                  "error": "Not Found"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start service for a customer by sending HSM message",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
     "/dashboard/analytics/cards": {
       "get": {
         "operationId": "AnalyticsController_getCardsMetrics",
@@ -4013,6 +4470,339 @@
         "summary": "Get active services with pagination and filtering",
         "tags": [
           "Dashboard Analytics"
+        ]
+      }
+    },
+    "/templates/create": {
+      "post": {
+        "operationId": "TemplatesController_createTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Template created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "409": {
+            "description": "Template with this template_code already exists"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new template",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/templates/list": {
+      "get": {
+        "operationId": "TemplatesController_findAllTemplates",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 10,
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term for template_code or content",
+            "schema": {
+              "example": "TESTE",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "A",
+                "R",
+                "P"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "Filter by category",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "MARKETING",
+                "UTILITY",
+                "AUTHENTICATION"
+              ]
+            }
+          },
+          {
+            "name": "template_code",
+            "required": false,
+            "in": "query",
+            "description": "Filter by template code",
+            "schema": {
+              "example": "TESTE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Templates retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TemplateResponseDto"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "page": {
+                      "type": "number"
+                    },
+                    "limit": {
+                      "type": "number"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all templates with pagination and filtering",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/templates/find": {
+      "get": {
+        "operationId": "TemplatesController_findTemplateById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "query",
+            "description": "Template ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Find template by ID",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/templates/update": {
+      "patch": {
+        "operationId": "TemplatesController_updateTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTemplateByIdDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Template updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Template not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update template by ID",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/templates": {
+      "delete": {
+        "operationId": "TemplatesController_deleteTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Template deleted successfully"
+          },
+          "404": {
+            "description": "Template not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete template by ID",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/templates/sync": {
+      "post": {
+        "description": "Fetches templates from Otima API and updates the local database. Creates new templates or updates existing ones based on template_code.",
+        "operationId": "TemplatesController_syncTemplates",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncTemplatesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Templates synced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "created": {
+                      "type": "number",
+                      "description": "Number of templates created"
+                    },
+                    "updated": {
+                      "type": "number",
+                      "description": "Number of templates updated"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid response format from Otima API"
+          },
+          "500": {
+            "description": "Internal server error - failed to sync templates"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sync templates from Otima API",
+        "tags": [
+          "Templates"
         ]
       }
     }
@@ -5016,6 +5806,17 @@
             "description": "Customer ID involved in the interaction",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
+          "donorCode": {
+            "type": "string",
+            "description": "Donor code for the interaction",
+            "example": "DONOR123",
+            "maxLength": 255
+          },
+          "tabulationId": {
+            "type": "string",
+            "description": "Tabulation ID for categorizing the interaction",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
           "observations": {
             "type": "string",
             "description": "Internal notes/observations about the interaction",
@@ -5034,6 +5835,16 @@
             ],
             "example": "whatsapp",
             "default": "whatsapp"
+          },
+          "direction": {
+            "type": "string",
+            "description": "Interaction direction",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "example": "inbound",
+            "default": "inbound"
           },
           "startedAt": {
             "type": "string",
@@ -5054,6 +5865,7 @@
         "required": [
           "sessionId",
           "platform",
+          "direction",
           "startedAt"
         ]
       },
@@ -5085,6 +5897,11 @@
             "description": "Customer ID involved in the interaction",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
+          "donorCode": {
+            "type": "string",
+            "description": "Donor code for the interaction",
+            "example": "DONOR123"
+          },
           "observations": {
             "type": "string",
             "description": "Internal notes/observations",
@@ -5101,6 +5918,15 @@
               "other"
             ],
             "example": "whatsapp"
+          },
+          "direction": {
+            "type": "string",
+            "description": "Interaction direction",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "example": "inbound"
           },
           "startedAt": {
             "format": "date-time",
@@ -5187,6 +6013,7 @@
           "id",
           "sessionId",
           "platform",
+          "direction",
           "startedAt",
           "createdAt",
           "updatedAt",
@@ -5198,6 +6025,256 @@
           "isTelegram",
           "isInstagram",
           "isFacebook"
+        ]
+      },
+      "HistoryListCustomerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Customer unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "platformId": {
+            "type": "string",
+            "description": "Platform-specific ID (WhatsApp phone, Telegram user_id, etc.)",
+            "example": "5511999999999"
+          },
+          "name": {
+            "type": "string",
+            "description": "Customer name",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "description": "Customer email",
+            "example": "john.doe@example.com"
+          },
+          "cpf": {
+            "type": "string",
+            "description": "Customer CPF",
+            "example": "12345678901"
+          },
+          "profilePicture": {
+            "type": "string",
+            "description": "Customer profile picture URL",
+            "example": "https://example.com/profile.jpg"
+          },
+          "donorCode": {
+            "type": "string",
+            "description": "Customer donor code",
+            "example": "DONOR123"
+          },
+          "observations": {
+            "type": "string",
+            "description": "Customer observations",
+            "example": "VIP customer"
+          },
+          "tags": {
+            "description": "Customer tags",
+            "example": [
+              "vip",
+              "premium"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "HistoryListUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "User name",
+            "example": "Jane Smith"
+          },
+          "profilePicture": {
+            "type": "string",
+            "description": "User profile picture URL",
+            "example": "https://example.com/profile.jpg"
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "jane.smith@example.com"
+          },
+          "contact": {
+            "type": "string",
+            "description": "User contact information",
+            "example": "+1234567890"
+          }
+        }
+      },
+      "HistoryListTabulationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Tabulation unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tabulation name",
+            "example": "Main Tabulation"
+          },
+          "description": {
+            "type": "string",
+            "description": "Tabulation description",
+            "example": "Description for main tabulation"
+          },
+          "effective": {
+            "type": "boolean",
+            "description": "Whether tabulation is effective",
+            "example": false
+          }
+        }
+      },
+      "HistoryListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "History unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier",
+            "example": "session_123456789"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Friendly session identifier",
+            "example": "20251218175106819"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform where the interaction occurred",
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "instagram",
+              "facebook",
+              "other"
+            ],
+            "example": "whatsapp"
+          },
+          "direction": {
+            "type": "string",
+            "description": "Interaction direction",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "example": "inbound"
+          },
+          "donorCode": {
+            "type": "string",
+            "description": "Donor code for the interaction",
+            "example": "DONOR123"
+          },
+          "observations": {
+            "type": "string",
+            "description": "Internal notes/observations",
+            "example": "Customer was very satisfied with the service"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the interaction started",
+            "example": "2024-01-01T10:00:00.000Z"
+          },
+          "attendedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the customer was attended",
+            "example": "2024-01-01T10:05:00.000Z"
+          },
+          "finishedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the interaction finished",
+            "example": "2024-01-01T10:30:00.000Z"
+          },
+          "customer": {
+            "description": "Customer information",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HistoryListCustomerDto"
+              }
+            ]
+          },
+          "user": {
+            "description": "User information",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HistoryListUserDto"
+              }
+            ]
+          },
+          "tabulation": {
+            "description": "Tabulation information",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HistoryListTabulationDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "sessionId",
+          "platform",
+          "direction",
+          "startedAt"
+        ]
+      },
+      "HistoryListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "List of history records",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoryListItemDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of records",
+            "example": 100
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 10
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 10
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
         ]
       },
       "UpdateHistoryByIdDto": {
@@ -5225,6 +6302,12 @@
             "description": "Customer ID involved in the interaction",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
+          "donorCode": {
+            "type": "string",
+            "description": "Donor code for the interaction",
+            "example": "DONOR123",
+            "maxLength": 255
+          },
           "protocol": {
             "type": "string",
             "description": "Friendly session identifier (e.g., 20251218175106819)",
@@ -5248,6 +6331,15 @@
               "other"
             ],
             "example": "whatsapp"
+          },
+          "direction": {
+            "type": "string",
+            "description": "Interaction direction",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "example": "inbound"
           },
           "startedAt": {
             "type": "string",
@@ -5386,116 +6478,22 @@
       "QueueResponseDto": {
         "type": "object",
         "properties": {
-          "sessionId": {
-            "type": "string",
-            "description": "Session identifier",
-            "example": "session_123456789"
+          "data": {
+            "description": "List of waiting customers",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueueItemDto"
+            }
           },
-          "customerId": {
-            "type": "string",
-            "description": "Customer ID involved in the interaction",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "userId": {
-            "type": "string",
-            "description": "User ID who will handle the interaction",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "platform": {
-            "type": "string",
-            "description": "Platform where the interaction occurred",
-            "enum": [
-              "whatsapp",
-              "telegram",
-              "instagram",
-              "facebook",
-              "other"
-            ],
-            "example": "whatsapp"
-          },
-          "status": {
-            "type": "string",
-            "description": "Current status of the queue item",
-            "enum": [
-              "bot",
-              "waiting",
-              "service"
-            ],
-            "example": "waiting"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Queue creation timestamp",
-            "example": "2024-01-01T00:00:00.000Z"
-          },
-          "attendedAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "When the customer was attended",
-            "example": "2024-01-01T10:05:00.000Z"
-          },
-          "isBot": {
-            "type": "boolean",
-            "description": "Whether status is bot",
-            "example": false
-          },
-          "isWaiting": {
-            "type": "boolean",
-            "description": "Whether status is waiting",
-            "example": true
-          },
-          "isInService": {
-            "type": "boolean",
-            "description": "Whether status is in service",
-            "example": false
-          },
-          "isAttended": {
-            "type": "boolean",
-            "description": "Whether customer was attended",
-            "example": true
-          },
-          "waitingTime": {
+          "total": {
             "type": "number",
-            "description": "Waiting time in milliseconds",
-            "example": 300000
-          },
-          "isWhatsApp": {
-            "type": "boolean",
-            "description": "Whether platform is WhatsApp",
-            "example": true
-          },
-          "isTelegram": {
-            "type": "boolean",
-            "description": "Whether platform is Telegram",
-            "example": false
-          },
-          "isInstagram": {
-            "type": "boolean",
-            "description": "Whether platform is Instagram",
-            "example": false
-          },
-          "isFacebook": {
-            "type": "boolean",
-            "description": "Whether platform is Facebook",
-            "example": false
+            "description": "Total number of waiting customers",
+            "example": 5
           }
         },
         "required": [
-          "sessionId",
-          "customerId",
-          "userId",
-          "platform",
-          "status",
-          "createdAt",
-          "isBot",
-          "isWaiting",
-          "isInService",
-          "isAttended",
-          "isWhatsApp",
-          "isTelegram",
-          "isInstagram",
-          "isFacebook"
+          "data",
+          "total"
         ]
       },
       "UpdateQueueDto": {
@@ -5555,8 +6553,15 @@
         "properties": {
           "sessionId": {
             "type": "string",
-            "description": "Session identifier",
-            "example": "session_123456789"
+            "description": "Session identifier for the chat to end",
+            "example": "session_whatsapp_123456789",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "tabulationId": {
+            "type": "string",
+            "description": "Tabulation ID for categorizing the service",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "observations": {
             "type": "string",
@@ -5566,7 +6571,8 @@
           }
         },
         "required": [
-          "sessionId"
+          "sessionId",
+          "tabulationId"
         ]
       },
       "TransferQueueDto": {
@@ -6372,6 +7378,255 @@
           "updatedAt"
         ]
       },
+      "TransferChatDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier for the chat to transfer",
+            "example": "session_whatsapp_123456789",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "userId": {
+            "type": "string",
+            "description": "ID of the user to transfer the chat to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "sessionId",
+          "userId"
+        ]
+      },
+      "TransferChatResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier",
+            "example": "session_whatsapp_123456789"
+          },
+          "previousUserId": {
+            "type": "string",
+            "description": "Previous user ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "newUserId": {
+            "type": "string",
+            "description": "New user ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "newUserName": {
+            "type": "string",
+            "description": "New user name",
+            "example": "John Doe"
+          },
+          "transferMessage": {
+            "type": "string",
+            "description": "Transfer message sent to customer",
+            "example": "Atendimento transferido para *John Doe*"
+          }
+        },
+        "required": [
+          "sessionId",
+          "previousUserId",
+          "newUserId",
+          "newUserName",
+          "transferMessage"
+        ]
+      },
+      "EndServiceResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier",
+            "example": "session_whatsapp_123456789"
+          },
+          "tabulationId": {
+            "type": "string",
+            "description": "Tabulation ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "endServiceMessage": {
+            "type": "string",
+            "description": "End service message sent to customer",
+            "example": "*John Doe* encerrou o atendimento"
+          },
+          "message": {
+            "type": "string",
+            "description": "Success message",
+            "example": "Service ended successfully"
+          }
+        },
+        "required": [
+          "sessionId",
+          "tabulationId",
+          "endServiceMessage",
+          "message"
+        ]
+      },
+      "QueueItemDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier",
+            "example": "session_whatsapp_123456789"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "customer": {
+            "type": "object",
+            "description": "Customer information",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "name": "John Doe",
+              "contact": "+5511999999999",
+              "platform": "whatsapp"
+            }
+          }
+        },
+        "required": [
+          "sessionId",
+          "customerId",
+          "customer"
+        ]
+      },
+      "AttendDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier for specific customer to attend. If not provided, the oldest waiting customer will be attended.",
+            "example": "session_whatsapp_123456789",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        }
+      },
+      "AttendResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier",
+            "example": "session_whatsapp_123456789"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID who started the service",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "userName": {
+            "type": "string",
+            "description": "User name",
+            "example": "John Doe"
+          },
+          "attendMessage": {
+            "type": "string",
+            "description": "Service started message sent to customer",
+            "example": "*John Doe* iniciou o atendimento"
+          },
+          "message": {
+            "type": "string",
+            "description": "Success message",
+            "example": "Service started successfully"
+          }
+        },
+        "required": [
+          "sessionId",
+          "customerId",
+          "userId",
+          "userName",
+          "attendMessage",
+          "message"
+        ]
+      },
+      "StartServiceDto": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID to start service for",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "templateCode": {
+            "type": "string",
+            "description": "Template code for HSM message",
+            "example": "welcome_template",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "parameters": {
+            "description": "Template parameters to interpolate in the message",
+            "example": [
+              "John",
+              "Doe"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "customerId",
+          "templateCode"
+        ]
+      },
+      "StartServiceResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Session identifier created for the service",
+            "example": "session_whatsapp_123456789"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID who started the service",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "templateCode": {
+            "type": "string",
+            "description": "Template code used",
+            "example": "welcome_template"
+          },
+          "messageSent": {
+            "type": "boolean",
+            "description": "HSM message sent successfully",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Success message",
+            "example": "Service started successfully"
+          }
+        },
+        "required": [
+          "sessionId",
+          "customerId",
+          "userId",
+          "templateCode",
+          "messageSent",
+          "message"
+        ]
+      },
       "CardsMetricsResponseDto": {
         "type": "object",
         "properties": {
@@ -6636,6 +7891,327 @@
           "limit",
           "totalPages"
         ]
+      },
+      "TemplateButtonDto": {
+        "type": "object",
+        "properties": {
+          "texto_botao": {
+            "type": "string",
+            "description": "Button text",
+            "example": "Sim, desejo dar continuidade ao atendimento."
+          },
+          "tipo_botao": {
+            "type": "string",
+            "description": "Button type",
+            "example": "RESPOSTA"
+          }
+        },
+        "required": [
+          "texto_botao",
+          "tipo_botao"
+        ]
+      },
+      "CreateTemplateDto": {
+        "type": "object",
+        "properties": {
+          "template_code": {
+            "type": "string",
+            "description": "Template code (unique identifier)",
+            "example": "TESTE",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "accounts": {
+            "description": "List of account identifiers",
+            "example": [
+              "558001904880"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "button_sample": {
+            "description": "Button samples",
+            "example": [
+              {
+                "texto_botao": "Sim, desejo dar continuidade ao atendimento.",
+                "tipo_botao": "RESPOSTA"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateButtonDto"
+            }
+          },
+          "category": {
+            "type": "string",
+            "description": "Template category",
+            "enum": [
+              "MARKETING",
+              "UTILITY",
+              "AUTHENTICATION"
+            ],
+            "example": "MARKETING"
+          },
+          "content": {
+            "type": "string",
+            "description": "Template content/message",
+            "example": "Olá -var1-, tudo bem? Contato de testes da Ubicua Brasil."
+          },
+          "status": {
+            "type": "string",
+            "description": "Template status",
+            "enum": [
+              "A",
+              "R",
+              "P"
+            ],
+            "example": "A"
+          },
+          "status_description": {
+            "type": "string",
+            "description": "Status description",
+            "example": "Ativo",
+            "maxLength": 50
+          },
+          "variable_sample": {
+            "type": "object",
+            "description": "Variable samples (key-value pairs)",
+            "example": {
+              "-var1-": "FABIO"
+            }
+          },
+          "created_date": {
+            "type": "string",
+            "description": "Created date from Otima",
+            "example": "2024-03-13 11:45:57"
+          },
+          "updated_date": {
+            "type": "string",
+            "description": "Updated date from Otima",
+            "example": "2024-03-13 11:53:35"
+          }
+        },
+        "required": [
+          "template_code",
+          "accounts",
+          "category",
+          "content",
+          "status",
+          "status_description"
+        ]
+      },
+      "TemplateResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Template unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "template_code": {
+            "type": "string",
+            "description": "Template code",
+            "example": "TESTE"
+          },
+          "accounts": {
+            "description": "List of account identifiers",
+            "example": [
+              "558001904880"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "button_sample": {
+            "description": "Button samples",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateButtonDto"
+            }
+          },
+          "category": {
+            "type": "string",
+            "description": "Template category",
+            "enum": [
+              "MARKETING",
+              "UTILITY",
+              "AUTHENTICATION"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "description": "Template content"
+          },
+          "status": {
+            "type": "string",
+            "description": "Template status",
+            "enum": [
+              "A",
+              "R",
+              "P"
+            ]
+          },
+          "status_description": {
+            "type": "string",
+            "description": "Status description"
+          },
+          "variable_sample": {
+            "type": "object",
+            "description": "Variable samples (key-value pairs)",
+            "example": {
+              "-var1-": "FABIO",
+              "-var2-": "retorno da sua doação"
+            }
+          },
+          "created_date": {
+            "type": "object",
+            "description": "Created date from Otima"
+          },
+          "updated_date": {
+            "type": "object",
+            "description": "Updated date from Otima"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Template creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Template last update timestamp"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether template is active"
+          },
+          "hasButtons": {
+            "type": "boolean",
+            "description": "Whether template has buttons"
+          },
+          "hasVariables": {
+            "type": "boolean",
+            "description": "Whether template has variables"
+          },
+          "variableCount": {
+            "type": "number",
+            "description": "Number of variables"
+          },
+          "buttonCount": {
+            "type": "number",
+            "description": "Number of buttons"
+          }
+        },
+        "required": [
+          "id",
+          "template_code",
+          "accounts",
+          "button_sample",
+          "category",
+          "content",
+          "status",
+          "status_description",
+          "variable_sample",
+          "createdAt",
+          "updatedAt",
+          "isActive",
+          "hasButtons",
+          "hasVariables",
+          "variableCount",
+          "buttonCount"
+        ]
+      },
+      "UpdateTemplateByIdDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Template unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "accounts": {
+            "description": "List of account identifiers",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "button_sample": {
+            "description": "Button samples",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateButtonDto"
+            }
+          },
+          "category": {
+            "type": "string",
+            "description": "Template category",
+            "enum": [
+              "MARKETING",
+              "UTILITY",
+              "AUTHENTICATION"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "description": "Template content/message"
+          },
+          "status": {
+            "type": "string",
+            "description": "Template status",
+            "enum": [
+              "A",
+              "R",
+              "P"
+            ]
+          },
+          "status_description": {
+            "type": "string",
+            "description": "Status description",
+            "maxLength": 50
+          },
+          "variable_sample": {
+            "type": "object",
+            "description": "Variable samples (key-value pairs)"
+          },
+          "created_date": {
+            "type": "string",
+            "description": "Created date from Otima"
+          },
+          "updated_date": {
+            "type": "string",
+            "description": "Updated date from Otima"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "DeleteTemplateDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Template unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "SyncTemplatesDto": {
+        "type": "object",
+        "properties": {
+          "customerCode": {
+            "type": "string",
+            "description": "Otima customer code (optional)",
+            "example": "CUSTOMER123"
+          }
+        }
       }
     }
   }

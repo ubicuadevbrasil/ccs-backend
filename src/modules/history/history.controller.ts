@@ -24,7 +24,8 @@ import {
   HistoryQueryDto, 
   FindHistoryDto, 
   DeleteHistoryDto, 
-  HistoryResponseDto 
+  HistoryResponseDto,
+  HistoryListResponseDto
 } from './dto/history.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { History } from './entities/history.entity';
@@ -56,11 +57,12 @@ export class HistoryController {
   @ApiOperation({ summary: 'Get all history records with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search term for sessionId or observations' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search term for sessionId, protocol, observations, donorCode, customer name, customer donorCode, or user name' })
   @ApiQuery({ name: 'userId', required: false, description: 'Filter by user ID' })
   @ApiQuery({ name: 'customerId', required: false, description: 'Filter by customer ID' })
   @ApiQuery({ name: 'protocol', required: false, description: 'Filter by protocol' })
   @ApiQuery({ name: 'platform', required: false, description: 'Filter by platform' })
+  @ApiQuery({ name: 'direction', required: false, description: 'Filter by direction (inbound/outbound)' })
   @ApiQuery({ name: 'startDate', required: false, description: 'Filter by start date (ISO string)' })
   @ApiQuery({ name: 'endDate', required: false, description: 'Filter by end date (ISO string)' })
   @ApiQuery({ name: 'isActive', required: false, description: 'Filter by active interactions' })
@@ -69,39 +71,30 @@ export class HistoryController {
   @ApiResponse({
     status: 200,
     description: 'History records retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        data: {
-          type: 'array',
-          items: { $ref: '#/components/schemas/HistoryResponseDto' },
-        },
-        total: { type: 'number' },
-        page: { type: 'number' },
-        limit: { type: 'number' },
-        totalPages: { type: 'number' },
-      },
-    },
+    type: HistoryListResponseDto,
   })
-  async findAllHistory(@Query() query: HistoryQueryDto) {
+  async findAllHistory(@Query() query: HistoryQueryDto): Promise<HistoryListResponseDto> {
     return this.historyService.findAllHistory(query);
   }
 
   @Get('find')
-  @ApiOperation({ summary: 'Find history record by ID' })
+  @ApiOperation({ summary: 'Get messages for history record by ID' })
   @ApiQuery({ name: 'id', description: 'History ID' })
   @ApiResponse({
     status: 200,
-    description: 'History record retrieved successfully',
-    type: HistoryResponseDto,
+    description: 'Messages retrieved successfully',
+    type: 'array',
+    schema: {
+      type: 'array',
+      items: { type: 'object' },
+    },
   })
   @ApiResponse({
     status: 404,
     description: 'History record not found',
   })
-  async findHistoryById(@Query() query: FindHistoryDto): Promise<HistoryResponseDto> {
-    const history = await this.historyService.findHistoryById(query.id);
-    return history as HistoryResponseDto;
+  async findHistoryById(@Query() query: FindHistoryDto): Promise<any[]> {
+    return this.historyService.findHistoryById(query.id);
   }
 
   @Patch('update')
@@ -141,33 +134,39 @@ export class HistoryController {
   }
 
   @Get('session')
-  @ApiOperation({ summary: 'Find history records by session ID' })
+  @ApiOperation({ summary: 'Get messages for session ID' })
   @ApiQuery({ name: 'sessionId', description: 'Session ID' })
   @ApiResponse({
     status: 200,
-    description: 'History records retrieved successfully',
-    type: [HistoryResponseDto],
+    description: 'Messages retrieved successfully',
+    type: 'array',
+    schema: {
+      type: 'array',
+      items: { type: 'object' },
+    },
   })
-  async findHistoryBySessionId(@Query('sessionId') sessionId: string): Promise<HistoryResponseDto[]> {
-    const histories = await this.historyService.findHistoryBySessionId(sessionId);
-    return histories as HistoryResponseDto[];
+  async findHistoryBySessionId(@Query('sessionId') sessionId: string): Promise<any[]> {
+    return this.historyService.findHistoryBySessionId(sessionId);
   }
 
   @Get('session/active')
-  @ApiOperation({ summary: 'Find active history record by session ID' })
+  @ApiOperation({ summary: 'Get messages for active history record by session ID' })
   @ApiQuery({ name: 'sessionId', description: 'Session ID' })
   @ApiResponse({
     status: 200,
-    description: 'Active history record retrieved successfully',
-    type: HistoryResponseDto,
+    description: 'Messages retrieved successfully',
+    type: 'array',
+    schema: {
+      type: 'array',
+      items: { type: 'object' },
+    },
   })
   @ApiResponse({
     status: 404,
     description: 'No active history record found for this session',
   })
-  async findActiveHistoryBySessionId(@Query('sessionId') sessionId: string): Promise<HistoryResponseDto | null> {
-    const history = await this.historyService.findActiveHistoryBySessionId(sessionId);
-    return history as HistoryResponseDto | null;
+  async findActiveHistoryBySessionId(@Query('sessionId') sessionId: string): Promise<any[] | null> {
+    return this.historyService.findActiveHistoryBySessionId(sessionId);
   }
 
   @Patch('mark-attended')

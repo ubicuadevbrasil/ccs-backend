@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Body,
   Patch,
   Delete,
@@ -35,7 +36,7 @@ import { Customer } from './entities/customer.entity';
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
-  @Patch('create')
+  @Post('create')
   @ApiOperation({ summary: 'Create a new customer with tags' })
   @ApiResponse({
     status: 201,

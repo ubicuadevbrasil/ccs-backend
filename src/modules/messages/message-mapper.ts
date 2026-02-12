@@ -34,6 +34,8 @@ export interface PlatformMessageMapper {
   determineMessageType(message: any): MessageType;
   extractMediaUrl(message: any): string | undefined;
   extractMessageText(message: any): string | undefined;
+  /** Map platform-specific ACK status to MessageStatus (optional) */
+  mapAckStatusToMessageStatus?(status: string): MessageStatus | null;
 }
 
 /**
@@ -138,6 +140,14 @@ export class MessageMapperService {
   ): PlatformMessageData {
     const mapper = this.getMapper(platform, platformType);
     return mapper.mapToPlatformMessageData(rawMessage, platform);
+  }
+
+  /**
+   * Map platform-specific ACK status to MessageStatus
+   */
+  mapAckStatusToMessageStatus(platformType: string, status: string): MessageStatus | null {
+    const mapper = this.getMapper(MessagePlatform.WHATSAPP, platformType);
+    return mapper.mapAckStatusToMessageStatus?.(status) ?? null;
   }
 }
 

@@ -68,11 +68,19 @@ export class OtimaService {
       this.logger.log(`Sending Otima WhatsApp message to ${sendMessageDto.to} (${sendMessageDto.type})`);
       const payload = this.buildSendMessagePayload(sendMessageDto);
       const endpoint = this.getSendMessageEndpoint(sendMessageDto);
-      const response: AxiosResponse<OtimaSendMessageResponse> = await this.axiosInstance.post(
-        endpoint,
-        payload,
-      );
-      return response.data;
+      // Bulk endpoints return arrays, extract first element for single message
+      const response: AxiosResponse<any[]> = await this.axiosInstance.post(endpoint, payload);
+      const result = response.data?.[0];
+      if (!result) {
+        throw new HttpException('No response data received', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+      // Map the response to match OtimaSendMessageResponse interface
+      return {
+        messageId: result.message_id || '',
+        status: result.status || '',
+        to: result.phone || sendMessageDto.to,
+        timestamp: result.status_description,
+      };
     } catch (error) {
       throw this.buildHttpException(error, 'Failed to send message via Otima');
     }
@@ -82,11 +90,22 @@ export class OtimaService {
     try {
       this.logger.log(`Sending Otima WhatsApp template ${templateDto.templateId} to ${templateDto.to}`);
       const payload = this.buildSendTemplatePayload(templateDto);
-      const response: AxiosResponse<OtimaSendMessageResponse> = await this.axiosInstance.post(
-        '/v1/whatsapp/message/hsm',
+      // Bulk endpoints return arrays, extract first element for single message
+      const response: AxiosResponse<any[]> = await this.axiosInstance.post(
+        '/v1/whatsapp/bulk/message/hsm',
         payload,
       );
-      return response.data;
+      const result = response.data?.[0];
+      if (!result) {
+        throw new HttpException('No response data received', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+      // Map the response to match OtimaSendMessageResponse interface
+      return {
+        messageId: result.message_id || '',
+        status: result.status || '',
+        to: result.phone || templateDto.to,
+        timestamp: result.status_description,
+      };
     } catch (error) {
       throw this.buildHttpException(error, 'Failed to send template message via Otima');
     }
@@ -94,6 +113,8 @@ export class OtimaService {
 
   async checkWhatsappExists(checkDto: OtimaCheckWhatsappDto): Promise<any> {
     try {
+      // Note: The /v1/whatsapp/validate/number endpoint is not documented in the OpenAPI spec
+      // This method may need to be updated or removed if the endpoint doesn't exist
       const infraMobile = this.configService.get<string>('CCS_MOBILE');
       const response = await this.axiosInstance.post('/v1/whatsapp/validate/number', {
         mobile: infraMobile,
@@ -110,12 +131,22 @@ export class OtimaService {
       const body = {
         broker_code: dto.brokerCode || this.config.brokerCode,
         customer_code: dto.customerCode || this.config.customerCode,
-        messages: dto.messages.map((message) => ({
-          date: message.date,
-          document: message.document,
+        messages: dto.messages.map((message) => {
+          const mapped: any = {
           text: message.text,
           whatsapp: message.whatsapp,
-        })),
+          };
+          if (message.date) {
+            mapped.date = message.date;
+          }
+          if (message.document) {
+            mapped.document = message.document;
+          }
+          if (message.extra_fields) {
+            mapped.extra_fields = message.extra_fields;
+          }
+          return mapped;
+        }),
       };
       const response = await this.axiosInstance.post('/v1/whatsapp/bulk/message/text', body);
       return response.data;
@@ -129,14 +160,30 @@ export class OtimaService {
       const body = {
         broker_code: dto.brokerCode || this.config.brokerCode,
         customer_code: dto.customerCode || this.config.customerCode,
-        messages: dto.messages.map((message) => ({
-          date: message.date,
-          document: message.document,
-          file: message.file,
+        messages: dto.messages.map((message) => {
+          const mapped: any = {
+            file: {
+              file: message.file.file,
+              mime_type: message.file.mime_type,
+            },
           whatsapp: message.whatsapp,
-        })),
+          };
+          if (message.file.caption) {
+            mapped.file.caption = message.file.caption;
+          }
+          if (message.date) {
+            mapped.date = message.date;
+          }
+          if (message.document) {
+            mapped.document = message.document;
+          }
+          if (message.extra_fields) {
+            mapped.extra_fields = message.extra_fields;
+          }
+          return mapped;
+        }),
       };
-      const response = await this.axiosInstance.post('/v1/whatsapp/bulk/message/hsm', body);
+      const response = await this.axiosInstance.post('/v1/whatsapp/bulk/message/document', body);
       return response.data;
     } catch (error) {
       throw this.buildHttpException(error, 'Failed to send bulk file messages via Otima');
@@ -149,15 +196,36 @@ export class OtimaService {
         broker_code: dto.brokerCode || this.config.brokerCode,
         customer_code: dto.customerCode || this.config.customerCode,
         template_code: dto.templateCode,
-        messages: dto.messages.map((message) => ({
-          date: message.date,
-          document: message.document,
-          hsm_file: message.hsm_file,
-          url_callback_mo: message.url_callback_mo,
-          url_callback_status: message.url_callback_status,
-          variables: message.variables,
+        messages: dto.messages.map((message) => {
+          const mapped: any = {
           whatsapp: message.whatsapp,
-        })),
+          };
+          if (message.date) {
+            mapped.date = message.date;
+          }
+          if (message.document) {
+            mapped.document = message.document;
+          }
+          if (message.extra_fields) {
+            mapped.extra_fields = message.extra_fields;
+          }
+          if (message.hsm_file) {
+            mapped.hsm_file = {
+              name: message.hsm_file.name,
+              url: message.hsm_file.url,
+            };
+          }
+          if (message.url_callback_mo) {
+            mapped.url_callback_mo = message.url_callback_mo;
+          }
+          if (message.url_callback_status) {
+            mapped.url_callback_status = message.url_callback_status;
+          }
+          if (message.variables) {
+            mapped.variables = message.variables;
+          }
+          return mapped;
+        }),
       };
       const response = await this.axiosInstance.post('/v1/whatsapp/bulk/message/hsm', body);
       return response.data;
@@ -168,16 +236,30 @@ export class OtimaService {
 
   async sendSingleHsmBase64File(dto: OtimaSingleHsmBase64FileDto): Promise<any> {
     try {
-      const body = {
+      const body: any = {
         broker_code: dto.brokerCode || this.config.brokerCode,
         customer_code: dto.customerCode || this.config.customerCode,
-        date: dto.date,
         document: dto.document,
-        file: dto.file,
+        file: {
+          base64_data: dto.file.base64_data,
+          mime_type: dto.file.mime_type,
+          name: dto.file.name,
+        },
         template_code: dto.templateCode,
-        variables: dto.variables,
         whatsapp: dto.whatsapp,
       };
+      if (dto.date) {
+        body.date = dto.date;
+      }
+      if (dto.extra_fields) {
+        body.extra_fields = dto.extra_fields;
+      }
+      if (dto.text) {
+        body.text = dto.text;
+      }
+      if (dto.variables) {
+        body.variables = dto.variables;
+      }
       const response = await this.axiosInstance.post(
         '/v1/whatsapp/message/hsm/file/base64',
         body,
@@ -190,18 +272,28 @@ export class OtimaService {
 
   async sendMailmanHsm(dto: OtimaMailmanHsmDto): Promise<any> {
     try {
-      const body = {
+      const body: any = {
         broker_code: dto.brokerCode || this.config.brokerCode,
         customer_code: dto.customerCode || this.config.customerCode,
-        date: dto.date,
         document: dto.document,
-        failed_message: dto.failed_message,
-        file: dto.file,
+        file: {
+          base64_data: dto.file.base64_data,
+          mime_type: dto.file.mime_type,
+          name: dto.file.name,
+        },
         linha_digitavel: dto.linha_digitavel,
         template_code: dto.templateCode,
-        variables: dto.variables,
         whatsapp: dto.whatsapp,
       };
+      if (dto.date) {
+        body.date = dto.date;
+      }
+      if (dto.failed_message) {
+        body.failed_message = dto.failed_message;
+      }
+      if (dto.variables) {
+        body.variables = dto.variables;
+      }
       const response = await this.axiosInstance.post('/v1/whatsapp/message/mailman/hsm', body);
       return response.data;
     } catch (error) {
@@ -241,36 +333,97 @@ export class OtimaService {
   }
 
   private buildSendMessagePayload(sendMessageDto: OtimaSendMessageDto): any {
+    const brokerCode = this.config.brokerCode;
+    const customerCode = this.config.customerCode;
+    
     if (sendMessageDto.type === 'text') {
       return {
-        number: sendMessageDto.to,
-        text: sendMessageDto.text,
+        broker_code: brokerCode,
+        customer_code: customerCode,
+        messages: [
+          {
+            whatsapp: sendMessageDto.to,
+            text: sendMessageDto.text,
+          },
+        ],
       };
     }
+    // For file/document messages, use bulk document endpoint
+    if (!sendMessageDto.mediaUrl) {
+      throw new HttpException('Media URL is required for file/document messages', HttpStatus.BAD_REQUEST);
+    }
     return {
-      number: sendMessageDto.to,
-      url: sendMessageDto.mediaUrl,
-      caption: sendMessageDto.caption,
+      broker_code: brokerCode,
+      customer_code: customerCode,
+      messages: [
+        {
+          whatsapp: sendMessageDto.to,
+          file: {
+            file: sendMessageDto.mediaUrl,
+            mime_type: this.getMimeTypeFromUrl(sendMessageDto.mediaUrl),
+            ...(sendMessageDto.caption && { caption: sendMessageDto.caption }),
+          },
+        },
+      ],
     };
   }
 
   private buildSendTemplatePayload(templateDto: OtimaSendTemplateMessageDto): any {
+    const brokerCode = this.config.brokerCode;
+    const customerCode = this.config.customerCode;
+    
+    // Convert parameters array to variables object format if needed
+    const variables: Record<string, string> = {};
+    if (templateDto.parameters && templateDto.parameters.length > 0) {
+      templateDto.parameters.forEach((param, index) => {
+        variables[`-var${index + 1}-`] = param;
+      });
+    }
+    
     return {
-      number: templateDto.to,
-      templateCode: templateDto.templateId,
-      parameters: templateDto.parameters ?? [],
+      broker_code: brokerCode,
+      customer_code: customerCode,
+      template_code: templateDto.templateId,
+      messages: [
+        {
+          whatsapp: templateDto.to,
+          ...(Object.keys(variables).length > 0 && { variables }),
+        },
+      ],
     };
   }
 
   /**
    * Get Otima WhatsApp endpoint based on message type
-   * According to Otima docs, text and file/url messages use different endpoints.
+   * According to Otima OpenAPI spec, use bulk endpoints for single messages.
    */
   private getSendMessageEndpoint(sendMessageDto: OtimaSendMessageDto): string {
     if (sendMessageDto.type === 'text') {
-      return '/v1/whatsapp/message/text';
+      return '/v1/whatsapp/bulk/message/text';
     }
-    return '/v1/whatsapp/message/file/url';
+    return '/v1/whatsapp/bulk/message/document';
+  }
+
+  /**
+   * Helper method to determine MIME type from URL or file extension
+   */
+  private getMimeTypeFromUrl(url: string): string {
+    if (!url) return 'application/octet-stream';
+    
+    const extension = url.split('.').pop()?.toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      pdf: 'application/pdf',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      mp4: 'video/mp4',
+      mp3: 'audio/mpeg',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    };
+    
+    return mimeTypes[extension || ''] || 'application/octet-stream';
   }
 
   private buildHttpException(error: unknown, defaultMessage: string): HttpException {

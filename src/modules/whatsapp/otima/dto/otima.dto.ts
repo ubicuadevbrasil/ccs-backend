@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsArray,
+  ValidateNested,
+  IsObject,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -69,23 +77,106 @@ export class OtimaCheckWhatsappDto {
   mobileExist: string;
 }
 
-export class OtimaBulkTextMessageItemDto {
-  @ApiProperty({ description: 'Message date in format YYYY-MM-DD HH:mm:ss' })
+export class OtimaFileDto {
+  @ApiPropertyOptional({ description: 'File caption' })
+  @IsOptional()
+  @IsString()
+  caption?: string;
+
+  @ApiProperty({
+    description: 'File URL, must be public address',
+    example: 'http://mydomain.com/myfile.pdf',
+  })
   @IsString()
   @IsNotEmpty()
-  date: string;
+  file: string;
 
-  @ApiPropertyOptional({ description: 'Document identifier for tracking' })
+  @ApiProperty({
+    description: 'MIME type of the file',
+    example: 'application/pdf',
+  })
+  @IsString()
+  @IsNotEmpty()
+  mime_type: string;
+}
+
+export class OtimaHsmFileDto {
+  @ApiProperty({
+    description: 'File name',
+    example: 'file.jpg',
+  })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @ApiProperty({
+    description: 'File URL',
+    example: 'https://mydomain.com/file.jpg',
+  })
+  @IsString()
+  @IsNotEmpty()
+  url: string;
+}
+
+export class OtimaFileBase64Dto {
+  @ApiProperty({
+    description: 'File data in base64 format',
+  })
+  @IsString()
+  @IsNotEmpty()
+  base64_data: string;
+
+  @ApiProperty({
+    description: 'MIME type of the file',
+    example: 'application/pdf',
+  })
+  @IsString()
+  @IsNotEmpty()
+  mime_type: string;
+
+  @ApiProperty({
+    description: 'File name',
+    example: 'file.pdf',
+  })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+}
+
+export class OtimaBulkTextMessageItemDto {
+  @ApiPropertyOptional({
+    description: 'Message date in format YYYY-MM-DD HH:mm:ss',
+    example: '2025-12-23 14:38:24',
+  })
+  @IsOptional()
+  @IsString()
+  date?: string;
+
+  @ApiPropertyOptional({
+    description: 'Document identifier for tracking (can be anything: cpf, social secure number)',
+    example: 'ABC12345',
+  })
   @IsOptional()
   @IsString()
   document?: string;
+
+  @ApiPropertyOptional({
+    description: 'Extra fields for several usages (cpf_cnpj, contrato)',
+    example: { cpf_cnpj: '12345678901' },
+  })
+  @IsOptional()
+  @IsObject()
+  extra_fields?: Record<string, any>;
 
   @ApiProperty({ description: 'Text content of the message' })
   @IsString()
   @IsNotEmpty()
   text: string;
 
-  @ApiProperty({ description: 'Recipient WhatsApp number in international format' })
+  @ApiProperty({
+    description: 'Recipient WhatsApp number in international format',
+    example: '5541999999999',
+  })
   @IsString()
   @IsNotEmpty()
   whatsapp: string;
@@ -103,7 +194,7 @@ export class OtimaBulkTextMessagesDto {
   customerCode?: string;
 
   @ApiProperty({
-    description: 'Array of text messages to send in bulk',
+    description: 'Array of text messages to send in bulk (max 1000 per request)',
     type: [OtimaBulkTextMessageItemDto],
   })
   @IsArray()
@@ -113,31 +204,42 @@ export class OtimaBulkTextMessagesDto {
 }
 
 export class OtimaBulkFileMessageItemDto {
-  @ApiProperty({ description: 'Message date in format YYYY-MM-DD HH:mm:ss' })
+  @ApiPropertyOptional({
+    description: 'Message date in format YYYY-MM-DD HH:mm:ss',
+    example: '2025-12-23 14:38:24',
+  })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  date: string;
+  date?: string;
 
-  @ApiPropertyOptional({ description: 'Document identifier for tracking' })
+  @ApiPropertyOptional({
+    description: 'Document identifier for tracking (can be anything: cpf, social secure number)',
+    example: 'ABC12345',
+  })
   @IsOptional()
   @IsString()
   document?: string;
 
+  @ApiPropertyOptional({
+    description: 'Extra fields for several usages (cpf_cnpj, contrato)',
+    example: { cpf_cnpj: '12345678901' },
+  })
+  @IsOptional()
+  @IsObject()
+  extra_fields?: Record<string, any>;
+
   @ApiProperty({
     description: 'File information to be sent',
-    example: {
-      caption: 'myfile',
-      file: 'http://mydomain.com/myfile.pdf',
-      mime_type: 'application/pdf',
-    },
+    type: OtimaFileDto,
   })
-  file: {
-    caption?: string;
-    file: string;
-    mime_type: string;
-  };
+  @ValidateNested()
+  @Type(() => OtimaFileDto)
+  file: OtimaFileDto;
 
-  @ApiProperty({ description: 'Recipient WhatsApp number in international format' })
+  @ApiProperty({
+    description: 'Recipient WhatsApp number in international format',
+    example: '5541999999999',
+  })
   @IsString()
   @IsNotEmpty()
   whatsapp: string;
@@ -155,7 +257,7 @@ export class OtimaBulkFileMessagesDto {
   customerCode?: string;
 
   @ApiProperty({
-    description: 'Array of file/document messages to send in bulk',
+    description: 'Array of file/document messages to send in bulk (max 1000 per request)',
     type: [OtimaBulkFileMessageItemDto],
   })
   @IsArray()
@@ -165,46 +267,65 @@ export class OtimaBulkFileMessagesDto {
 }
 
 export class OtimaBulkHsmMessageItemDto {
-  @ApiProperty({ description: 'Message date in format YYYY-MM-DD HH:mm:ss' })
+  @ApiPropertyOptional({
+    description: 'Message date in format YYYY-MM-DD HH:mm:ss',
+    example: '2025-12-23 14:38:24',
+  })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  date: string;
+  date?: string;
 
-  @ApiPropertyOptional({ description: 'Document identifier for tracking' })
+  @ApiPropertyOptional({
+    description: 'Document identifier for tracking (can be anything: cpf, social secure number)',
+    example: 'ABC12345',
+  })
   @IsOptional()
   @IsString()
   document?: string;
 
   @ApiPropertyOptional({
-    description: 'Optional HSM file (image or document) associated with the message',
-    example: {
-      name: 'file.jpg',
-      url: 'https://mydomain.com/file.jpg',
-    },
+    description: 'Extra fields for several usages (gocheck, receptivo)',
+    example: { cpf_cnpj: '12345678901' },
   })
   @IsOptional()
-  hsm_file?: {
-    name: string;
-    url: string;
-  };
+  @IsObject()
+  extra_fields?: Record<string, any>;
 
-  @ApiPropertyOptional({ description: 'Callback URL for MO (inbound) events' })
+  @ApiPropertyOptional({
+    description: 'Optional HSM file (image or document) associated with the message',
+    type: OtimaHsmFileDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OtimaHsmFileDto)
+  hsm_file?: OtimaHsmFileDto;
+
+  @ApiPropertyOptional({
+    description: 'Callback URL for MO (inbound) events',
+  })
   @IsOptional()
   @IsString()
   url_callback_mo?: string;
 
-  @ApiPropertyOptional({ description: 'Callback URL for status events' })
+  @ApiPropertyOptional({
+    description: 'Callback URL for status events',
+  })
   @IsOptional()
   @IsString()
   url_callback_status?: string;
 
   @ApiPropertyOptional({
-    description: 'Template variables map, e.g. { "-var1-": "name" }',
+    description: 'Template variables map, e.g. { "-var1-": "name", "-var2-": "document" }',
+    example: { '-var1-': 'name', '-var2-': 'document' },
   })
   @IsOptional()
+  @IsObject()
   variables?: Record<string, string>;
 
-  @ApiProperty({ description: 'Recipient WhatsApp number in international format' })
+  @ApiProperty({
+    description: 'Recipient WhatsApp number in international format',
+    example: '5541999999999',
+  })
   @IsString()
   @IsNotEmpty()
   whatsapp: string;
@@ -227,7 +348,7 @@ export class OtimaBulkHsmMessagesDto {
   templateCode: string;
 
   @ApiProperty({
-    description: 'Array of HSM messages to send in bulk',
+    description: 'Array of HSM messages to send in bulk (max 1000 per request)',
     type: [OtimaBulkHsmMessageItemDto],
   })
   @IsArray()
@@ -247,29 +368,44 @@ export class OtimaSingleHsmBase64FileDto {
   @IsString()
   customerCode?: string;
 
-  @ApiProperty({ description: 'Message date in format YYYY-MM-DD HH:mm:ss' })
-  @IsString()
-  @IsNotEmpty()
-  date: string;
-
-  @ApiPropertyOptional({ description: 'Document identifier for tracking' })
+  @ApiPropertyOptional({
+    description: 'Message date in format YYYY-MM-DD HH:mm:ss',
+    example: '2025-12-23 14:38:24',
+  })
   @IsOptional()
   @IsString()
-  document?: string;
+  date?: string;
+
+  @ApiProperty({
+    description: 'Document identifier for tracking (can be anything: cpf, social secure number)',
+    example: 'ABC12345',
+  })
+  @IsString()
+  @IsNotEmpty()
+  document: string;
+
+  @ApiPropertyOptional({
+    description: 'Extra fields for several usages (gocheck, receptivo)',
+    example: { cpf_cnpj: '12345678901' },
+  })
+  @IsOptional()
+  @IsObject()
+  extra_fields?: Record<string, any>;
 
   @ApiProperty({
     description: 'File data in base64 format',
-    example: {
-      base64_data: 'JVBERi0xLjUK...',
-      mime_type: 'application/pdf',
-      name: 'file.pdf',
-    },
+    type: OtimaFileBase64Dto,
   })
-  file: {
-    base64_data: string;
-    mime_type: string;
-    name: string;
-  };
+  @ValidateNested()
+  @Type(() => OtimaFileBase64Dto)
+  file: OtimaFileBase64Dto;
+
+  @ApiPropertyOptional({
+    description: 'Text content (optional)',
+  })
+  @IsOptional()
+  @IsString()
+  text?: string;
 
   @ApiProperty({ description: 'Template code configured in Otima' })
   @IsString()
@@ -277,12 +413,17 @@ export class OtimaSingleHsmBase64FileDto {
   templateCode: string;
 
   @ApiPropertyOptional({
-    description: 'Template variables map, e.g. { "-var1-": "name" }',
+    description: 'Template variables map, e.g. { "-var1-": "name", "-var2-": "document" }',
+    example: { '-var1-': 'name', '-var2-': 'document' },
   })
   @IsOptional()
+  @IsObject()
   variables?: Record<string, string>;
 
-  @ApiProperty({ description: 'Recipient WhatsApp number in international format' })
+  @ApiProperty({
+    description: 'Recipient WhatsApp number in international format',
+    example: '5541999999999',
+  })
   @IsString()
   @IsNotEmpty()
   whatsapp: string;
@@ -299,36 +440,40 @@ export class OtimaMailmanHsmDto {
   @IsString()
   customerCode?: string;
 
-  @ApiProperty({ description: 'Message date in format YYYY-MM-DD HH:mm:ss' })
-  @IsString()
-  @IsNotEmpty()
-  date: string;
-
-  @ApiPropertyOptional({ description: 'Document identifier for tracking' })
+  @ApiPropertyOptional({
+    description: 'Message date in format YYYY-MM-DD HH:mm:ss',
+    example: '2025-12-23 14:38:24',
+  })
   @IsOptional()
   @IsString()
-  document?: string;
+  date?: string;
 
-  @ApiPropertyOptional({ description: 'Fallback text used when message fails' })
+  @ApiProperty({
+    description: 'Document identifier for tracking (can be anything: cpf, social secure number)',
+    example: 'ABC12345',
+  })
+  @IsString()
+  @IsNotEmpty()
+  document: string;
+
+  @ApiPropertyOptional({
+    description: 'Fallback text used when message fails',
+  })
   @IsOptional()
   @IsString()
   failed_message?: string;
 
   @ApiProperty({
     description: 'File data in base64 format',
-    example: {
-      base64_data: 'JVBERi0xLjUK...',
-      mime_type: 'application/pdf',
-      name: 'file.pdf',
-    },
+    type: OtimaFileBase64Dto,
   })
-  file: {
-    base64_data: string;
-    mime_type: string;
-    name: string;
-  };
+  @ValidateNested()
+  @Type(() => OtimaFileBase64Dto)
+  file: OtimaFileBase64Dto;
 
-  @ApiProperty({ description: 'Line digit (linha digitável) of the document' })
+  @ApiProperty({
+    description: 'Line digit (linha digitável) of the document',
+  })
   @IsString()
   @IsNotEmpty()
   linha_digitavel: string;
@@ -339,12 +484,17 @@ export class OtimaMailmanHsmDto {
   templateCode: string;
 
   @ApiPropertyOptional({
-    description: 'Template variables map, e.g. { "-var1-": "name" }',
+    description: 'Template variables map, e.g. { "-var1-": "name", "-var2-": "document" }',
+    example: { '-var1-': 'name', '-var2-': 'document' },
   })
   @IsOptional()
+  @IsObject()
   variables?: Record<string, string>;
 
-  @ApiProperty({ description: 'Recipient WhatsApp number in international format' })
+  @ApiProperty({
+    description: 'Recipient WhatsApp number in international format',
+    example: '5541999999999',
+  })
   @IsString()
   @IsNotEmpty()
   whatsapp: string;

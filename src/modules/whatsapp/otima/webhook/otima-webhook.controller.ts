@@ -26,6 +26,7 @@ export class OtimaWebhookController {
   })
   async handleMessages(@Body() body: any, @Res() res: Response): Promise<void> {
     try {
+      console.log('body messages', new Date().toISOString(), JSON.stringify(body, null, 2));
       await this.otimaWebhookService.processInboundMessages(body);
       res.sendStatus(200);
     } catch (error) {
@@ -49,6 +50,7 @@ export class OtimaWebhookController {
   })
   async handleAck(@Body() body: any, @Res() res: Response): Promise<void> {
     try {
+      console.log('body ack', body);
       await this.otimaWebhookService.processStatusUpdates(body);
       res.sendStatus(200);
     } catch (error) {

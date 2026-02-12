@@ -1,5 +1,6 @@
 import { Knex } from 'knex';
 import { randomUUID } from 'crypto';
+import { faker } from '@faker-js/faker';
 
 export async function seed(knex: Knex): Promise<void> {
   console.log('🌱 Starting customers seed...');
@@ -1094,9 +1095,16 @@ export async function seed(knex: Knex): Promise<void> {
   ];
 
   // Extract tags from customers before inserting (tags is not a column in customer table)
+  // Also add profilePicUrl using faker for all customers
   const customersWithTags = mockCustomers.map(customer => {
     const { tags, ...customerData } = customer;
-    return { customerData, tags: tags || [] };
+    return { 
+      customerData: {
+        ...customerData,
+        profilePicUrl: faker.image.avatar(),
+      }, 
+      tags: tags || [] 
+    };
   });
 
   // Insert customers (without tags field)

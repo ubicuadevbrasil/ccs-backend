@@ -75,6 +75,20 @@ export class AnalyticsService {
       .first();
     const readMessages = parseInt(readMessagesResult?.count as string) || 0;
 
+    const avgWaitingQueueTimeSeconds = queueStats.averageWaitingTime > 0
+      ? Math.round((queueStats.averageWaitingTime / 1000) * 100) / 100
+      : null;
+    const avgServiceTimeResult = await this.knex('history')
+      .whereNotNull('attendedAt')
+      .whereNotNull('finishedAt')
+      .whereRaw('DATE(??) = CURRENT_DATE', ['finishedAt'])
+      .select(this.knex.raw('AVG(EXTRACT(EPOCH FROM ("finishedAt" - "attendedAt"))) as "avgSeconds"'))
+      .first();
+    const avgServiceTimeSeconds =
+      avgServiceTimeResult?.avgSeconds != null && Number(avgServiceTimeResult.avgSeconds) > 0
+        ? Math.round(Number(avgServiceTimeResult.avgSeconds) * 100) / 100
+        : null;
+
     return {
       customersWaitingInQueue: queueStats.waiting,
       customersInService: queueStats.service,
@@ -83,27 +97,40 @@ export class AnalyticsService {
       sentMessages,
       readMessages,
       total: receivedMessages + sentMessages,
+      avgWaitingQueueTimeSeconds,
+      avgServiceTimeSeconds,
     };
   }
 
   /**
-   * Get operators with pagination and filtering
+   * Get operators with pagination and filtering.
+   * Includes socket-connected users (excluding current auth user) and recently disconnected
+   * (lastActivity within 30 min). Excludes users who have logged out (logoutAt set).
    */
-  async getOperators(query: OperatorsQueryDto): Promise<OperatorsResponseDto> {
+  async getOperators(query: OperatorsQueryDto, currentUserId: string): Promise<OperatorsResponseDto> {
     const page = parseInt(query.page || '1');
     const limit = parseInt(query.limit || '10');
     const offset = (page - 1) * limit;
 
-    // Get connected user IDs and their connection timestamps
+    const RECENT_DISCONNECT_MINUTES = 30;
+    const recentCutoff = new Date(Date.now() - RECENT_DISCONNECT_MINUTES * 60 * 1000);
+
     const connectedUserIds = this.socketGateway.getConnectedUsers();
     const connectionTimestamps = this.socketGateway.getAllConnectedUsersWithTimestamps();
 
-    // Build query for users
-    let queryBuilder = this.knex('user');
+    let queryBuilder = this.knex('user')
+      .whereNull('logoutAt')
+      .where('id', '!=', currentUserId)
+      .where((builder) => {
+        if (connectedUserIds.length > 0) {
+          builder.whereIn('id', connectedUserIds).orWhere('lastActivityAt', '>=', recentCutoff);
+        } else {
+          builder.where('lastActivityAt', '>=', recentCutoff);
+        }
+      });
 
-    // Apply search filter
     if (query.search) {
-      queryBuilder = queryBuilder.where((builder) => {
+      queryBuilder = queryBuilder.andWhere((builder) => {
         builder
           .whereILike('name', `%${query.search}%`)
           .orWhereILike('email', `%${query.search}%`)
@@ -111,45 +138,25 @@ export class AnalyticsService {
       });
     }
 
-    // Filter only connected users
-    if (connectedUserIds.length > 0) {
-      queryBuilder = queryBuilder.whereIn('id', connectedUserIds);
-    } else {
-      // If no connected users, return empty result
-      return {
-        data: [],
-        total: 0,
-        page,
-        limit,
-        totalPages: 0,
-      };
-    }
-
-    // Get total count
     const totalQuery = queryBuilder.clone();
     const [{ count }] = await totalQuery.count('* as count');
     const total = parseInt(count as string);
 
-    // Get paginated results
     const users = await queryBuilder
       .select('*')
       .orderBy('lastActivityAt', 'desc')
       .limit(limit)
       .offset(offset);
 
-    // Build operator response with additional data
     const operators: OperatorResponseDto[] = await Promise.all(
       users.map(async (user) => {
+        const isConnected = connectedUserIds.includes(user.id);
         const connectionTime = connectionTimestamps.get(user.id);
         const socketOnlineTime = connectionTime
           ? Date.now() - connectionTime.getTime()
           : 0;
-
-        // Get socket ID
         const socketId = this.socketGateway.getSocketId(user.id) || '';
 
-        // Get customers in service for this user from queue
-        // We need to query the queue service for services with this userId
         const queueQuery = {
           userId: user.id,
           status: QueueStatus.SERVICE,
@@ -159,7 +166,6 @@ export class AnalyticsService {
         const userServices = await this.queueService.findAllQueue(queueQuery as any);
         const customersInService = userServices.data.length;
 
-        // Get finished services for this user today
         const finishedServicesResult = await this.knex('history')
           .where('userId', user.id)
           .whereNotNull('finishedAt')
@@ -169,9 +175,11 @@ export class AnalyticsService {
         const finishedServices = parseInt(finishedServicesResult?.count as string) || 0;
 
         return {
+          isConnected,
           socketId,
           socketOnlineTime,
           userId: user.id,
+          userProfile: user.profile ?? 'operator',
           userName: user.name,
           userEmail: user.email || '',
           userContact: user.contact || '',
@@ -195,78 +203,82 @@ export class AnalyticsService {
   }
 
   /**
-   * Get active services with pagination and filtering
+   * Get active queues (waiting + service) from Redis with pagination and filtering
    */
   async getActiveServices(query: ActiveServicesQueryDto): Promise<ActiveServicesResponseDto> {
     const page = parseInt(query.page || '1');
     const limit = parseInt(query.limit || '10');
     const offset = (page - 1) * limit;
 
-    // Get all sessionIds from queue with status='service'
-    const serviceSessionIds = await this.queueService.getSessionIdsByStatus(QueueStatus.SERVICE);
+    const queueQuery = { page: '1', limit: '5000' };
+    const [waitingResult, serviceResult] = await Promise.all([
+      this.queueService.findAllQueue({ ...queueQuery, status: QueueStatus.WAITING }),
+      this.queueService.findAllQueue({ ...queueQuery, status: QueueStatus.SERVICE }),
+    ]);
 
-    if (serviceSessionIds.length === 0) {
-      return {
-        data: [],
-        total: 0,
-        page,
-        limit,
-        totalPages: 0,
-      };
-    }
-
-    // Build query with joins
-    let queryBuilder = this.knex('history')
-      .leftJoin('customer', 'history.customerId', 'customer.id')
-      .leftJoin('user', 'history.userId', 'user.id')
-      .whereIn('history.sessionId', serviceSessionIds)
-      .select(
-        'history.protocol',
-        'history.sessionId',
-        'history.direction',
-        'history.attendedAt',
-        'customer.name as customerName',
-        'customer.contact as customerNumber',
-        'customer.donorCode',
-        'user.name as operatorName',
+    let items = [...waitingResult.data, ...serviceResult.data];
+    const searchLower = query.search?.toLowerCase();
+    if (searchLower) {
+      items = items.filter(
+        (q) =>
+          (q.sessionId && q.sessionId.toLowerCase().includes(searchLower)) ||
+          (q.customer?.name && q.customer.name.toLowerCase().includes(searchLower)) ||
+          (q.customer?.contact && q.customer.contact.toLowerCase().includes(searchLower)) ||
+          (q.metadata?.protocol && String(q.metadata.protocol).toLowerCase().includes(searchLower)),
       );
-
-    // Apply search filter
-    if (query.search) {
-      queryBuilder = queryBuilder.where((builder) => {
-        builder
-          .whereILike('history.protocol', `%${query.search}%`)
-          .orWhereILike('customer.name', `%${query.search}%`)
-          .orWhereILike('customer.contact', `%${query.search}%`);
-      });
     }
-
-    // Apply direction filter
     if (query.direction) {
-      queryBuilder = queryBuilder.where('history.direction', query.direction);
+      items = items.filter((q) => (q.metadata?.direction ?? HistoryDirection.INBOUND) === query.direction);
     }
 
-    // Get total count
-    const totalQuery = queryBuilder.clone();
-    const [{ count }] = await totalQuery.count('* as count');
-    const total = parseInt(count as string);
+    items.sort((a, b) => {
+      const aTime = a.attendedAt?.getTime() ?? 0;
+      const bTime = b.attendedAt?.getTime() ?? 0;
+      return bTime - aTime;
+    });
 
-    // Get paginated results
-    const services = await queryBuilder
-      .orderBy('history.attendedAt', 'desc')
-      .limit(limit)
-      .offset(offset);
+    const total = items.length;
+    const paginated = items.slice(offset, offset + limit);
 
-    const activeServices: ActiveServiceResponseDto[] = services.map((service) => ({
-      protocol: service.protocol || null,
-      sessionId: service.sessionId,
-      customerName: service.customerName || null,
-      customerNumber: service.customerNumber || null,
-      donorCode: service.donorCode || null,
-      operatorName: service.operatorName || null,
-      direction: service.direction as HistoryDirection,
-      attendedAt: service.attendedAt || null,
-    }));
+    const activeServices: ActiveServiceResponseDto[] = paginated.map((q) => {
+      const cust = q.customer;
+      const tags = cust?.tags;
+      const tagsList = Array.isArray(tags)
+        ? (tags as Array<{ tag?: string }>).map((t) => (typeof t === 'string' ? t : t?.tag)).filter(Boolean) as string[]
+        : [];
+      const customerDto: ActiveServiceResponseDto['customer'] = cust
+        ? {
+            id: cust.id,
+            platformId: cust.platformId,
+            name: cust.name ?? undefined,
+            email: cust.email ?? undefined,
+            cpf: cust.cpf ?? undefined,
+            profilePicture: (cust as { profilePicture?: string }).profilePicture ?? (cust as { profilePicUrl?: string }).profilePicUrl ?? undefined,
+            donorCode: cust.donorCode ?? undefined,
+            observations: cust.observations ?? undefined,
+            tags: tagsList,
+          }
+        : null;
+      const usr = q.user;
+      const userDto: ActiveServiceResponseDto['user'] = usr
+        ? {
+            id: usr.id,
+            name: usr.name ?? undefined,
+            profilePicture: usr.profilePicture ?? undefined,
+            email: usr.email ?? undefined,
+            contact: usr.contact ?? undefined,
+          }
+        : null;
+      return {
+        protocol: (q.metadata?.protocol as string) ?? null,
+        sessionId: q.sessionId,
+        customer: customerDto,
+        user: userDto,
+        direction: (q.metadata?.direction as HistoryDirection) ?? HistoryDirection.INBOUND,
+        startedAt: q.createdAt ?? null,
+        attendedAt: q.attendedAt ?? null,
+      };
+    });
 
     return {
       data: activeServices,

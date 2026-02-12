@@ -49,9 +49,29 @@ export class CardsMetricsResponseDto {
     example: 432,
   })
   total: number;
+
+  @ApiPropertyOptional({
+    description: 'Average waiting queue time in seconds (from Redis: attended entries)',
+    example: 125.5,
+    nullable: true,
+  })
+  avgWaitingQueueTimeSeconds: number | null;
+
+  @ApiPropertyOptional({
+    description: 'Average service time in seconds (from Redis: entries currently in service)',
+    example: 342.8,
+    nullable: true,
+  })
+  avgServiceTimeSeconds: number | null;
 }
 
 export class OperatorResponseDto {
+  @ApiProperty({
+    description: 'Whether the user is currently connected via socket',
+    example: true,
+  })
+  isConnected: boolean;
+
   @ApiProperty({
     description: 'Socket ID',
     example: 'socket_abc123',
@@ -69,6 +89,13 @@ export class OperatorResponseDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   userId: string;
+
+  @ApiProperty({
+    description: 'User profile/role',
+    example: 'operator',
+    enum: ['admin', 'supervisor', 'operator'],
+  })
+  userProfile: string;
 
   @ApiProperty({
     description: 'User name',
@@ -189,6 +216,89 @@ export class OperatorsResponseDto {
   totalPages: number;
 }
 
+export class ActiveServiceCustomerDto {
+  @ApiPropertyOptional({
+    description: 'Customer unique identifier',
+    example: '3e9fdea3-f938-4167-9772-579265c896be',
+  })
+  id?: string;
+
+  @ApiPropertyOptional({
+    description: 'Platform-specific ID (WhatsApp phone, Telegram user_id, etc.)',
+    example: '5511982740276',
+  })
+  platformId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Customer name',
+    example: 'Odair Victoriano',
+  })
+  name?: string;
+
+  @ApiPropertyOptional({
+    description: 'Customer email',
+  })
+  email?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Customer CPF',
+  })
+  cpf?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Customer profile picture URL',
+  })
+  profilePicture?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Customer donor code',
+  })
+  donorCode?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Customer observations',
+  })
+  observations?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Customer tags',
+    type: [String],
+    example: [],
+  })
+  tags?: string[];
+}
+
+export class ActiveServiceUserDto {
+  @ApiPropertyOptional({
+    description: 'User unique identifier',
+    example: '48512c15-6497-11ee-8da1-ac1f6bf53052',
+  })
+  id?: string;
+
+  @ApiPropertyOptional({
+    description: 'User name',
+    example: 'Ubicua Supervisor',
+  })
+  name?: string;
+
+  @ApiPropertyOptional({
+    description: 'User profile picture URL',
+  })
+  profilePicture?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'User email',
+    example: 'ubcsuper@ubicua.com',
+  })
+  email?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'User contact',
+    example: '+5511999999992',
+  })
+  contact?: string | null;
+}
+
 export class ActiveServiceResponseDto {
   @ApiProperty({
     description: 'Service protocol',
@@ -202,29 +312,17 @@ export class ActiveServiceResponseDto {
   })
   sessionId: string;
 
-  @ApiProperty({
-    description: 'Customer name',
-    example: 'Jane Smith',
+  @ApiPropertyOptional({
+    description: 'Customer information',
+    type: ActiveServiceCustomerDto,
   })
-  customerName: string | null;
+  customer?: ActiveServiceCustomerDto | null;
 
-  @ApiProperty({
-    description: 'Customer number/contact',
-    example: '+1234567890',
+  @ApiPropertyOptional({
+    description: 'User (operator) information',
+    type: ActiveServiceUserDto,
   })
-  customerNumber: string | null;
-
-  @ApiProperty({
-    description: 'Donor code',
-    example: 'DONOR123',
-  })
-  donorCode: string | null;
-
-  @ApiProperty({
-    description: 'Operator name',
-    example: 'John Doe',
-  })
-  operatorName: string | null;
+  user?: ActiveServiceUserDto | null;
 
   @ApiProperty({
     description: 'Service direction',
@@ -232,6 +330,12 @@ export class ActiveServiceResponseDto {
     example: HistoryDirection.INBOUND,
   })
   direction: HistoryDirection;
+
+  @ApiProperty({
+    description: 'When the queue entry was created (service started)',
+    example: '2024-01-15T10:00:00Z',
+  })
+  startedAt: Date | null;
 
   @ApiProperty({
     description: 'When the service was attended',

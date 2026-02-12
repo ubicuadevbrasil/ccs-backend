@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { OtimaService } from './otima.service';
+import { OtimaApiModule } from './otima-api.module';
 import { OtimaController } from './otima.controller';
 import { OtimaWebhookModule } from './webhook/otima-webhook.module';
 
@@ -9,10 +8,9 @@ import { OtimaWebhookModule } from './webhook/otima-webhook.module';
  * Provides integration with Otima broker WhatsApp APIs
  */
 @Module({
-  imports: [ConfigModule, OtimaWebhookModule],
+  imports: [OtimaApiModule, OtimaWebhookModule],
   controllers: [OtimaController],
-  providers: [OtimaService],
-  exports: [OtimaService],
+  exports: [OtimaApiModule],
 })
 export class OtimaModule {}
 

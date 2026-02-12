@@ -8,14 +8,21 @@ export enum HistoryPlatform {
   OTHER = 'other',
 }
 
+export enum HistoryDirection {
+  INBOUND = 'inbound',
+  OUTBOUND = 'outbound',
+}
+
 export interface HistoryEntity {
   id: string;
   sessionId: string;
   protocol?: string;
   userId?: string;
   customerId?: string;
+  donorCode?: string;
   observations?: string;
   platform: HistoryPlatform;
+  direction: HistoryDirection;
   startedAt: Date;
   attendedAt?: Date;
   finishedAt?: Date;
@@ -29,8 +36,10 @@ export class History implements HistoryEntity {
   protocol?: string;
   userId?: string;
   customerId?: string;
+  donorCode?: string;
   observations?: string;
   platform: HistoryPlatform;
+  direction: HistoryDirection;
   startedAt: Date;
   attendedAt?: Date;
   finishedAt?: Date;

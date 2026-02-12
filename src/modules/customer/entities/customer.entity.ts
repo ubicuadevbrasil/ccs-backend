@@ -32,7 +32,6 @@ export interface CustomerEntity {
   donorCode?: string;
   priority: number;
   isGroup: boolean;
-  skipBot: boolean;
   type: CustomerType;
   status: CustomerStatus;
   platform: CustomerPlatform;
@@ -55,7 +54,6 @@ export class Customer implements CustomerEntity {
   donorCode?: string;
   priority: number;
   isGroup: boolean;
-  skipBot: boolean;
   type: CustomerType;
   status: CustomerStatus;
   platform: CustomerPlatform;
@@ -142,7 +140,6 @@ export class Customer implements CustomerEntity {
       donorCode: this.donorCode,
       priority: this.priority,
       isGroup: this.isGroup,
-      skipBot: this.skipBot,
       type: this.type,
       status: this.status,
       platform: this.platform,

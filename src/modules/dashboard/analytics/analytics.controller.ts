@@ -1,6 +1,7 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { AnalyticsService } from './analytics.service';
 import {
   CardsMetricsResponseDto,
@@ -38,8 +39,11 @@ export class AnalyticsController {
     description: 'Operators retrieved successfully',
     type: OperatorsResponseDto,
   })
-  async getOperators(@Query() query: OperatorsQueryDto): Promise<OperatorsResponseDto> {
-    return this.analyticsService.getOperators(query);
+  async getOperators(
+    @Query() query: OperatorsQueryDto,
+    @CurrentUser() currentUser: { id: string },
+  ): Promise<OperatorsResponseDto> {
+    return this.analyticsService.getOperators(query, currentUser.id);
   }
 
   @Get('services')

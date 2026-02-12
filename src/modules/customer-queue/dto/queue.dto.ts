@@ -366,6 +366,16 @@ export class EndServiceDto {
   @IsString()
   @MaxLength(1000)
   observations?: string;
+
+  @ApiPropertyOptional({
+    description: 'Donor code for the interaction',
+    example: 'DONOR123',
+    maxLength: 255,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  donorCode?: string;
 }
 
 export class TransferQueueDto {

@@ -12,11 +12,12 @@ import {
   CreateQueueFacebookDto
 } from './dto/queue.dto';
 import { HistoryService } from '../history/history.service';
-import { HistoryPlatform } from '../history/entities/history.entity';
+import { HistoryPlatform, HistoryDirection } from '../history/entities/history.entity';
 import { Customer } from '../customer/entities/customer.entity';
 import { User } from '../user/entities/user.entity';
 import { Message } from '../messages/entities/message.entity';
 import { UserService } from '../user/user.service';
+import { getProtocol } from '../../common/utils/date.utils';
 
 export interface PaginatedResult<T> {
   data: T[];
@@ -126,7 +127,7 @@ export class QueueService {
       userId: createQueueDto.userId,
       user: createQueueDto.user,
       platform: HistoryPlatform.WHATSAPP,
-      status: QueueStatus.BOT,
+      status: QueueStatus.WAITING,
       attendedAt: createQueueDto.attendedAt,
       lastMessage: createQueueDto.lastMessage,
       metadata: createQueueDto.metadata,
@@ -147,7 +148,7 @@ export class QueueService {
       userId: createQueueDto.userId,
       user: createQueueDto.user,
       platform: HistoryPlatform.TELEGRAM,
-      status: QueueStatus.BOT,
+      status: QueueStatus.WAITING,
       attendedAt: createQueueDto.attendedAt,
       lastMessage: createQueueDto.lastMessage,
       metadata: createQueueDto.metadata,
@@ -168,7 +169,7 @@ export class QueueService {
       userId: createQueueDto.userId,
       user: createQueueDto.user,
       platform: HistoryPlatform.INSTAGRAM,
-      status: QueueStatus.BOT,
+      status: QueueStatus.WAITING,
       attendedAt: createQueueDto.attendedAt,
       lastMessage: createQueueDto.lastMessage,
       metadata: createQueueDto.metadata,
@@ -189,7 +190,7 @@ export class QueueService {
       userId: createQueueDto.userId,
       user: createQueueDto.user,
       platform: HistoryPlatform.FACEBOOK,
-      status: QueueStatus.BOT,
+      status: QueueStatus.WAITING,
       attendedAt: createQueueDto.attendedAt,
       lastMessage: createQueueDto.lastMessage,
       metadata: createQueueDto.metadata,
@@ -437,13 +438,16 @@ export class QueueService {
 
     const queue = new Queue(this.deserializeQueueData(queueData));
 
-    // Create history record
+    // Create history record with protocol and donorCode from request
     await this.historyService.createHistory({
       sessionId: queue.sessionId,
+      protocol: getProtocol(),
+      donorCode: endServiceDto.donorCode,
       userId: queue.userId,
       customerId: queue.customerId,
       observations: endServiceDto.observations,
       platform: queue.platform,
+      direction: HistoryDirection.INBOUND,
       startedAt: queue.createdAt.toISOString(),
       attendedAt: queue.attendedAt?.toISOString(),
       finishedAt: new Date().toISOString(),

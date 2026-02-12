@@ -2,8 +2,35 @@ import { Injectable, Logger } from '@nestjs/common';
 import { SocketGateway } from './socket.gateway';
 
 /**
+ * Chat message payload format matching ChatService response.
+ * Used for broadcasting inbound/outbound messages to connected socket users.
+ */
+export interface ChatMessagePayload {
+  id: string;
+  messageId: string;
+  sessionId: string;
+  senderType: string;
+  recipientType: string;
+  customerId: string | null;
+  userId: string | null;
+  fromMe: boolean;
+  system: boolean;
+  isGroup: boolean;
+  message?: string;
+  media?: string;
+  type: string;
+  platform: string;
+  status: string;
+  metadata?: any;
+  replyMessageId?: string;
+  sentAt: Date | string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+/**
  * Socket Service for managing real-time events
- * 
+ *
  * This service provides a clean interface for other modules to send
  * real-time events to connected clients without directly accessing the gateway.
  */
@@ -33,6 +60,28 @@ export class SocketService {
   }
 
   /**
+   * Broadcast a chat message in the format of ChatService (full message entity).
+   * Used when receiving inbound messages (e.g. from Otima webhook) or sending outbound.
+   */
+  broadcastChatMessage(message: ChatMessagePayload): void {
+    this.socketGateway.broadcastEvent('new_message', {
+      type: 'message',
+      data: message,
+    });
+  }
+
+  /**
+   * Send a chat message to a specific user (e.g. the agent assigned to the queue).
+   * Returns false if the user is not connected.
+   */
+  sendChatMessageToUser(userId: string, message: ChatMessagePayload): boolean {
+    return this.socketGateway.sendToUser(userId, 'new_message', {
+      type: 'message',
+      data: message,
+    });
+  }
+
+  /**
    * Broadcast message status update to all connected users
    */
   broadcastMessageStatusUpdate(statusData: {
@@ -42,6 +91,24 @@ export class SocketService {
     chatId: string;
   }): void {
     this.socketGateway.broadcastEvent('message_status_update', {
+      type: 'status_update',
+      data: statusData,
+    });
+  }
+
+  /**
+   * Send message status update to a specific user (e.g. the agent assigned to the chat).
+   */
+  sendMessageStatusUpdateToUser(
+    userId: string,
+    statusData: {
+      messageId: string;
+      status: 'sent' | 'delivered' | 'read' | 'failed';
+      timestamp: string;
+      chatId: string;
+    },
+  ): boolean {
+    return this.socketGateway.sendToUser(userId, 'message_status_update', {
       type: 'status_update',
       data: statusData,
     });

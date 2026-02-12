@@ -1,0 +1,3891 @@
+{
+    "definitions": {
+      "Batch": {
+        "properties": {
+          "end": {
+            "$ref": "#/definitions/Date"
+          },
+          "start": {
+            "$ref": "#/definitions/Date"
+          }
+        },
+        "required": [
+          "start"
+        ],
+        "type": "object"
+      },
+      "Blacklist": {
+        "properties": {
+          "documents": {
+            "items": {
+              "properties": {
+                "create_at": {
+                  "$ref": "#/definitions/Date"
+                },
+                "document": {
+                  "$ref": "#/definitions/Document"
+                }
+              }
+            },
+            "type": "array"
+          },
+          "phones": {
+            "items": {
+              "properties": {
+                "create_at": {
+                  "$ref": "#/definitions/Date"
+                },
+                "phone": {
+                  "$ref": "#/definitions/Phone"
+                }
+              }
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "CallbackBrokerCode": {
+        "description": "broker code (codigo do fornecedor)",
+        "example": "CODE123",
+        "type": "string"
+      },
+      "CallbackCustomerCode": {
+        "description": "customer code (codigo de centro de custo)",
+        "example": "CUSTOMER_CODE",
+        "type": "string"
+      },
+      "CallbackDate": {
+        "description": "event date",
+        "example": "2023-06-16 09:43:04",
+        "type": "string"
+      },
+      "CallbackDocument": {
+        "description": "document like cpf or social number",
+        "example": "12345678901",
+        "type": "string"
+      },
+      "CallbackFilePayload": {
+        "example": {
+          "body": {
+            "caption": "arquivo",
+            "file": "https://fileurl.example/file-hash",
+            "id": "",
+            "mime_type": "image/jpeg",
+            "sha256": ""
+          },
+          "type": "image"
+        },
+        "properties": {
+          "body": {
+            "description": "the file content",
+            "type": "object"
+          },
+          "type": {
+            "description": "type can be document, image, audio or video",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CallbackMessageID": {
+        "description": "message id",
+        "example": "30c376cb-8c34-4f56-92bf-fbdfa9a45ad8",
+        "type": "string"
+      },
+      "CallbackPhone": {
+        "description": "phone number",
+        "example": "5541999999999",
+        "type": "string"
+      },
+      "CallbackStatus": {
+        "description": "status details, possible values: blacklist, cancelado, entregue, enviado, inválido, lido, não entregue, não Enviado, repetido, válido, Indisponível",
+        "example": "não entregue",
+        "type": "string"
+      },
+      "CallbackTextPayload": {
+        "example": {
+          "body": "0943",
+          "type": "text"
+        },
+        "type": "object"
+      },
+      "CallbackType": {
+        "description": "event type",
+        "example": "message",
+        "type": "string"
+      },
+      "CallbackUsername": {
+        "description": "the user name",
+        "example": "Contact name",
+        "type": "string"
+      },
+      "CampaignSMSMessage": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/definitions/Message"
+            },
+            "maxItems": 100000,
+            "minItems": 1,
+            "type": "array"
+          },
+          "template_code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customer_code",
+          "messages",
+          "broker_code"
+        ],
+        "type": "object"
+      },
+      "CustomContent": {
+        "properties": {
+          "suggestions": {
+            "items": {
+              "$ref": "#/definitions/Suggestion"
+            },
+            "maxItems": 5,
+            "minItems": 0,
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "RICHCARD",
+              "FILE",
+              "TEXT",
+              "CAROUSEL"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "Date": {
+        "example": "2025-12-23 14:38:24",
+        "type": "string"
+      },
+      "Destination": {
+        "properties": {
+          "channel": {
+            "enum": [
+              "sms",
+              "email"
+            ],
+            "example": "sms",
+            "type": "string"
+          },
+          "recipient": {
+            "example": "41999999999",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DetachedRCSCreateCampaign": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "campaign_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "template_code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "campaign_code",
+          "customer_code",
+          "broker_code",
+          "template_code"
+        ],
+        "type": "object"
+      },
+      "DetachedRCSCustomMessage": {
+        "example": {
+          "broker_code": "string",
+          "customer_code": "string",
+          "messages": [
+            {
+              "content": {
+                "suggestions": [
+                  {
+                    "reply_id": "response_id_1",
+                    "text": "your text here",
+                    "type": "REPLY"
+                  },
+                  {
+                    "reply_id": "response_id_2",
+                    "text": "your text here",
+                    "type": "OPEN_URL",
+                    "url": "https://yoururl.com"
+                  },
+                  {
+                    "number": "+554199999999999",
+                    "reply_id": "response_id_3",
+                    "text": "your text here",
+                    "type": "DIAL"
+                  },
+                  {
+                    "description": "event description",
+                    "end_time": "2024-05-30T17:00:00Z",
+                    "original_end_time": "2024-05-30T17:00:00Z",
+                    "original_start_time": "2024-05-28T17:00:00Z",
+                    "reply_id": "response_id_4",
+                    "start_time": "2024-05-28T17:00:00Z",
+                    "text": "event text",
+                    "title": "event title",
+                    "type": "CALENDAR_EVENT"
+                  },
+                  {
+                    "reply_id": "response_id_5",
+                    "text": "share location text",
+                    "type": "SHARE_LOCATION"
+                  },
+                  {
+                    "address": "adress street, number 2540",
+                    "reply_id": "response_id_6",
+                    "text": "view location text",
+                    "type": "VIEW_LOCATION"
+                  }
+                ],
+                "text": "your text here",
+                "type": "TEXT"
+              },
+              "date": "2025-12-23 14:38:24",
+              "document": "ABC12345",
+              "phone": "554199999999",
+              "url_callback_mo": "string",
+              "url_callback_status": "string"
+            },
+            {
+              "content": {
+                "file_url": "https://yoururl.com/file.jpg",
+                "suggestions": [],
+                "text": "your text here",
+                "type": "FILE"
+              },
+              "date": "2025-12-23 14:38:24",
+              "document": "ABC12345",
+              "phone": "554199999999",
+              "url_callback_mo": "string",
+              "url_callback_status": "string"
+            },
+            {
+              "content": {
+                "description": "your text here",
+                "image_url": "https://yoururl.here/file.jpg",
+                "size": "MEDIUM",
+                "suggestions": [],
+                "title": "title here",
+                "type": "RICHCARD"
+              },
+              "date": "2025-12-23 14:38:24",
+              "document": "ABC12345",
+              "phone": "554199999999",
+              "url_callback_mo": "string",
+              "url_callback_status": "string"
+            },
+            {
+              "content": {
+                "carousel": [
+                  {
+                    "description": "your text here",
+                    "image_url": "https://yoururl.here/file.jpg",
+                    "size": "SHORT",
+                    "suggestions": [],
+                    "title": "title here"
+                  },
+                  {
+                    "description": "your text here",
+                    "image_url": "https://yoururl.here/file.jpg",
+                    "size": "MEDIUM",
+                    "suggestions": [],
+                    "title": "title here"
+                  },
+                  {
+                    "description": "your text here",
+                    "image_url": "https://yoururl.here/file.jpg",
+                    "size": "TALL",
+                    "suggestions": [],
+                    "title": "title here"
+                  }
+                ],
+                "type": "CAROUSEL"
+              },
+              "date": "2025-12-23 14:38:24",
+              "document": "ABC12345",
+              "phone": "554199999999",
+              "url_callback_mo": "string",
+              "url_callback_status": "string"
+            }
+          ]
+        },
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/definitions/RCSCustomMessage"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "customer_code",
+          "messages",
+          "broker_code"
+        ],
+        "type": "object"
+      },
+      "DetachedRCSDocumentMessage": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/definitions/RCSDocumentMessage"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "customer_code",
+          "messages",
+          "broker_code"
+        ],
+        "type": "object"
+      },
+      "DetachedRCSDocumentMessageBase64File": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "message": {
+            "$ref": "#/definitions/RCSDocumentMessageBase64File"
+          }
+        },
+        "required": [
+          "customer_code",
+          "message",
+          "broker_code"
+        ],
+        "type": "object"
+      },
+      "DetachedRCSTemplateMessage": {
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/definitions/RCSTemplateMessage"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "type": "object"
+      },
+      "DetachedRCSTextMessage": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/definitions/RCSTextMessage"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "customer_code",
+          "messages",
+          "broker_code"
+        ],
+        "type": "object"
+      },
+      "DetachedSMSMessage": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/definitions/Message"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "type": "array"
+          },
+          "template_code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customer_code",
+          "messages",
+          "broker_code"
+        ],
+        "type": "object"
+      },
+      "DetachedWhatsappDocumentMessage": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/definitions/DocumentMessage"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "customer_code",
+          "messages",
+          "broker_code"
+        ],
+        "type": "object"
+      },
+      "DetachedWhatsappHsmMessage": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/definitions/HsmMessage"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "type": "array"
+          },
+          "template_code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customer_code",
+          "messages",
+          "broker_code",
+          "template_code"
+        ],
+        "type": "object"
+      },
+      "DetachedWhatsappTextMessage": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/definitions/TextMessage"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "customer_code",
+          "messages",
+          "broker_code"
+        ],
+        "type": "object"
+      },
+      "Document": {
+        "description": "can be anything: cpf, social secure number.",
+        "example": "ABC12345",
+        "type": "string"
+      },
+      "DocumentMessage": {
+        "properties": {
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "extra_fields": {
+            "description": "extra fields for several usages (cpf_cnpj, contrato)",
+            "type": "object"
+          },
+          "file": {
+            "$ref": "#/definitions/File"
+          },
+          "whatsapp": {
+            "$ref": "#/definitions/Whatsapp"
+          }
+        },
+        "required": [
+          "whatsapp",
+          "file"
+        ],
+        "type": "object"
+      },
+      "Fallback": {
+        "properties": {
+          "auth_token": {
+            "description": "Otima api solution ( e.g SMS) authentication token.",
+            "type": "string"
+          },
+          "broker_code": {
+            "description": "broker code from the given solution",
+            "type": "string"
+          },
+          "customer_code": {
+            "description": "customer code from the given solution",
+            "type": "string"
+          },
+          "solution": {
+            "description": "solution used to send a fallback message",
+            "enum": [
+              "SMS"
+            ],
+            "type": "string"
+          },
+          "template_code": {
+            "description": "template code from the given solution",
+            "type": "string"
+          },
+          "url_callback_fallback_mo": {
+            "description": "url to receive messages response",
+            "type": "string"
+          },
+          "url_callback_fallback_status": {
+            "description": "url to receive callback status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "solution",
+          "auth_token",
+          "customer_code",
+          "broker_code"
+        ],
+        "type": "object"
+      },
+      "File": {
+        "properties": {
+          "caption": {
+            "type": "string"
+          },
+          "file": {
+            "description": "file url, must be public address",
+            "example": "http://mydomain.com/myfile.pdf",
+            "type": "string"
+          },
+          "mime_type": {
+            "example": "application/pdf",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "mime_type"
+        ],
+        "type": "object"
+      },
+      "FileBase64": {
+        "properties": {
+          "base64_data": {
+            "type": "string"
+          },
+          "mime_type": {
+            "example": "application/pdf",
+            "type": "string"
+          },
+          "name": {
+            "example": "file.pdf",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "mime_type",
+          "base64_data"
+        ],
+        "type": "object"
+      },
+      "HsmMessage": {
+        "properties": {
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "extra_fields": {
+            "description": "extra fields for several usages (gocheck, receptivo)",
+            "example": {
+              "cpf_cnpj": "12345678901"
+            },
+            "type": "object"
+          },
+          "hsm_file": {
+            "properties": {
+              "name": {
+                "example": "file.jpg",
+                "type": "string"
+              },
+              "url": {
+                "example": "https://mydomain.com/file.jpg",
+                "type": "string"
+              }
+            },
+            "required": [
+              "url",
+              "name"
+            ],
+            "type": "object"
+          },
+          "url_callback_mo": {
+            "description": "url to receive messages response",
+            "type": "string"
+          },
+          "url_callback_status": {
+            "description": "url to receive callback status",
+            "type": "string"
+          },
+          "variables": {
+            "example": {
+              "-var1-": "name",
+              "-var2-": "document",
+              "-varN-": "N"
+            },
+            "type": "object"
+          },
+          "whatsapp": {
+            "$ref": "#/definitions/Whatsapp"
+          }
+        },
+        "required": [
+          "whatsapp"
+        ],
+        "type": "object"
+      },
+      "Message": {
+        "properties": {
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "phone": {
+            "$ref": "#/definitions/Phone"
+          },
+          "text": {
+            "type": "string"
+          },
+          "url_callback_dlr": {
+            "type": "string"
+          },
+          "url_callback_mo": {
+            "type": "string"
+          },
+          "url_callback_status": {
+            "type": "string"
+          },
+          "variables": {
+            "$ref": "#/definitions/Variable"
+          }
+        },
+        "required": [
+          "phone",
+          "text"
+        ],
+        "type": "object"
+      },
+      "MessageID": {
+        "example": "ff61f428-e1d0-41de-9038-9b425bb93f3d",
+        "type": "string"
+      },
+      "PayloadSMSBlacklist": {
+        "properties": {
+          "customer_code": {
+            "type": "string"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/definitions/Document"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "type": "array"
+          },
+          "phones": {
+            "items": {
+              "$ref": "#/definitions/Phone"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "customer_code"
+        ],
+        "type": "object"
+      },
+      "PayloadWeblink": {
+        "properties": {
+          "campaign_code": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "destinations": {
+            "items": {
+              "$ref": "#/definitions/Destination"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "campaign_code",
+          "destinations"
+        ],
+        "type": "object"
+      },
+      "Phone": {
+        "description": "phone number",
+        "example": "5541999999999",
+        "type": "string"
+      },
+      "PostSingleEmailHtml": {
+        "properties": {
+          "attachment": {
+            "description": "File attachment",
+            "properties": {
+              "data": {
+                "description": "file in base64",
+                "type": "string"
+              },
+              "mime": {
+                "description": "file mime type",
+                "type": "string"
+              },
+              "name": {
+                "description": "file name",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "broker_code": {
+            "description": "You can find your broker list here https://360.otima.digital/geral/list-fornecedor.php",
+            "type": "string"
+          },
+          "customer_code": {
+            "description": "You can find your customer list here https://360.otima.digital/geral/list-centro-custo.php",
+            "type": "string"
+          },
+          "email": {
+            "description": "The destination address",
+            "type": "string"
+          },
+          "html": {
+            "description": "The email body content",
+            "type": "string"
+          },
+          "subject": {
+            "description": "The email subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "customer_code",
+          "broker_code",
+          "html",
+          "subject"
+        ],
+        "type": "object"
+      },
+      "PostSingleEmailTemplate": {
+        "properties": {
+          "attachment": {
+            "description": "File attachment",
+            "properties": {
+              "data": {
+                "description": "file in base64",
+                "type": "string"
+              },
+              "mime": {
+                "description": "file mime type",
+                "type": "string"
+              },
+              "name": {
+                "description": "file name",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "broker_code": {
+            "description": "You can find your broker list here https://360.otima.digital/geral/list-fornecedor.php",
+            "type": "string"
+          },
+          "customer_code": {
+            "description": "You can find your customer list here https://360.otima.digital/geral/list-centro-custo.php",
+            "type": "string"
+          },
+          "email": {
+            "description": "The destination address",
+            "type": "string"
+          },
+          "template_code": {
+            "description": "The body message. You can find your template list here https://360.otima.digital/geral/list-template.php",
+            "type": "string"
+          },
+          "variables": {
+            "description": "used to replace the template variables ",
+            "items": {
+              "properties": {
+                "key": {
+                  "example": "-var1-",
+                  "type": "string"
+                },
+                "value": {
+                  "example": "123",
+                  "type": "string"
+                }
+              }
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "email",
+          "customer_code",
+          "broker_code",
+          "template_code"
+        ],
+        "type": "object"
+      },
+      "RCSBase64File": {
+        "properties": {
+          "base64_data": {
+            "description": "Valid formats: [image/jpeg, image/jpg, image/gif, image/png, video/h263, video/m4v, video/mp4, video/mpeg, video/mpeg4, video/webm].",
+            "type": "string"
+          },
+          "mime_type": {
+            "example": "image/jpg",
+            "type": "string"
+          },
+          "name": {
+            "example": "file.jpg",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "mime_type"
+        ],
+        "type": "object"
+      },
+      "RCSCustomMessage": {
+        "properties": {
+          "content": {
+            "$ref": "#/definitions/CustomContent"
+          },
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "extra_fields": {
+            "description": "extra fields for several usages (cpf_cnpj, contrato)",
+            "type": "object"
+          },
+          "fallback": {
+            "$ref": "#/definitions/Fallback"
+          },
+          "phone": {
+            "$ref": "#/definitions/Phone"
+          },
+          "url_callback_mo": {
+            "description": "url to receive messages response",
+            "type": "string"
+          },
+          "url_callback_status": {
+            "description": "url to receive callback status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone",
+          "content"
+        ],
+        "type": "object"
+      },
+      "RCSDocumentMessage": {
+        "properties": {
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "extra_fields": {
+            "description": "extra fields for several usages (cpf_cnpj, contrato)",
+            "type": "object"
+          },
+          "fallback": {
+            "$ref": "#/definitions/Fallback"
+          },
+          "file": {
+            "$ref": "#/definitions/RCSFile"
+          },
+          "phone": {
+            "$ref": "#/definitions/Phone"
+          },
+          "url_callback_mo": {
+            "description": "url to receive messages response",
+            "type": "string"
+          },
+          "url_callback_status": {
+            "description": "url to receive callback status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone",
+          "file"
+        ],
+        "type": "object"
+      },
+      "RCSDocumentMessageBase64File": {
+        "properties": {
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "extra_fields": {
+            "description": "extra fields for several usages (cpf_cnpj, contrato)",
+            "type": "object"
+          },
+          "fallback": {
+            "$ref": "#/definitions/Fallback"
+          },
+          "file": {
+            "$ref": "#/definitions/RCSBase64File"
+          },
+          "phone": {
+            "$ref": "#/definitions/Phone"
+          },
+          "url_callback_mo": {
+            "description": "url to receive messages response",
+            "type": "string"
+          },
+          "url_callback_status": {
+            "description": "url to receive callback status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone",
+          "file"
+        ],
+        "type": "object"
+      },
+      "RCSFile": {
+        "properties": {
+          "caption": {
+            "type": "string"
+          },
+          "file": {
+            "description": "file url, must be public address. Valid formats: [image/jpeg, image/jpg, image/gif, image/png, video/h263, video/m4v, video/mp4, video/mpeg, video/mpeg4, video/webm].",
+            "example": "http://mydomain.com/myfile.jpg",
+            "type": "string"
+          },
+          "mime_type": {
+            "example": "image/jpg",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "mime_type"
+        ],
+        "type": "object"
+      },
+      "RCSFileCallbackExample": {
+        "properties": {
+          "broker_code": {
+            "$ref": "#/definitions/CallbackBrokerCode"
+          },
+          "custumer_code": {
+            "$ref": "#/definitions/CallbackCustomerCode"
+          },
+          "date": {
+            "$ref": "#/definitions/CallbackDate"
+          },
+          "document": {
+            "$ref": "#/definitions/CallbackDocument"
+          },
+          "message_id": {
+            "$ref": "#/definitions/CallbackMessageID"
+          },
+          "payload": {
+            "$ref": "#/definitions/CallbackFilePayload"
+          },
+          "phone": {
+            "$ref": "#/definitions/CallbackPhone"
+          },
+          "type": {
+            "$ref": "#/definitions/CallbackType"
+          },
+          "username": {
+            "$ref": "#/definitions/CallbackUsername"
+          }
+        },
+        "type": "object"
+      },
+      "RCSFlowMessage": {
+        "properties": {
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "extra_fields": {
+            "description": "extra fields for several usages (cpf_cnpj, contrato)",
+            "type": "object"
+          },
+          "fallback": {
+            "$ref": "#/definitions/Fallback"
+          },
+          "phone": {
+            "$ref": "#/definitions/Phone"
+          },
+          "url_callback_mo": {
+            "description": "url to receive messages response",
+            "type": "string"
+          },
+          "url_callback_status": {
+            "description": "url to receive callback status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone"
+        ],
+        "type": "object"
+      },
+      "RCSStatusCallbackExample": {
+        "properties": {
+          "broker_code": {
+            "$ref": "#/definitions/CallbackBrokerCode"
+          },
+          "custumer_code": {
+            "$ref": "#/definitions/CallbackCustomerCode"
+          },
+          "date": {
+            "$ref": "#/definitions/CallbackDate"
+          },
+          "description": {
+            "description": "additional information",
+            "type": "string"
+          },
+          "document": {
+            "$ref": "#/definitions/CallbackDocument"
+          },
+          "message_id": {
+            "$ref": "#/definitions/CallbackMessageID"
+          },
+          "phone": {
+            "$ref": "#/definitions/CallbackPhone"
+          },
+          "status": {
+            "$ref": "#/definitions/CallbackStatus"
+          },
+          "type": {
+            "description": "event type",
+            "example": "status",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RCSTemplateMessage": {
+        "properties": {
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "extra_fields": {
+            "description": "extra fields for several usages (cpf_cnpj, contrato)",
+            "type": "object"
+          },
+          "fallback": {
+            "$ref": "#/definitions/Fallback"
+          },
+          "phone": {
+            "$ref": "#/definitions/Phone"
+          },
+          "url_callback_mo": {
+            "description": "url to receive messages response",
+            "type": "string"
+          },
+          "url_callback_status": {
+            "description": "url to receive callback status",
+            "type": "string"
+          },
+          "variables": {
+            "example": {
+              "-var1-": "name",
+              "-var2-": "document",
+              "-varN-": "N"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "phone"
+        ],
+        "type": "object"
+      },
+      "RCSTextCallbackExample": {
+        "properties": {
+          "broker_code": {
+            "$ref": "#/definitions/CallbackBrokerCode"
+          },
+          "custumer_code": {
+            "$ref": "#/definitions/CallbackCustomerCode"
+          },
+          "date": {
+            "$ref": "#/definitions/CallbackDate"
+          },
+          "document": {
+            "$ref": "#/definitions/CallbackDocument"
+          },
+          "message_id": {
+            "$ref": "#/definitions/CallbackMessageID"
+          },
+          "payload": {
+            "$ref": "#/definitions/CallbackTextPayload"
+          },
+          "phone": {
+            "$ref": "#/definitions/CallbackPhone"
+          },
+          "type": {
+            "$ref": "#/definitions/CallbackType"
+          }
+        },
+        "type": "object"
+      },
+      "RCSTextMessage": {
+        "properties": {
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "extra_fields": {
+            "description": "extra fields for several usages (cpf_cnpj, contrato)",
+            "type": "object"
+          },
+          "fallback": {
+            "$ref": "#/definitions/Fallback"
+          },
+          "phone": {
+            "$ref": "#/definitions/Phone"
+          },
+          "text": {
+            "type": "string"
+          },
+          "url_callback_mo": {
+            "description": "url to receive messages response",
+            "type": "string"
+          },
+          "url_callback_status": {
+            "description": "url to receive callback status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone",
+          "text"
+        ],
+        "type": "object"
+      },
+      "SingleDocumentMessageWithBase64File": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "extra_fields": {
+            "description": "extra fields for several usages (gocheck, receptivo)",
+            "example": {
+              "cpf_cnpj": "12345678901"
+            },
+            "type": "object"
+          },
+          "file": {
+            "$ref": "#/definitions/FileBase64"
+          },
+          "text": {
+            "type": "string"
+          },
+          "whatsapp": {
+            "$ref": "#/definitions/Whatsapp"
+          }
+        },
+        "required": [
+          "customer_code",
+          "whatsapp",
+          "broker_code",
+          "file"
+        ],
+        "type": "object"
+      },
+      "SingleHsmMessageWithBase64File": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "extra_fields": {
+            "description": "extra fields for several usages (gocheck, receptivo)",
+            "example": {
+              "cpf_cnpj": "12345678901"
+            },
+            "type": "object"
+          },
+          "file": {
+            "$ref": "#/definitions/FileBase64"
+          },
+          "template_code": {
+            "type": "string"
+          },
+          "variables": {
+            "example": {
+              "-var1-": "name",
+              "-var2-": "document",
+              "-varN-": "N"
+            },
+            "type": "object"
+          },
+          "whatsapp": {
+            "$ref": "#/definitions/Whatsapp"
+          }
+        },
+        "required": [
+          "customer_code",
+          "whatsapp",
+          "broker_code",
+          "template_code",
+          "file",
+          "document"
+        ],
+        "type": "object"
+      },
+      "SingleMailmanWhatsappHsmMessage": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "failed_message": {
+            "type": "string"
+          },
+          "file": {
+            "$ref": "#/definitions/FileBase64"
+          },
+          "linha_digitavel": {
+            "type": "string"
+          },
+          "template_code": {
+            "type": "string"
+          },
+          "variables": {
+            "example": {
+              "-var1-": "name",
+              "-var2-": "document",
+              "-varN-": "N"
+            },
+            "type": "object"
+          },
+          "whatsapp": {
+            "$ref": "#/definitions/Whatsapp"
+          }
+        },
+        "required": [
+          "customer_code",
+          "whatsapp",
+          "broker_code",
+          "template_code",
+          "file",
+          "document"
+        ],
+        "type": "object"
+      },
+      "StartSMSCampaign": {
+        "properties": {
+          "broker_code": {
+            "type": "string"
+          },
+          "customer_code": {
+            "type": "string"
+          },
+          "template_code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customer_code",
+          "broker_code"
+        ],
+        "type": "object"
+      },
+      "Status": {
+        "enum": [
+          "I",
+          "B",
+          "R",
+          "V"
+        ],
+        "example": "V",
+        "type": "string"
+      },
+      "StatusDescription": {
+        "example": "Valid",
+        "type": "string"
+      },
+      "Suggestion": {
+        "properties": {
+          "reply_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "REPLY",
+              "OPEN_URL",
+              "DIAL",
+              "CALENDAR_EVENT",
+              "SHARE_LOCATION",
+              "VIEW_LOCATION"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "text",
+          "reply_id"
+        ],
+        "type": "object"
+      },
+      "TextMessage": {
+        "properties": {
+          "date": {
+            "$ref": "#/definitions/Date"
+          },
+          "document": {
+            "$ref": "#/definitions/Document"
+          },
+          "extra_fields": {
+            "description": "extra fields for several usages (cpf_cnpj, contrato)",
+            "type": "object"
+          },
+          "text": {
+            "type": "string"
+          },
+          "whatsapp": {
+            "$ref": "#/definitions/Whatsapp"
+          }
+        },
+        "required": [
+          "whatsapp",
+          "text"
+        ],
+        "type": "object"
+      },
+      "Variable": {
+        "items": {
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "type": "array"
+      },
+      "Whatsapp": {
+        "example": "5541999999999",
+        "type": "string"
+      },
+      "WhatsappFileCallbackExample": {
+        "properties": {
+          "broker_code": {
+            "$ref": "#/definitions/CallbackBrokerCode"
+          },
+          "custumer_code": {
+            "$ref": "#/definitions/CallbackCustomerCode"
+          },
+          "date": {
+            "$ref": "#/definitions/CallbackDate"
+          },
+          "document": {
+            "$ref": "#/definitions/CallbackDocument"
+          },
+          "message_id": {
+            "$ref": "#/definitions/CallbackMessageID"
+          },
+          "payload": {
+            "$ref": "#/definitions/CallbackFilePayload"
+          },
+          "phone": {
+            "$ref": "#/definitions/CallbackPhone"
+          },
+          "type": {
+            "$ref": "#/definitions/CallbackType"
+          },
+          "username": {
+            "$ref": "#/definitions/CallbackUsername"
+          }
+        },
+        "type": "object"
+      },
+      "WhatsappStatusCallbackExample": {
+        "properties": {
+          "broker_code": {
+            "$ref": "#/definitions/CallbackBrokerCode"
+          },
+          "custumer_code": {
+            "$ref": "#/definitions/CallbackCustomerCode"
+          },
+          "date": {
+            "$ref": "#/definitions/CallbackDate"
+          },
+          "description": {
+            "description": "additional information",
+            "type": "string"
+          },
+          "document": {
+            "$ref": "#/definitions/CallbackDocument"
+          },
+          "message_id": {
+            "$ref": "#/definitions/CallbackMessageID"
+          },
+          "phone": {
+            "$ref": "#/definitions/CallbackPhone"
+          },
+          "status": {
+            "$ref": "#/definitions/CallbackStatus"
+          },
+          "type": {
+            "description": "event type",
+            "example": "status",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WhatsappTextCallbackExample": {
+        "properties": {
+          "broker_code": {
+            "$ref": "#/definitions/CallbackBrokerCode"
+          },
+          "custumer_code": {
+            "$ref": "#/definitions/CallbackCustomerCode"
+          },
+          "date": {
+            "$ref": "#/definitions/CallbackDate"
+          },
+          "document": {
+            "$ref": "#/definitions/CallbackDocument"
+          },
+          "message_id": {
+            "$ref": "#/definitions/CallbackMessageID"
+          },
+          "payload": {
+            "$ref": "#/definitions/CallbackTextPayload"
+          },
+          "phone": {
+            "$ref": "#/definitions/CallbackPhone"
+          },
+          "type": {
+            "$ref": "#/definitions/CallbackType"
+          },
+          "username": {
+            "$ref": "#/definitions/CallbackUsername"
+          }
+        },
+        "type": "object"
+      },
+      "customer_list": {
+        "items": {
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "solution": {
+              "type": "string"
+            }
+          }
+        },
+        "type": "array"
+      },
+      "error": {
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "info": {
+      "contact": {
+        "email": "suporte@otima.digital",
+        "name": "API Support",
+        "url": "https://otima.digital"
+      },
+      "description": "\n\n# Introduction\nThis is the Grupo Otima public Api.\n\nHere you will find methods to send messages from all of our available channels (Whatsapp, Email, RCS, Weblink)\n\n# Base Url\nAll requests use this url as prefix\n\nhttps://services.otima.digital\n\ne.g: `curl -X POST https://services.otima.digital/v1/weblink/link`\n\n# Authentication\nAll requests use the ***Authorization*** value in the `header`\n\nHeader e.g: `Authorization: your-token-value-here`\n\n# Postman\nWe created a [Postman Collection](https://www.postman.com/otimadigital/workspace/otima-digital/collection/31238570-21541ad8-4141-41ef-b2d5-1f7bda160103) to help you get started. Please export or fork the collection to your own Postman workspace so you can execute the api call.",
+      "termsOfService": "",
+      "title": "Api Otima Digital",
+      "uiversion": 3,
+      "version": "1.0.0",
+      "x-logo": {
+        "url": "https://360.otima.digital/assets/images/arquivos_marca_otima/fundo_transparente/preenchida/logo_otimadigital_red.png"
+      }
+    },
+    "paths": {
+      "/rcs/file/example": {
+        "post": {
+          "description": "payload examples of how you will receive callbacks at the url provided when sending messages. \n        *this endpoint is not valid, this section just exemplifies the callback format*",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "$ref": "#/definitions/RCSFileCallbackExample"
+                    },
+                    "maxItems": 1000,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            }
+          },
+          "summary": "RCS File callback example",
+          "tags": [
+            "CALLBACK"
+          ]
+        }
+      },
+      "/rcs/status/example": {
+        "post": {
+          "description": "payload examples of how you will receive callbacks at the url provided when sending messages. \n        *this endpoint is not valid, this section just exemplifies the callback format*",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "$ref": "#/definitions/RCSStatusCallbackExample"
+                    },
+                    "maxItems": 1000,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            }
+          },
+          "summary": "RCS Status callback example",
+          "tags": [
+            "CALLBACK"
+          ]
+        }
+      },
+      "/rcs/text/example": {
+        "post": {
+          "description": "payload examples of how you will receive callbacks at the url provided when sending messages. \n        *this endpoint is not valid, this section just exemplifies the callback format*",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "$ref": "#/definitions/RCSTextCallbackExample"
+                    },
+                    "maxItems": 1000,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            }
+          },
+          "summary": "RCS Text callback example",
+          "tags": [
+            "CALLBACK"
+          ]
+        }
+      },
+      "/v1/email/message/html": {
+        "post": {
+          "description": "Send a single email message using a custom HTML",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "name": "payload",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/PostSingleEmailHtml"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "message_id": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "examples": {
+                    "Invalid Base64": {
+                      "value": {
+                        "error": "invalid base64 attachment data"
+                      }
+                    },
+                    "Invalid email": {
+                      "value": {
+                        "error": "invalid email address [%s]"
+                      }
+                    }
+                  },
+                  "schema": {
+                    "$ref": "#/definitions/error"
+                  }
+                }
+              },
+              "description": "Missing values from body, invalid email address or invalid base64 attachment"
+            },
+            "401": {
+              "content": {
+                "application/json": {
+                  "examples": {
+                    "AuthFailed": {
+                      "value": {
+                        "error": "Authorization failed."
+                      }
+                    }
+                  },
+                  "schema": {
+                    "$ref": "#/definitions/error"
+                  }
+                }
+              },
+              "description": "Authorization failed."
+            },
+            "404": {
+              "content": {
+                "application/json": {
+                  "examples": {
+                    "Invalid broker": {
+                      "value": {
+                        "error": "Broker code not found."
+                      }
+                    },
+                    "Invalid customer": {
+                      "value": {
+                        "error": "Customer code/id [%s] not found."
+                      }
+                    }
+                  },
+                  "schema": {
+                    "$ref": "#/definitions/error"
+                  }
+                }
+              },
+              "description": "Not found values, like customer code or broker code"
+            },
+            "500": {
+              "description": "Internal server error, please report the error message to us.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Single html message",
+          "tags": [
+            "EMAIL"
+          ]
+        }
+      },
+      "/v1/email/message/template": {
+        "post": {
+          "description": "Send a single email message using Template",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "name": "payload",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/PostSingleEmailTemplate"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "message_id": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "examples": {
+                    "Invalid Base64": {
+                      "value": {
+                        "error": "invalid base64 attachment data"
+                      }
+                    },
+                    "Invalid email": {
+                      "value": {
+                        "error": "invalid email address [%s]"
+                      }
+                    }
+                  },
+                  "schema": {
+                    "$ref": "#/definitions/error"
+                  }
+                }
+              },
+              "description": "Missing values from body, invalid email address or invalid base64 attachment"
+            },
+            "401": {
+              "content": {
+                "application/json": {
+                  "examples": {
+                    "Auth failed": {
+                      "value": {
+                        "error": "Authorization failed."
+                      }
+                    }
+                  },
+                  "schema": {
+                    "$ref": "#/definitions/error"
+                  }
+                }
+              },
+              "description": "Authorization failed."
+            },
+            "404": {
+              "content": {
+                "application/json": {
+                  "examples": {
+                    "Invalid broker": {
+                      "value": {
+                        "error": "Broker code not found."
+                      }
+                    },
+                    "Invalid customer": {
+                      "value": {
+                        "error": "Customer code/id [%s] not found."
+                      }
+                    },
+                    "Invalid template": {
+                      "value": {
+                        "error": "Template not found or not allowed for your credentials."
+                      }
+                    }
+                  },
+                  "schema": {
+                    "$ref": "#/definitions/error"
+                  }
+                }
+              },
+              "description": "Not found values, like customer code or broker code"
+            },
+            "500": {
+              "description": "Internal server error, please report the error message to us.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Single template message",
+          "tags": [
+            "EMAIL"
+          ]
+        }
+      },
+      "/v1/geral/customer/all": {
+        "get": {
+          "description": "Get all customers that the authenticated token has access to",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success Request",
+              "schema": {
+                "$ref": "#/definitions/customer_list"
+              }
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "404": {
+              "description": "User not found",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "500": {
+              "description": "Internal server error",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Get all allowed customers",
+          "tags": [
+            "Geral"
+          ]
+        }
+      },
+      "/v1/rcs/bulk/message/custom": {
+        "post": {
+          "description": "Send messages with a limit 1000 per request using a pre-build agent with a flow, \n        you can schedule every message with his own date",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/DetachedRCSCustomMessage"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "404": {
+              "description": "Customer not found.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send custom message",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/rcs/bulk/message/document": {
+        "post": {
+          "description": "Send messages with a limit 1000 per request, \n        you can schedule every message with his own date",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/DetachedRCSDocumentMessage"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send file/document messages",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/rcs/bulk/message/template": {
+        "post": {
+          "description": "Send messages with a limit 1000 per request using a pre-build template, \n        you can schedule every message with his own date and also send the callback url to receive messages and status.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/DetachedRCSTemplateMessage"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "404": {
+              "description": "Template or customer not found.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send messages with a template",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/rcs/bulk/message/text": {
+        "post": {
+          "description": "Send messages with a limit 1000 per request, \n        you can schedule every message with his own date",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/DetachedRCSTextMessage"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send text messages",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/rcs/campaign/create": {
+        "post": {
+          "description": "Create a new RCS Campaign.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/DetachedRCSCreateCampaign"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success Request",
+              "schema": {
+                "items": {
+                  "properties": {
+                    "campaign_code": {
+                      "type": "string"
+                    },
+                    "campaign_id": {
+                      "example": "54ef80fbc38846a48d3af06c091ea97a",
+                      "type": "string"
+                    },
+                    "status": {
+                      "example": "CREATED",
+                      "type": "string"
+                    }
+                  }
+                },
+                "type": "array"
+              }
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "404": {
+              "description": "Template or customer not found, or Broker code not found.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "409": {
+              "description": "Campaign code already exists.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Create RCS Campaign",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/rcs/campaign/message/{campaign_id}/template": {
+        "post": {
+          "description": "Send messages with a limit 1000 per request using a pre-build template, \n        you can schedule every message with his own date and also send the callback url to receive messages and status.\n        Use the campaign_id returned in the /campaign/create method to attach the messages to the campaign.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/DetachedRCSTemplateMessage"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "example": "APPENDED",
+                          "type": "string"
+                        },
+                        "status_description": {
+                          "example": "Message appended to campaign successfully",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "404": {
+              "description": "Campaign code not found or inactive.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Append Campaging messages with a template",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/rcs/campaign/{campaign_id}/cancel": {
+        "post": {
+          "description": "\n        Cancel an existing API campaign using the campaign_id returned by the /campaign/create method.\n        Note: Campaigns that are already close to their scheduled send time may be sent partially or even fully before cancellation is completed. This method does not guarantee full cancellation of the campaign.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "description": "Unique ID of the campaign to cancel.",
+              "in": "path",
+              "name": "campaign_id",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "campaign_id": {
+                        "example": "54ef80fbc38846a48d3af06c091ea97a",
+                        "type": "string"
+                      },
+                      "status": {
+                        "example": "ACCEPTED",
+                        "type": "string"
+                      },
+                      "status_description": {
+                        "example": "Processing",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Campaign successfully marked as canceled."
+            },
+            "404": {
+              "description": "Campaign code not found or inactive",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "500": {
+              "description": "Failed to cancel your campaign, please try again",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Cancel RCS Campaign",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/rcs/campaign/{campaign_id}/finish": {
+        "post": {
+          "description": "\n        Mark an existing RCS campaign as finished, allowing it to be processed and sent.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "description": "Unique ID of the campaign to finish.",
+              "in": "path",
+              "name": "campaign_id",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "campaign_id": {
+                        "example": "54ef80fbc38846a48d3af06c091ea97a",
+                        "type": "string"
+                      },
+                      "status": {
+                        "example": "FINISH",
+                        "type": "string"
+                      },
+                      "status_description": {
+                        "example": "Campaign accepted for processing",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Campaign successfully marked as finished."
+            },
+            "404": {
+              "description": "Campaign code not found or inactive",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Finish RCS Campaign",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/rcs/credential": {
+        "get": {
+          "description": "Retrieve a list of all RCS credentials.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "credential": {
+                          "type": "string"
+                        },
+                        "customer": {
+                          "type": "string"
+                        },
+                        "daily_message_limit": {
+                          "type": "string"
+                        },
+                        "direction": {
+                          "type": "string"
+                        },
+                        "monthly_message_limit": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "sender": {
+                          "type": "string"
+                        },
+                        "technology": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "List RCS credentials",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/rcs/customer": {
+        "get": {
+          "description": "Retrieve a list of all allowed RCS customers.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "callbacks": {
+                          "type": "object"
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "List RCS customers",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/rcs/message/document/file/base64": {
+        "post": {
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/DetachedRCSDocumentMessageBase64File"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send single document message with base64 file",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/rcs/template/{customer_code}": {
+        "get": {
+          "description": "Retrieve a list of all RCS templates for the given customer.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "description": "Customer Code, you can get this information at 360.otima.digital panel",
+              "in": "path",
+              "name": "customer_code",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "media_content": {
+                          "$ref": "#/definitions/CustomContent"
+                        },
+                        "media_type": {
+                          "enum": [
+                            "RICHCARD",
+                            "FILE",
+                            "TEXT",
+                            "CAROUSEL"
+                          ],
+                          "type": "string"
+                        },
+                        "suggestions": {
+                          "$ref": "#/definitions/Suggestion"
+                        },
+                        "text": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "List RCS templates",
+          "tags": [
+            "RCS"
+          ]
+        }
+      },
+      "/v1/receptive/chat/{protocol_id}/{status_code}": {
+        "put": {
+          "description": "Finish a chat using a custom status.",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "description": "The status code of the desired Finish status. To get the status code list access: https://360.otima.digital/receptivo/list-status.php",
+              "in": "path",
+              "name": "status_code",
+              "required": true
+            },
+            {
+              "description": "The chat protocol id.",
+              "in": "path",
+              "name": "protocol_id",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "message": {
+                        "example": "protocol_id: 00000000000000000 conclude.",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "404": {
+              "description": "Invalid status_code",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "406": {
+              "description": "Closed chat or invalid protocol id",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Finish a open chat",
+          "tags": [
+            "RECEPTIVO"
+          ]
+        }
+      },
+      "/v1/sms/blacklist": {
+        "post": {
+          "description": "Add phones and documents (like cpf) to the given Customer code",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "description": "",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/PayloadSMSBlacklist"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Add new values to the Blacklist",
+          "tags": [
+            "SMS"
+          ]
+        }
+      },
+      "/v1/sms/blacklist/customer/{code}": {
+        "get": {
+          "description": "Return the Blacklist phones and documents from the given Customer Code",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "description": "Customer Code, you can get this information at MTExpert Panel",
+              "in": "path",
+              "name": "code",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Blacklist"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/definitions/error"
+                  }
+                }
+              },
+              "description": "Authorization failed."
+            }
+          },
+          "summary": "Return Blacklisted values",
+          "tags": [
+            "SMS"
+          ]
+        }
+      },
+      "/v1/sms/campaign": {
+        "post": {
+          "description": "Create a new Campaign scratch and get a reference code to append messages,\n        with the code you can add messages using the `/sms/campaign/{code}/messages` endpoint",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "name": "payload",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/StartSMSCampaign"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Create a new Campaign",
+          "tags": [
+            "SMS",
+            "Campaign"
+          ]
+        }
+      },
+      "/v1/sms/campaign/{code}": {
+        "put": {
+          "description": "Finish the Campaign scratch, and send it to the creation Queue.",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "path",
+              "name": "code",
+              "required": true
+            },
+            {
+              "in": "body",
+              "items": {
+                "properties": {
+                  "batches": {
+                    "$ref": "#/definitions/Batch"
+                  }
+                }
+              },
+              "required": true,
+              "type": "array"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Finish a campaign creation",
+          "tags": [
+            "SMS",
+            "Campaign"
+          ]
+        }
+      },
+      "/v1/sms/campaign/{code}/messages": {
+        "post": {
+          "description": "Append messages to the given campaign code, max 100000 per request.\n        All messages will be validate/sanitezed latter, when campaign creation final step is called \n        (`PUT /sms/campaign/{code}`). Its possible to schedule every message with his own date or use Batches, \n        you can use a Template with Variables or set each message with his own text.",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/CampaignSMSMessage"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Append messages to a campaign",
+          "tags": [
+            "SMS",
+            "Campaign"
+          ]
+        }
+      },
+      "/v1/sms/message": {
+        "post": {
+          "description": "Send messages with a limit 1000 per request, \n        you can schedule every message with his own date, you can use a Template with Variables or set each message\n        with his own text.",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/DetachedSMSMessage"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send messages without a campaign",
+          "tags": [
+            "SMS",
+            "Single"
+          ]
+        }
+      },
+      "/v1/weblink/link": {
+        "post": {
+          "description": "After creating a campaign at \n        [Weblink Campaign Page](https://360.otima.digital/weblink/list-weblink.php),\n        you can send messages using this method",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "description": "",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/PayloadWeblink"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "403": {
+              "description": " Missing values (campaign code, destinations, data, variable) or invalid recipient",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            },
+            "404": {
+              "description": "Campaign not found.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Create messages with Links",
+          "tags": [
+            "WEBLINK"
+          ]
+        }
+      },
+      "/v1/whatsapp/bulk/message/document": {
+        "post": {
+          "description": "Send messages with a limit 1000 per request, \n        you can schedule every message with his own date",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/DetachedWhatsappDocumentMessage"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send file/document messages",
+          "tags": [
+            "WHATSAPP"
+          ]
+        }
+      },
+      "/v1/whatsapp/bulk/message/hsm": {
+        "post": {
+          "description": "Send messages with a limit 1000 per request, \n        you can schedule every message with his own date and also send the callback url to receive messages and status.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/DetachedWhatsappHsmMessage"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send hsm messages",
+          "tags": [
+            "WHATSAPP"
+          ]
+        }
+      },
+      "/v1/whatsapp/bulk/message/text": {
+        "post": {
+          "description": "Send messages with a limit 1000 per request, \n        you can schedule every message with his own date",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/DetachedWhatsappTextMessage"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send text messages",
+          "tags": [
+            "WHATSAPP"
+          ]
+        }
+      },
+      "/v1/whatsapp/credential": {
+        "get": {
+          "description": "Retrieve a list of all Whatsapp credentials.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "credential": {
+                          "type": "string"
+                        },
+                        "customer": {
+                          "type": "string"
+                        },
+                        "daily_message_limit": {
+                          "type": "string"
+                        },
+                        "direction": {
+                          "type": "string"
+                        },
+                        "monthly_message_limit": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "sender": {
+                          "type": "string"
+                        },
+                        "technology": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "List Whatsapp credentials",
+          "tags": [
+            "WHATSAPP"
+          ]
+        }
+      },
+      "/v1/whatsapp/customer": {
+        "get": {
+          "description": "Retrieve a list of all allowed Whatsapp customers.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "callbacks": {
+                          "type": "object"
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "List Whatsapp customers",
+          "tags": [
+            "WHATSAPP"
+          ]
+        }
+      },
+      "/v1/whatsapp/message/document/file/base64": {
+        "post": {
+          "description": "this method allows to send a Document template message using a file in base64 format",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/SingleDocumentMessageWithBase64File"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send a single Document message with base64 file",
+          "tags": [
+            "WHATSAPP"
+          ]
+        }
+      },
+      "/v1/whatsapp/message/hsm/file/base64": {
+        "post": {
+          "description": "this method allows to send a HSM template message using a file in base64 format",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/SingleHsmMessageWithBase64File"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send a single HSM message",
+          "tags": [
+            "WHATSAPP"
+          ]
+        }
+      },
+      "/v1/whatsapp/message/mailman/hsm": {
+        "post": {
+          "description": "Send a HSM message with some content to be validate after the receiver interact with the \n        first message.\n        ",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/SingleMailmanWhatsappHsmMessage"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "document": {
+                          "$ref": "#/definitions/Document"
+                        },
+                        "message_id": {
+                          "$ref": "#/definitions/MessageID"
+                        },
+                        "phone": {
+                          "$ref": "#/definitions/Phone"
+                        },
+                        "status": {
+                          "$ref": "#/definitions/Status"
+                        },
+                        "status_description": {
+                          "$ref": "#/definitions/StatusDescription"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "Send mailman hsm message",
+          "tags": [
+            "WHATSAPP"
+          ]
+        }
+      },
+      "/v1/whatsapp/template/hsm/{customer_code}": {
+        "get": {
+          "description": "The possible values for the status are: \n\n                            'X' = Aguardando aprovação,\n                            'A' = Ativo,\n                            'R' = Reprovado,\n                            'I' = Inativo,\n                            'P' = Pendente aprovação fornecedor,\n                            'E' = Erro cadastro template",
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "description": "Customer Code, you can get this information at MTExpert Panel",
+              "in": "path",
+              "name": "code",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "accounts": {
+                          "type": "array"
+                        },
+                        "button_sample": {
+                          "type": "array"
+                        },
+                        "category": {
+                          "description": "possible values: MARKETING, UTILITY, AUTHENTICATION",
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "created_date": {
+                          "$ref": "#/definitions/Date"
+                        },
+                        "status": {
+                          "enum": [
+                            "X",
+                            "A",
+                            "R",
+                            "I",
+                            "P",
+                            "E"
+                          ],
+                          "type": "string"
+                        },
+                        "status_description": {
+                          "type": "string"
+                        },
+                        "template_code": {
+                          "type": "string"
+                        },
+                        "updated_date": {
+                          "$ref": "#/definitions/Date"
+                        },
+                        "variable_sample": {
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "List HSM templates",
+          "tags": [
+            "WHATSAPP"
+          ]
+        }
+      },
+      "/v1/whatsapp/template/hsm/{customer_code}/{status}": {
+        "get": {
+          "parameters": [
+            {
+              "description": "Authentication Token",
+              "in": "header",
+              "name": "authorization",
+              "required": true
+            },
+            {
+              "description": "Customer Code, you can get this information at MTExpert Panel",
+              "in": "path",
+              "name": "code",
+              "required": true
+            },
+            {
+              "description": "The possible values for the status are: \n\n                            'X' = Aguardando aprovação,\n                            'A' = Ativo,\n                            'R' = Reprovado,\n                            'I' = Inativo,\n                            'P' = Pendente aprovação fornecedor,\n                            'E' = Erro cadastro template",
+              "in": "path",
+              "name": "status",
+              "required": false
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "properties": {
+                        "accounts": {
+                          "type": "array"
+                        },
+                        "button_sample": {
+                          "type": "array"
+                        },
+                        "category": {
+                          "description": "possible values: MARKETING, UTILITY, AUTHENTICATION",
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "created_date": {
+                          "$ref": "#/definitions/Date"
+                        },
+                        "status": {
+                          "enum": [
+                            "X",
+                            "A",
+                            "R",
+                            "I",
+                            "P",
+                            "E"
+                          ],
+                          "type": "string"
+                        },
+                        "status_description": {
+                          "type": "string"
+                        },
+                        "template_code": {
+                          "type": "string"
+                        },
+                        "updated_date": {
+                          "$ref": "#/definitions/Date"
+                        },
+                        "variable_sample": {
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            },
+            "401": {
+              "description": "Authorization failed.",
+              "schema": {
+                "$ref": "#/definitions/error"
+              }
+            }
+          },
+          "summary": "List HSM templates by status",
+          "tags": [
+            "WHATSAPP"
+          ]
+        }
+      },
+      "/whatsapp/file/example": {
+        "post": {
+          "description": "payload examples of how you will receive callbacks at the url provided when sending messages. \n        *this endpoint is not valid, this section just exemplifies the callback format*",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "$ref": "#/definitions/WhatsappFileCallbackExample"
+                    },
+                    "maxItems": 1000,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            }
+          },
+          "summary": "Whatsapp File callback example",
+          "tags": [
+            "CALLBACK"
+          ]
+        }
+      },
+      "/whatsapp/status/example": {
+        "post": {
+          "description": "payload examples of how you will receive callbacks at the url provided when sending messages. \n        *this endpoint is not valid, this section just exemplifies the callback format*",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "$ref": "#/definitions/WhatsappStatusCallbackExample"
+                    },
+                    "maxItems": 1000,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            }
+          },
+          "summary": "Whatsapp Status callback example",
+          "tags": [
+            "CALLBACK"
+          ]
+        }
+      },
+      "/whatsapp/text/example": {
+        "post": {
+          "description": "payload examples of how you will receive callbacks at the url provided when sending messages. \n        *this endpoint is not valid, this section just exemplifies the callback format*",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "$ref": "#/definitions/WhatsappTextCallbackExample"
+                    },
+                    "maxItems": 1000,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                }
+              },
+              "description": "Success Request"
+            }
+          },
+          "summary": "Whatsapp Text callback example",
+          "tags": [
+            "CALLBACK"
+          ]
+        }
+      }
+    },
+    "swagger": "2.0",
+    "x-tagGroups": [
+      {
+        "name": "Product",
+        "tags": [
+          "EMAIL",
+          "WHATSAPP",
+          "WEBLINK",
+          "RCS",
+          "RECEPTIVO",
+          "CALLBACK",
+          "General"
+        ]
+      }
+    ]
+  }
