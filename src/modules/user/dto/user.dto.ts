@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength, MaxLength, Length, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserProfile, UserStatus } from '../entities/user.entity';
 
@@ -410,4 +410,66 @@ export class DeleteUserDto {
   @IsString()
   @IsNotEmpty()
   id: string;
+}
+
+export class SendRecoverPasswordDto {
+  @ApiProperty({
+    description: 'User email to send the recovery code',
+    example: 'user@example.com',
+  })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+}
+
+export class ValidateRecoverCodeDto {
+  @ApiProperty({
+    description: 'User email',
+    example: 'user@example.com',
+  })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty({
+    description: '6-digit recovery code received by email',
+    example: '942691',
+    minLength: 6,
+    maxLength: 6,
+  })
+  @IsString()
+  @Length(6, 6)
+  @Matches(/^\d{6}$/, { message: 'code must be a 6-digit number' })
+  code: string;
+}
+
+export class RecoverPasswordDto {
+  @ApiProperty({
+    description: 'User email',
+    example: 'user@example.com',
+  })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty({
+    description: '6-digit recovery code received by email',
+    example: '942691',
+    minLength: 6,
+    maxLength: 6,
+  })
+  @IsString()
+  @Length(6, 6)
+  @Matches(/^\d{6}$/, { message: 'code must be a 6-digit number' })
+  code: string;
+
+  @ApiProperty({
+    description: 'New password',
+    example: 'NewSecurePassword123!',
+    minLength: 8,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  newPassword: string;
 }

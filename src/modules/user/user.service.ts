@@ -153,6 +153,17 @@ export class UserService {
   }
 
   /**
+   * Find user by email
+   */
+  async findUserByEmail(email: string): Promise<User | null> {
+    const user = await this.knex('user')
+      .where('email', email)
+      .first();
+
+    return user ? new User(user) : null;
+  }
+
+  /**
    * Update user by ID
    */
   async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
