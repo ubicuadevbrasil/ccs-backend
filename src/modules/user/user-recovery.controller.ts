@@ -20,7 +20,11 @@ export class UserRecoveryController {
   @Post('validate-recover-code')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Validate recovery code before proceeding to set new password' })
-  @ApiResponse({ status: 200, description: 'Code is valid', schema: { valid: true } })
+  @ApiResponse({
+    status: 200,
+    description: 'Code is valid',
+    schema: { type: 'object', properties: { valid: { type: 'boolean', example: true } } },
+  })
   @ApiResponse({ status: 400, description: 'Invalid or expired recovery code' })
   async validateRecoverCode(@Body() dto: ValidateRecoverCodeDto) {
     return this.passwordRecoveryService.validateRecoveryCode(dto.email, dto.code);
