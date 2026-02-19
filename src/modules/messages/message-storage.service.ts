@@ -479,6 +479,37 @@ export class MessageStorageService {
   }
 
   /**
+   * Handle Vonage ACK status update.
+   * Maps Vonage status (sent, delivered, read, failed) to MessageStatus and updates existing message.
+   * @returns Session ID, message ID and new status when update succeeded, for socket emission; null otherwise.
+   */
+  async handleVonageMessageUpdate(
+    messageId: string,
+    vonageStatus: string,
+  ): Promise<{ sessionId: string; messageId: string; status: MessageStatus } | null> {
+    try {
+      this.logger.log(`Handling Vonage message update for messageId: ${messageId} with status: ${vonageStatus}`);
+      const messageStatus = this.messageMapperService.mapAckStatusToMessageStatus('vonage', vonageStatus);
+      if (!messageStatus) {
+        this.logger.warn(`Unknown Vonage status: ${vonageStatus}, skipping update`);
+        return null;
+      }
+      const message = await this.messagesService.findMessageByMessageId(messageId);
+      if (!message) {
+        throw new NotFoundException(
+          `Message not found for messageId: ${messageId}. ACK must only update existing messages; ensure the message webhook runs before the ACK webhook.`,
+        );
+      }
+      await this.updateMessageStatus(message.sessionId, messageId, messageStatus);
+      this.logger.log(`Successfully updated message ${messageId} to status ${messageStatus}`);
+      return { sessionId: message.sessionId, messageId, status: messageStatus };
+    } catch (error) {
+      this.logger.error(`Error handling Vonage message update for ${messageId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all active sessions (sessions with messages in Redis)
    */
   async getActiveSessions(): Promise<string[]> {

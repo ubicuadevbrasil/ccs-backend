@@ -1,0 +1,1702 @@
+{
+   "openapi": "3.0.3",
+   "info": {
+      "version": "1.5.1",
+      "title": "WhatsApp Template Management API",
+      "x-metaTitle": "Vonage WhatsApp Template Management API Reference | Vonage API Documentation",
+      "x-metaDescription": "Find quick answers to questions about the Vonage WhatsApp Template Management API in this reference guide. Learn more in Vonage's API documentation.",
+      "description": "The Messages API now offers the WhatsApp Template Management API that allow you to manage templates for your WABAs and cut out the manual step of submitting and checking templates manually. You can manage your templates using the Template Management API, including adding new templates, retrieving their statuses, and deleting any that are already in use. Different sorts of media can be sent with each WhatsApp message template. You can manage your media files via the API and set up extra features to improve their functionality.",
+      "contact": {
+         "name": "Vonage DevRel",
+         "email": "devrel@vonage.com",
+         "url": "https://developer.vonage.com/"
+      },
+      "x-label": "Beta"
+   },
+   "servers": [
+      {
+         "url": "https://api.nexmo.com/v2/whatsapp-manager"
+      }
+   ],
+   "paths": {
+      "/wabas/{id}/templates": {
+         "get": {
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
+            "summary": "List Templates",
+            "operationId": "ListTemplates",
+            "responses": {
+               "200": {
+                  "description": "OK",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "type": "object",
+                           "properties": {
+                              "paging": {
+                                 "type": "object",
+                                 "properties": {
+                                    "cursors": {
+                                       "type": "object",
+                                       "properties": {
+                                          "before": {
+                                             "type": "string",
+                                             "example": "MAZDZD",
+                                             "description": "The template before the first template in the current list"
+                                          },
+                                          "after": {
+                                             "type": "string",
+                                             "example": "MjQZD",
+                                             "description": "The template after the last template in the current list"
+                                          }
+                                       }
+                                    },
+                                    "next": {
+                                       "type": "string",
+                                       "format": "uri",
+                                       "example": "https://api.nexmo.com/v2/whatsapp-manager/wabas/106499765517625/templates?after=MwZDZD",
+                                       "description": "A URI to ge the next paginated page."
+                                    },
+                                    "previous": {
+                                       "type": "string",
+                                       "format": "uri",
+                                       "example": "https://api.nexmo.com/v2/whatsapp-manager/wabas/106499765517625/templates?before=MgZDZD",
+                                       "description": "A URI to ge the previous paginated page."
+                                    }
+                                 }
+                              },
+                              "templates": {
+                                 "type": "array",
+                                 "description": "An array of templates in the current list",
+                                 "items": {
+                                    "$ref": "#/components/schemas/WhatsAppTemplate"
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  }
+               },
+               "400": {
+                  "description": "Bad Request",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse400"
+                        },
+                        "examples": {}
+                     }
+                  }
+               },
+               "401": {
+                  "description": "Unauthorized",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse401"
+                        }
+                     }
+                  }
+               },
+               "404": {
+                  "description": "Not Found",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse404"
+                        }
+                     }
+                  }
+               },
+               "429": {
+                  "description": "Too Many Requests",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse429"
+                        }
+                     }
+                  }
+               }
+            },
+            "description": "Get a list of templates,and their associated metadata, for the specified WABA ID. If multiple language variants exist for a template, each variant will be returned as a separate template object.",
+            "parameters": [
+               {
+                  "schema": {
+                     "type": "number",
+                     "minLength": 1,
+                     "maxLength": 500,
+                     "default": 25,
+                     "example": 10
+                  },
+                  "in": "query",
+                  "name": "limit",
+                  "description": "The number of templates to return in the list. Although the max size is 500, for large datasets it is recommended to use a lower limit and instead use pagination to avoid potential timeouts."
+               },
+               {
+                  "schema": {
+                     "type": "string",
+                     "example": "MAZDZD"
+                  },
+                  "in": "query",
+                  "name": "before",
+                  "description": "A cursor point used for a paginated request to indicate the template to paginate backwards from."
+               },
+               {
+                  "schema": {
+                     "type": "string",
+                     "example": "MjQZD"
+                  },
+                  "in": "query",
+                  "name": "after",
+                  "description": "A cursor point used for a paginated request to indicate the template to paginate forwards from."
+               },
+               {
+                  "schema": {
+                     "type": "string",
+                     "example": "UTILITY",
+                     "enum": [
+                        "UTILITY",
+                        "AUTHENTICATION",
+                        "MARKETING"
+                     ]
+                  },
+                  "in": "query",
+                  "name": "category",
+                  "description": "A filter  for returning only templates matching a specific category."
+               },
+               {
+                  "schema": {
+                     "type": "string",
+                     "example": "special offer"
+                  },
+                  "in": "query",
+                  "name": "content",
+                  "description": "A search filter representing the content of a template. Only matching templates will be returned in the list."
+               },
+               {
+                  "schema": {
+                     "type": "string",
+                     "example": "en"
+                  },
+                  "in": "query",
+                  "name": "language",
+                  "description": "A filter  for returning only templates matching a specific language code. A list of supported languages is available in the [WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/) "
+               },
+               {
+                  "schema": {
+                     "type": "string",
+                     "example": "My Template"
+                  },
+                  "in": "query",
+                  "name": "name",
+                  "description": "A search filter representing the name, either full or partial, of a template. Only matching templates will be returned in the list."
+               },
+               {
+                  "schema": {
+                     "type": "string",
+                     "example": "special offer"
+                  },
+                  "in": "query",
+                  "name": "name_or_content",
+                  "description": "A search filter representing the name, either full or partial, or content of a template. Only matching templates will be returned in the list."
+               },
+               {
+                  "schema": {
+                     "type": "string",
+                     "example": "RED",
+                     "enum": [
+                        "GREEN",
+                        "YELLOW",
+                        "RED",
+                        "UNKNOWN"
+                     ]
+                  },
+                  "in": "query",
+                  "name": "quality_score",
+                  "description": "A search filter representing the quality score of a template. Only matching templates will be returned in the list."
+               },
+               {
+                  "schema": {
+                     "type": "string",
+                     "example": "APPROVED",
+                     "enum": [
+                        "APPROVED",
+                        "IN_APPEAL",
+                        "PENDING",
+                        "REJECTED",
+                        "DISABLED",
+                        "PAUSED",
+                        "LIMIT_EXCEEDED"
+                     ]
+                  },
+                  "in": "query",
+                  "name": "status",
+                  "description": "A filter for returning only templates matching a specific status. "
+               }
+            ]
+         },
+         "parameters": [
+            {
+               "schema": {
+                  "type": "string"
+               },
+               "name": "id",
+               "in": "path",
+               "required": true,
+               "description": "The id of the WABA"
+            }
+         ],
+         "post": {
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
+            "summary": "Create Template",
+            "operationId": "CreateTemplate",
+            "responses": {
+               "200": {
+                  "description": "OK",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "type": "object",
+                           "x-examples": {
+                              "example-1": {
+                                 "id": "408766354711449"
+                              }
+                           },
+                           "properties": {
+                              "id": {
+                                 "type": "string",
+                                 "description": "The unique ID of the created template.",
+                                 "example": "408766354711449"
+                              }
+                           },
+                           "required": [
+                              "id"
+                           ]
+                        }
+                     }
+                  }
+               },
+               "401": {
+                  "description": "Unauthorized",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse401"
+                        }
+                     }
+                  }
+               },
+               "404": {
+                  "description": "Not Found",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse404"
+                        }
+                     }
+                  }
+               },
+               "422": {
+                  "description": "Unprocessable Entity",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse422"
+                        }
+                     }
+                  }
+               },
+               "500": {
+                  "description": "Internal Server Error",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse500"
+                        }
+                     }
+                  }
+               }
+            },
+            "description": "Submit a new template to be associated with this WABA",
+            "parameters": [
+               {
+                  "schema": {
+                     "type": "string"
+                  },
+                  "in": "header",
+                  "name": "Content-Type",
+                  "description": "application/json"
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "oneOf": [
+                           {
+                              "$ref": "#/components/schemas/CreateTextTemplate"
+                           },
+                           {
+                              "$ref": "#/components/schemas/CreateMediaTemplate"
+                           }
+                        ]
+                     }
+                  }
+               }
+            }
+         },
+         "delete": {
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
+            "summary": "Delete Template",
+            "operationId": "DeleteTemplate",
+            "parameters": [
+               {
+                  "name": "name",
+                  "in": "query",
+                  "schema": {
+                     "type": "string"
+                  },
+                  "example": "my_template",
+                  "required": true,
+                  "description": "The name of the template to be deleted. The `name` is required, but if specified without `hsm_id` being specified then **all** templates matching that name will be deleted."
+               },
+               {
+                  "name": "hsm_id",
+                  "in": "query",
+                  "schema": {
+                     "type": "string"
+                  },
+                  "example": 408766354711449,
+                  "required": false,
+                  "description": "The ID of the specific template to be deleted. Only the template matching **both** the specified `name` and `hsm_id` will be deleted."
+               }
+            ],
+            "responses": {
+               "204": {
+                  "description": "No Content"
+               },
+               "400": {
+                  "description": "Bad Request",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse400"
+                        }
+                     }
+                  }
+               },
+               "401": {
+                  "description": "Unauthorized",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse401"
+                        }
+                     }
+                  }
+               },
+               "404": {
+                  "description": "Not Found",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse404"
+                        }
+                     }
+                  }
+               },
+               "500": {
+                  "description": "Internal Server Error",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse500"
+                        }
+                     }
+                  }
+               }
+            },
+            "description": "Delete a template of the specified name associated with the WABA ID"
+         }
+      },
+      "/wabas/{id}/templates/{template_id}": {
+         "get": {
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
+            "summary": "Get Template",
+            "operationId": "GetTemplate",
+            "responses": {
+               "200": {
+                  "description": "OK",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/WhatsAppTemplate"
+                        }
+                     }
+                  }
+               },
+               "401": {
+                  "description": "Unauthorized",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse401"
+                        }
+                     }
+                  }
+               },
+               "404": {
+                  "description": "Not Found",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "oneOf": [
+                              {
+                                 "$ref": "#/components/schemas/WabaNotFound"
+                              },
+                              {
+                                 "$ref": "#/components/schemas/TemplateNotFound"
+                              }
+                           ]
+                        }
+                     }
+                  }
+               },
+               "500": {
+                  "description": "Internal Server Error",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse500"
+                        }
+                     }
+                  }
+               }
+            },
+            "description": "Get details of an existing template identified by the WABA and Template ID",
+            "parameters": [
+               {
+                  "schema": {
+                     "type": "string"
+                  },
+                  "name": "id",
+                  "in": "path",
+                  "required": true,
+                  "description": "The id of the WABA"
+               },
+               {
+                  "schema": {
+                     "type": "string"
+                  },
+                  "name": "template_id",
+                  "in": "path",
+                  "required": true,
+                  "description": "The id of the template"
+               }
+            ]
+         },
+         "put": {
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
+            "summary": "Update Template",
+            "operationId": "UpdateTemplate",
+            "responses": {
+               "204": {
+                  "description": "No Content"
+               },
+               "400": {
+                  "description": "Bad Request",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse400"
+                        }
+                     }
+                  }
+               },
+               "401": {
+                  "description": "Unauthorized",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse401"
+                        }
+                     }
+                  }
+               },
+               "404": {
+                  "description": "Not Found",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse404"
+                        }
+                     }
+                  }
+               },
+               "500": {
+                  "description": "Internal Server Error",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse500"
+                        }
+                     }
+                  }
+               }
+            },
+            "description": "Update an existing template identified by the WABA and Template ID",
+            "parameters": [
+               {
+                  "schema": {
+                     "type": "string"
+                  },
+                  "in": "header",
+                  "name": "Content-Type",
+                  "description": "application/json"
+               },
+               {
+                  "schema": {
+                     "type": "string"
+                  },
+                  "name": "id",
+                  "in": "path",
+                  "required": true,
+                  "description": "The id of the WABA"
+               },
+               {
+                  "schema": {
+                     "type": "string"
+                  },
+                  "name": "template_id",
+                  "in": "path",
+                  "required": true,
+                  "description": "The id of the template to be updated"
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "oneOf": [
+                           {
+                              "$ref": "#/components/schemas/UpdateTextTemplate"
+                           },
+                           {
+                              "$ref": "#/components/schemas/UpdateMediaTemplate"
+                           }
+                        ]
+                     }
+                  }
+               }
+            }
+         }
+      },
+      "/media/uploads": {
+         "post": {
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
+            "summary": "Media Upload",
+            "operationId": "MediaUpload",
+            "responses": {
+               "200": {
+                  "description": "OK",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "type": "object",
+                           "x-examples": {
+                              "example-1": {
+                                 "h": "2:c2FtcGxlLm1wNA==:image/jpeg:GKAj0gAUCZmJ1voFADip2iIAAAAAbugbAAAA:e:1472075513:ARZ_3ybzrQqEaluMUdI"
+                              }
+                           },
+                           "properties": {
+                              "h": {
+                                 "type": "string",
+                                 "description": "The uploaded file's file handle",
+                                 "example": ":c2FtcGxlLm1wNA==:image/jpeg:GKAj0gAUCZmJ1voFADip2iIAAAAAbugbAAAA:e:1472075513:ARZ_3ybzrQqEaluMUdI"
+                              }
+                           }
+                        }
+                     }
+                  }
+               },
+               "400": {
+                  "description": "Bad Request",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse400"
+                        }
+                     }
+                  }
+               },
+               "401": {
+                  "description": "Unauthorized",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse401"
+                        }
+                     }
+                  }
+               },
+               "500": {
+                  "description": "Internal Server Error",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse500"
+                        }
+                     }
+                  }
+               }
+            },
+            "description": "Upload media files to the WhatsApp platform. Once uploaded, you can use an uploaded file's handle to create a media template.",
+            "parameters": [
+               {
+                  "schema": {
+                     "type": "string"
+                  },
+                  "in": "query",
+                  "name": "file_type",
+                  "required": true,
+                  "description": "The file's MIME type. Valid values are: `image/jpeg`, `image/jpg`, `image/png`, and `video/mp4`."
+               },
+               {
+                  "schema": {
+                     "type": "string"
+                  },
+                  "in": "header",
+                  "name": "Content-Type",
+                  "description": "multipart/form-data",
+                  "required": true
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "multipart/form-data": {
+                     "schema": {
+                        "type": "object",
+                        "properties": {
+                           "mediafile": {
+                              "type": "string",
+                              "format": "binary",
+                              "description": "The file to be uploaded. [See an example cURL request](/messages/guides/whatsapp-template-management#uploading-media)"
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   },
+   "components": {
+      "securitySchemes": {
+         "bearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+         }
+      },
+      "schemas": {
+         "WhatsAppTemplate": {
+            "type": "object",
+            "description": "A template object.",
+            "properties": {
+               "id": {
+                  "type": "string",
+                  "description": "The unique identifier for this template.",
+                  "example": "1045638762820500"
+               },
+               "name": {
+                  "type": "string",
+                  "description": "The name of the template",
+                  "example": "sample_issue_resolution"
+               },
+               "language": {
+                  "type": "string",
+                  "example": "en",
+                  "description": "The language of the template. The same template name can be used for multiple language versions. A list of supported languages is available in the [WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/)"
+               },
+               "status": {
+                  "type": "string",
+                  "description": "The status of the template. Templates with a status of `APPROVED` can be used in WhatsApp template messages.",
+                  "enum": [
+                     "APPROVED",
+                     "REJECTED",
+                     "IN_APPEAL",
+                     "PENDING",
+                     "PENDING_DELETION",
+                     "DELETED",
+                     "DISABLED",
+                     "LOCKED"
+                  ],
+                  "example": "APPROVED"
+               },
+               "category": {
+                  "type": "string",
+                  "description": "The category of the template. This determines the purpose of the template. Note: until June 1st 2023 some older template categories may be listed.\nThese should be updated to one the valid categories or they will be automatically migrated.\n",
+                  "example": "UTILITY",
+                  "enum": [
+                     "UTILITY",
+                     "AUTHENTICATION",
+                     "MARKETING"
+                  ]
+               },
+               "previous_category": {
+                  "type": "string",
+                  "description": "If the template has been updated to a different category, shows the previous category of the template.",
+                  "example": "MARKETING"
+               },
+               "components": {
+                  "type": "array",
+                  "description": "An array of objects representing the parts of the template itself.",
+                  "items": {
+                     "anyOf": [
+                        {
+                           "$ref": "#/components/schemas/TemplateComponentStandard"
+                        },
+                        {
+                           "$ref": "#/components/schemas/TemplateComponentButtons"
+                        }
+                     ]
+                  }
+               }
+            }
+         },
+         "CreateTextTemplate": {
+            "title": "Create Text Template",
+            "type": "object",
+            "properties": {
+               "name": {
+                  "type": "string",
+                  "description": "The name of the template",
+                  "example": "sample_issue_resolution"
+               },
+               "language": {
+                  "type": "string",
+                  "description": "The language of the template. The same template name can be used for multiple language versions. A list of supported languages is available in the [WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/). Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)",
+                  "example": "en"
+               },
+               "category": {
+                  "type": "string",
+                  "description": "The required category of the template. The category determines what the template will be used for. Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)",
+                  "example": "UTILITY",
+                  "enum": [
+                     "UTILITY",
+                     "AUTHENTICATION",
+                     "MARKETING"
+                  ]
+               },
+               "allow_category_change": {
+                  "type": "boolean",
+                  "deprecated": true,
+                  "description": "**This field is now deprecated. This functionality is now enabled by default by Meta and cannot be disabled. See the [Meta documentation](https://developers.facebook.com/docs/whatsapp/business-management-api/message-templates/) for more infomration.**\n\n~~An optional parameter which, when set to `true`, can avoid template rejection due to mis-categorization.\nIncluding this parameter, with a value of `true`, will allow Meta to re-assign the template to a different category as appropriate.~~\n",
+                  "example": true,
+                  "enum": [
+                     true,
+                     false
+                  ]
+               },
+               "components": {
+                  "type": "array",
+                  "description": "An array of objects representing the parts of the template itself.",
+                  "minItems": 0,
+                  "uniqueItems": false,
+                  "items": {
+                     "type": "object",
+                     "minProperties": 0,
+                     "properties": {
+                        "type": {
+                           "type": "string",
+                           "example": "BODY",
+                           "description": "The type of template component. `HEADER`, `FOOTER`, and `BUTTONS` are optional, a `BODY` is always a required component of a template.",
+                           "enum": [
+                              "HEADER",
+                              "BODY",
+                              "FOOTER",
+                              "BUTTONS"
+                           ]
+                        },
+                        "format": {
+                           "type": "string",
+                           "description": "The format of the template component. For a Text Template, `format` is always `TEXT` for `HEADER`, `BODY` or `FOOTER` components.",
+                           "example": "TEXT",
+                           "enum": [
+                              "TEXT"
+                           ]
+                        },
+                        "text": {
+                           "type": "string",
+                           "description": "The text to be displayed in this template component. EIther `plain text` or `text with placeholders {{1}}`.",
+                           "example": "Your parcel from {{1}} is due to arrive on {{2}} between {{3}} and {{4}}."
+                        },
+                        "example": {
+                           "type": "object",
+                           "description": "Must be included when placeholders are used in the text.",
+                           "properties": {
+                              "body_text": {
+                                 "type": "array",
+                                 "description": "An array containing one array. The inner array contains strings, with one item for each placeholder used in the `text`. Must be included when format is `text` and placeholders are included in the text.",
+                                 "example": "[['Courier','May 1st', '3:00PM', '4:00PM']]",
+                                 "items": {
+                                    "type": "array",
+                                    "items": {
+                                       "type": "string"
+                                    }
+                                 }
+                              }
+                           }
+                        },
+                        "buttons": {
+                           "type": "array",
+                           "description": "Where `type` is set to `BUTTONS`, an array of button objects representing the properties of each button. ",
+                           "items": {
+                              "type": "object",
+                              "properties": {
+                                 "type": {
+                                    "type": "string",
+                                    "description": "The type of button.",
+                                    "example": "QUICK_REPLY",
+                                    "enum": [
+                                       "QUICK_REPLY",
+                                       "URL",
+                                       "PHONE_NUMBER"
+                                    ]
+                                 },
+                                 "text": {
+                                    "type": "string",
+                                    "description": "The text to appear on the button.",
+                                    "example": "Yes"
+                                 },
+                                 "url": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "description": "A URL to which the end-user will be directed when hitting the button. Must be set when `type` is `URL`.",
+                                    "example": "https://example.com/special-offer-opt-in"
+                                 },
+                                 "phone_number": {
+                                    "type": "string",
+                                    "description": "Phone number to which a phone call would be placed by the end-user when hitting the button. Must be set when `type` is `PHONE_NUMBER`.",
+                                    "example": "8001111111"
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  },
+                  "required": [
+                     "type",
+                     "format"
+                  ]
+               }
+            },
+            "required": [
+               "name",
+               "language",
+               "category",
+               "components"
+            ]
+         },
+         "CreateMediaTemplate": {
+            "title": "Create Media Template",
+            "properties": {
+               "name": {
+                  "type": "string",
+                  "description": "The name of the template",
+                  "example": "sample_issue_resolution"
+               },
+               "language": {
+                  "type": "string",
+                  "description": "The language of the template. The same template name can be used for multiple language versions. A list of supported languages is available in the [WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/). Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)",
+                  "example": "en"
+               },
+               "category": {
+                  "type": "string",
+                  "description": "The required category of the template. The category determines what the template will be used for. Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)",
+                  "example": "UTILITY",
+                  "enum": [
+                     "UTILITY",
+                     "AUTHENTICATION",
+                     "MARKETING"
+                  ]
+               },
+               "allow_category_change": {
+                  "type": "boolean",
+                  "deprecated": true,
+                  "description": "**This field is now deprecated. This functionality is now enabled by default by Meta and cannot be disabled. See the [Meta documentation](https://developers.facebook.com/docs/whatsapp/business-management-api/message-templates/) for more infomration.**\n\n~~An optional parameter which, when set to `true`, can avoid template rejection due to mis-categorization.\nIncluding this parameter, with a value of `true`, will allow Meta to re-assign the template to a different category as appropriate.~~\n",
+                  "example": true,
+                  "enum": [
+                     true,
+                     false
+                  ]
+               },
+               "components": {
+                  "type": "array",
+                  "description": "An array of objects representing the parts of the template itself.",
+                  "minItems": 0,
+                  "uniqueItems": false,
+                  "items": {
+                     "type": "object",
+                     "minProperties": 0,
+                     "properties": {
+                        "type": {
+                           "type": "string",
+                           "example": "HEADER",
+                           "description": "The type of template component. `HEADER`, `FOOTER`, and `BUTTONS` are optional, a `BODY` is always a required component of a template.",
+                           "enum": [
+                              "HEADER",
+                              "BODY",
+                              "FOOTER",
+                              "BUTTONS"
+                           ]
+                        },
+                        "format": {
+                           "type": "string",
+                           "description": "The format of the template component. Where `type` is `HEADER` can be `TEXT`, `IMAGE`, `DOCUMENT`, or `VIDEO`. Where type is `BODY` or `FOOTER`, must be `TEXT`.",
+                           "example": "IMAGE",
+                           "enum": [
+                              "TEXT",
+                              "IMAGE",
+                              "DOCUMENT",
+                              "VIDEO"
+                           ]
+                        },
+                        "text": {
+                           "type": "string",
+                           "description": "The text to be displayed in this template component. EIther `plain text` or `text with placeholders {{1}}`.\n**Note: when using text with placeholders, you must include the `example` parameter in the component object.**\n"
+                        },
+                        "example": {
+                           "type": "object",
+                           "description": "Must be included when the `type` is `HEADER` and `format` is one of `IMAGE`, `DOCUMENT`, or `VIDEO`, or when the `format` is `text` and placeholders are used.\nNot allowed for other component types.'\n",
+                           "properties": {
+                              "header_handle": {
+                                 "type": "string",
+                                 "description": "The identifier or 'handle' of a file received in the response to a Media Upload. Must be included when `format` is `IMAGE`, `DOCUMENT`, or `VIDEO`.",
+                                 "example": "h:3:MjAyMi0wOC0wNCUyMDExXzE0XzQ0Ljc0Mjk0NV9XaGF0c0FwcCUyMEltYWdlJTIwMjAyMi0wOC0wNCUyMGF0JTIwMTEuMDcuMzclMjBBTS5qcGVn:aW1hZ2UvanBlZw==:ARZBgKmPpdCDKM9p8VulwOuNGrHg5RZYIrvwYWpn5YgJezdnoufigT9OTwtRYfAhP4EbpvJik7GZv5QGT7cU7k1Fqu3fnDxEe5XkdIypjSgngQ:e:1662475718:ARauPjU_zJe83Ukp5pY"
+                              },
+                              "body_text": {
+                                 "type": "array",
+                                 "description": "An array containing one array. The inner array contains strings, with one item for each placeholder used in the `text`. Must be included when format is `text` and placeholders are included in the text.",
+                                 "example": "[['Courier','May 1st', '3:00PM', '4:00PM']]",
+                                 "items": {
+                                    "type": "array",
+                                    "items": {
+                                       "type": "string"
+                                    }
+                                 }
+                              }
+                           }
+                        },
+                        "buttons": {
+                           "type": "array",
+                           "description": "Where `type` is set to `BUTTONS`, an array of button objects representing the properties of each button. ",
+                           "items": {
+                              "type": "object",
+                              "properties": {
+                                 "type": {
+                                    "type": "string",
+                                    "description": "The type of button.",
+                                    "example": "QUICK_REPLY",
+                                    "enum": [
+                                       "QUICK_REPLY",
+                                       "URL",
+                                       "PHONE_NUMBER",
+                                       "OTP"
+                                    ]
+                                 },
+                                 "text": {
+                                    "type": "string",
+                                    "description": "The text to appear on the button.",
+                                    "example": "Yes"
+                                 },
+                                 "otp_type": {
+                                    "type": "string",
+                                    "description": "The type of OTP button. Mandatory if the button `type` is `OTP`",
+                                    "enum": [
+                                       "COPY_CODE",
+                                       "ONE_TAP"
+                                    ],
+                                    "example": "ONE_TAP"
+                                 },
+                                 "autofill_text": {
+                                    "type": "string",
+                                    "description": "Mandatory if `otp_type` is `ONE_TAP`",
+                                    "example": "Autofill"
+                                 },
+                                 "package_name": {
+                                    "type": "string",
+                                    "description": "Your Android app's package name. Mandatory if `otp_type` is `ONE_TAP`",
+                                    "example": "com.example.myapp"
+                                 },
+                                 "signature_hash": {
+                                    "type": "string",
+                                    "description": "Your app signing key hash. See [App Signing Key Hash](https://developers.facebook.com/docs/whatsapp/business-management-api/authentication-templates#app-signing-key-hash). Mandatory if `otp_type` is `ONE_TAP`",
+                                    "example": "K8a%2FAINcGX7"
+                                 },
+                                 "url": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "description": "A URL to which the end-user will be directed when hitting the button. Must be set when `type` is `URL`.",
+                                    "example": "https://example.com/special-offer-opt-in"
+                                 },
+                                 "phone_number": {
+                                    "type": "string",
+                                    "description": "Phone number to which a phone call would be placed by the end-user when hitting the button. Must be set when `type` is `PHONE_NUMBER`.",
+                                    "example": "8001111111"
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  },
+                  "required": [
+                     "type",
+                     "format"
+                  ]
+               }
+            },
+            "required": [
+               "name",
+               "language",
+               "category",
+               "components"
+            ]
+         },
+         "UpdateTextTemplate": {
+            "title": "Update Text Template",
+            "type": "object",
+            "properties": {
+               "name": {
+                  "type": "string",
+                  "description": "The name of the template",
+                  "example": "sample_issue_resolution"
+               },
+               "language": {
+                  "type": "string",
+                  "description": "The language of the template. The same template name can be used for multiple language versions. A list of supported languages is available in the [WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/). Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)",
+                  "example": "en"
+               },
+               "category": {
+                  "type": "string",
+                  "description": "The required category of the template. The category determines what the template will be used for. Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)",
+                  "example": "UTILITY",
+                  "enum": [
+                     "UTILITY",
+                     "AUTHENTICATION",
+                     "MARKETING"
+                  ]
+               },
+               "allow_category_change": {
+                  "type": "boolean",
+                  "deprecated": true,
+                  "description": "**This field is now deprecated. This functionality is now enabled by default by Meta and cannot be disabled. See the [Meta documentation](https://developers.facebook.com/docs/whatsapp/business-management-api/message-templates/) for more infomration.**\n\n~~An optional parameter which, when set to `true`, can avoid template rejection due to mis-categorization.\nIncluding this parameter, with a value of `true`, will allow Meta to re-assign the template to a different category as appropriate.~~\n",
+                  "example": true,
+                  "enum": [
+                     true,
+                     false
+                  ]
+               },
+               "components": {
+                  "type": "array",
+                  "description": "An array of objects representing the parts of the template itself.",
+                  "minItems": 0,
+                  "uniqueItems": false,
+                  "items": {
+                     "type": "object",
+                     "minProperties": 0,
+                     "properties": {
+                        "type": {
+                           "type": "string",
+                           "example": "BODY",
+                           "description": "The type of template component. `HEADER`, `FOOTER`, and `BUTTONS` are optional, a `BODY` is always a required component of a template.",
+                           "enum": [
+                              "HEADER",
+                              "BODY",
+                              "FOOTER",
+                              "BUTTONS"
+                           ]
+                        },
+                        "format": {
+                           "type": "string",
+                           "description": "The format of the template component. For a Text Template, `format` is always `TEXT` for `HEADER`, `BODY` or `FOOTER` components.",
+                           "example": "TEXT",
+                           "enum": [
+                              "TEXT"
+                           ]
+                        },
+                        "text": {
+                           "type": "string",
+                           "description": "The text to be displayed in this template component. EIther `plain text` or `text with placeholders {{1}}`.",
+                           "example": "Your parcel from {{1}} is due to arrive on {{2}} between {{3}} and {{4}}."
+                        },
+                        "example": {
+                           "type": "object",
+                           "description": "Must be included when placeholders are used in the text.",
+                           "properties": {
+                              "body_text": {
+                                 "type": "array",
+                                 "description": "An array containing one array. The inner array contains strings, with one item for each placeholder used in the `text`. Must be included when format is `text` and placeholders are included in the text.",
+                                 "example": "[['Courier','May 1st', '3:00PM', '4:00PM']]",
+                                 "items": {
+                                    "type": "array",
+                                    "items": {
+                                       "type": "string"
+                                    }
+                                 }
+                              }
+                           }
+                        },
+                        "buttons": {
+                           "type": "array",
+                           "description": "Where `type` is set to `BUTTONS`, an array of button objects representing the properties of each button. ",
+                           "items": {
+                              "type": "object",
+                              "properties": {
+                                 "type": {
+                                    "type": "string",
+                                    "description": "The type of button.",
+                                    "example": "QUICK_REPLY",
+                                    "enum": [
+                                       "QUICK_REPLY",
+                                       "URL",
+                                       "PHONE_NUMBER"
+                                    ]
+                                 },
+                                 "text": {
+                                    "type": "string",
+                                    "description": "The text to appear on the button.",
+                                    "example": "Yes"
+                                 },
+                                 "url": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "description": "A URL to which the end-user will be directed when hitting the button. Must be set when `type` is `URL`.",
+                                    "example": "https://example.com/special-offer-opt-in"
+                                 },
+                                 "phone_number": {
+                                    "type": "string",
+                                    "description": "Phone number to which a phone call would be placed by the end-user when hitting the button. Must be set when `type` is `PHONE_NUMBER`.",
+                                    "example": "8001111111"
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  },
+                  "required": [
+                     "type",
+                     "format"
+                  ]
+               }
+            },
+            "required": [
+               "name",
+               "language",
+               "category",
+               "components"
+            ]
+         },
+         "UpdateMediaTemplate": {
+            "title": "Update Media Template",
+            "properties": {
+               "name": {
+                  "type": "string",
+                  "description": "The name of the template",
+                  "example": "sample_issue_resolution"
+               },
+               "language": {
+                  "type": "string",
+                  "description": "The language of the template. The same template name can be used for multiple language versions. A list of supported languages is available in the [WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/). Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)",
+                  "example": "en"
+               },
+               "category": {
+                  "type": "string",
+                  "description": "The required category of the template. The category determines what the template will be used for. Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)",
+                  "example": "UTILITY",
+                  "enum": [
+                     "UTILITY",
+                     "AUTHENTICATION",
+                     "MARKETING"
+                  ]
+               },
+               "allow_category_change": {
+                  "type": "boolean",
+                  "deprecated": true,
+                  "description": "**This field is now deprecated. This functionality is now enabled by default by Meta and cannot be disabled. See the [Meta documentation](https://developers.facebook.com/docs/whatsapp/business-management-api/message-templates/) for more infomration.**\n\n~~An optional parameter which, when set to `true`, can avoid template rejection due to mis-categorization.\nIncluding this parameter, with a value of `true`, will allow Meta to re-assign the template to a different category as appropriate.~~\n",
+                  "example": true,
+                  "enum": [
+                     true,
+                     false
+                  ]
+               },
+               "components": {
+                  "type": "array",
+                  "description": "An array of objects representing the parts of the template itself.",
+                  "minItems": 0,
+                  "uniqueItems": false,
+                  "items": {
+                     "type": "object",
+                     "minProperties": 0,
+                     "properties": {
+                        "type": {
+                           "type": "string",
+                           "example": "HEADER",
+                           "description": "The type of template component. `HEADER`, `FOOTER`, and `BUTTONS` are optional, a `BODY` is always a required component of a template.",
+                           "enum": [
+                              "HEADER",
+                              "BODY",
+                              "FOOTER",
+                              "BUTTONS"
+                           ]
+                        },
+                        "format": {
+                           "type": "string",
+                           "description": "The format of the template component. Where `type` is `HEADER` can be `TEXT`, `IMAGE`, `DOCUMENT`, or `VIDEO`. Where type is `BODY` or `FOOTER`, must be `TEXT`.",
+                           "example": "IMAGE",
+                           "enum": [
+                              "TEXT",
+                              "IMAGE",
+                              "DOCUMENT",
+                              "VIDEO"
+                           ]
+                        },
+                        "text": {
+                           "type": "string",
+                           "description": "The text to be displayed in this template component. EIther `plain text` or `text with placeholders {{1}}`.\n**Note: when using text with placeholders, you must include the `example` parameter in the component object.**\n"
+                        },
+                        "example": {
+                           "type": "object",
+                           "description": "Must be included when the `type` is `HEADER` and `format` is one of `IMAGE`, `DOCUMENT`, or `VIDEO`, or when the `format` is `text` and placeholders are used.\nNot allowed for other component types.'\n",
+                           "properties": {
+                              "header_handle": {
+                                 "type": "string",
+                                 "description": "The identifier or 'handle' of a file received in the response to a Media Upload. Must be included when `format` is `IMAGE`, `DOCUMENT`, or `VIDEO`.",
+                                 "example": "h:3:MjAyMi0wOC0wNCUyMDExXzE0XzQ0Ljc0Mjk0NV9XaGF0c0FwcCUyMEltYWdlJTIwMjAyMi0wOC0wNCUyMGF0JTIwMTEuMDcuMzclMjBBTS5qcGVn:aW1hZ2UvanBlZw==:ARZBgKmPpdCDKM9p8VulwOuNGrHg5RZYIrvwYWpn5YgJezdnoufigT9OTwtRYfAhP4EbpvJik7GZv5QGT7cU7k1Fqu3fnDxEe5XkdIypjSgngQ:e:1662475718:ARauPjU_zJe83Ukp5pY"
+                              },
+                              "body_text": {
+                                 "type": "array",
+                                 "description": "An array containing one array. The inner array contains strings, with one item for each placeholder used in the `text`. Must be included when format is `text` and placeholders are included in the text.",
+                                 "example": "[['Courier','May 1st', '3:00PM', '4:00PM']]",
+                                 "items": {
+                                    "type": "array",
+                                    "items": {
+                                       "type": "string"
+                                    }
+                                 }
+                              }
+                           }
+                        },
+                        "buttons": {
+                           "type": "array",
+                           "description": "Where `type` is set to `BUTTONS`, an array of button objects representing the properties of each button. ",
+                           "items": {
+                              "type": "object",
+                              "properties": {
+                                 "type": {
+                                    "type": "string",
+                                    "description": "The type of button.",
+                                    "example": "QUICK_REPLY",
+                                    "enum": [
+                                       "QUICK_REPLY",
+                                       "URL",
+                                       "PHONE_NUMBER",
+                                       "OTP"
+                                    ]
+                                 },
+                                 "text": {
+                                    "type": "string",
+                                    "description": "The text to appear on the button.",
+                                    "example": "Yes"
+                                 },
+                                 "otp_type": {
+                                    "type": "string",
+                                    "description": "The type of OTP button. Mandatory if the button `type` is `OTP`",
+                                    "enum": [
+                                       "COPY_CODE",
+                                       "ONE_TAP"
+                                    ],
+                                    "example": "ONE_TAP"
+                                 },
+                                 "autofill_text": {
+                                    "type": "string",
+                                    "description": "Mandatory if `otp_type` is `ONE_TAP`",
+                                    "example": "Autofill"
+                                 },
+                                 "package_name": {
+                                    "type": "string",
+                                    "description": "Your Android app's package name. Mandatory if `otp_type` is `ONE_TAP`",
+                                    "example": "com.example.myapp"
+                                 },
+                                 "signature_hash": {
+                                    "type": "string",
+                                    "description": "Your app signing key hash. See [App Signing Key Hash](https://developers.facebook.com/docs/whatsapp/business-management-api/authentication-templates#app-signing-key-hash). Mandatory if `otp_type` is `ONE_TAP`",
+                                    "example": "K8a%2FAINcGX7"
+                                 },
+                                 "url": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "description": "A URL to which the end-user will be directed when hitting the button. Must be set when `type` is `URL`.",
+                                    "example": "https://example.com/special-offer-opt-in"
+                                 },
+                                 "phone_number": {
+                                    "type": "string",
+                                    "description": "Phone number to which a phone call would be placed by the end-user when hitting the button. Must be set when `type` is `PHONE_NUMBER`.",
+                                    "example": "8001111111"
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  },
+                  "required": [
+                     "type",
+                     "format"
+                  ]
+               }
+            },
+            "required": [
+               "name",
+               "language",
+               "category",
+               "components"
+            ]
+         },
+         "TemplateComponentStandard": {
+            "title": "TemplateComponentStandard",
+            "type": "object",
+            "description": "A template component of `type` other than `BUTTONS`",
+            "properties": {
+               "type": {
+                  "type": "string",
+                  "description": "The type of template component.",
+                  "example": "BODY",
+                  "enum": [
+                     "HEADER",
+                     "BODY",
+                     "FOOTER"
+                  ]
+               },
+               "format": {
+                  "type": "string",
+                  "description": "The format of the template component. Where `type` is `HEADER` can be `TEXT`, `IMAGE`, `DOCUMENT`, or `VIDEO`. Where type is `BODY` or `FOOTER`, must be `TEXT`.",
+                  "example": "TEXT"
+               },
+               "text": {
+                  "type": "string",
+                  "description": "The text to be displayed in this template component. EIther `plain text` or `text with placeholders {{1}}`.",
+                  "example": "Your parcel from {{1}} is due to arrive on {{2}} between {{3}} and {{4}}."
+               }
+            }
+         },
+         "TemplateComponentButtons": {
+            "title": "TemplateComponentButtons",
+            "type": "object",
+            "description": "A template component with a `type` of `BUTTONS`",
+            "properties": {
+               "type": {
+                  "type": "string",
+                  "description": "The type of template component.",
+                  "example": "BUTTONS",
+                  "enum": [
+                     "BUTTONS"
+                  ]
+               },
+               "buttons": {
+                  "type": "array",
+                  "description": "An array of objects representing button components.",
+                  "items": {
+                     "type": "object",
+                     "properties": {
+                        "type": {
+                           "type": "string",
+                           "description": "The type of button",
+                           "enum": [
+                              "QUICK_REPLY",
+                              "URL",
+                              "PHONE_NUMBER"
+                           ],
+                           "example": "QUICK_REPLY"
+                        },
+                        "text": {
+                           "type": "string",
+                           "description": "The text displayed on the button.",
+                           "example": "Yes"
+                        },
+                        "url": {
+                           "type": "string",
+                           "description": "URL to which the end-user will be directed when hitting the button.\n",
+                           "example": "https://example.com/special-offer-opt-in",
+                           "format": "uri"
+                        },
+                        "phone_number": {
+                           "type": "string",
+                           "description": "Phone number to which a phone call would be placed by the end-user when hitting the button.",
+                           "example": "8001111111"
+                        }
+                     }
+                  }
+               }
+            }
+         },
+         "ErrorResponse400": {
+            "type": "object",
+            "properties": {
+               "type": {
+                  "type": "string",
+                  "description": "URL for the documentation regarding the error.",
+                  "example": "https://developer.vonage.com/api-errors"
+               },
+               "title": {
+                  "type": "string",
+                  "description": "The title of the error.",
+                  "example": "Message template \\\"components\\\" param contains unexpected field(s)"
+               },
+               "detail": {
+                  "type": "string",
+                  "description": "A description of the error.",
+                  "example": "component of type BUTTONS has unexpected field(s) (text)."
+               },
+               "instance_id": {
+                  "type": "string",
+                  "description": "The instance ID for the request that generated the error.",
+                  "example": "2f4461e1-43a6-4383-8502-dc6a2ec1786b"
+               }
+            },
+            "description": "Response body for 400 error responses",
+            "title": "400ErrorResponse"
+         },
+         "ErrorResponse401": {
+            "type": "object",
+            "properties": {
+               "type": {
+                  "type": "string",
+                  "description": "URL for the documentation regarding the error.",
+                  "example": "https://developer.vonage.com/api-errors#unauthorized"
+               },
+               "title": {
+                  "type": "string",
+                  "description": "The title of the error.",
+                  "example": "Unauthorized"
+               },
+               "detail": {
+                  "type": "string",
+                  "description": "A description of the error.",
+                  "example": "Check that you're using the correct credentials, and that your account has this feature enabled."
+               },
+               "instance_id": {
+                  "type": "string",
+                  "description": "The instance ID for the request that generated the error.",
+                  "example": "85292fc4-4503-4d2e-81a1-0b6f85b3f0e4"
+               }
+            },
+            "description": "Response body for 401 error responses",
+            "title": "401ErrorResponse"
+         },
+         "ErrorResponse404": {
+            "type": "object",
+            "properties": {
+               "type": {
+                  "type": "string",
+                  "description": "URL for the documentation regarding the error.",
+                  "example": "https://developer.vonage.com/api-errors#not-found"
+               },
+               "title": {
+                  "type": "string",
+                  "description": "The title of the error.",
+                  "example": "Not Found"
+               },
+               "detail": {
+                  "type": "string",
+                  "description": "A description of the error.",
+                  "example": "WABA was not found."
+               },
+               "instance_id": {
+                  "type": "string",
+                  "description": "The instance ID for the request that generated the error.",
+                  "example": "85292fc4-4503-4d2e-81a1-0b6f85b3f0e4"
+               }
+            },
+            "description": "Response body for 404 error responses",
+            "title": "404ErrorResponse"
+         },
+         "ErrorResponse422": {
+            "type": "object",
+            "properties": {
+               "type": {
+                  "type": "string",
+                  "description": "URL for the documentation regarding the error.",
+                  "example": "https://developer.nexmo.com/api-errors#invalid-json"
+               },
+               "title": {
+                  "type": "string",
+                  "description": "The title of the error.",
+                  "example": "Invalid params"
+               },
+               "detail": {
+                  "type": "string",
+                  "description": "A description of the error.",
+                  "example": "(#100) Param category must be one of {UTILITY, AUTHENTICATION, MARKETING}."
+               },
+               "instance_id": {
+                  "type": "string",
+                  "description": "The instance ID for the request that generated the error.",
+                  "example": "5b2ecda4-607d-457c-9d16-6d89f3fc6dcf"
+               }
+            },
+            "description": "Response body for 422 error responses",
+            "title": "422ErrorResponse"
+         },
+         "ErrorResponse429": {
+            "type": "object",
+            "properties": {
+               "type": {
+                  "type": "string",
+                  "description": "URL for the documentation regarding the error.",
+                  "example": "https://developer.nexmo.com/api-errors/messages-olympus#1000"
+               },
+               "title": {
+                  "type": "string",
+                  "description": "The title of the error.",
+                  "example": "Rate Limit Hit"
+               },
+               "detail": {
+                  "type": "string",
+                  "description": "A description of the error.",
+                  "example": "Please wait, then retry your request"
+               },
+               "instance_id": {
+                  "type": "string",
+                  "description": "The instance ID for the request that generated the error.",
+                  "example": "85292fc4-4503-4d2e-81a1-0b6f85b3f0e4"
+               }
+            },
+            "description": "Response body for 429 error responses",
+            "title": "429ErrorResponse"
+         },
+         "ErrorResponse500": {
+            "type": "object",
+            "properties": {
+               "type": {
+                  "type": "string",
+                  "description": "URL for the documentation regarding the error.",
+                  "example": "https://developer.vonage.com/api-errors/messages-olympus#1030"
+               },
+               "title": {
+                  "type": "string",
+                  "description": "The title of the error.",
+                  "example": "Internal error"
+               },
+               "detail": {
+                  "type": "string",
+                  "description": "A description of the error.",
+                  "example": "There was an error processing your request in the Platform."
+               },
+               "instance_id": {
+                  "type": "string",
+                  "description": "The instance ID for the request that generated the error.",
+                  "example": "85292fc4-4503-4d2e-81a1-0b6f85b3f0e4"
+               }
+            },
+            "description": "Response body for 500 error responses",
+            "title": "500ErrorResponse"
+         },
+         "WabaNotFound": {
+            "description": "WABA Not Found",
+            "type": "object",
+            "required": [
+               "type",
+               "title",
+               "details",
+               "instance"
+            ],
+            "properties": {
+               "type": {
+                  "type": "string",
+                  "description": "Link to error / remediation options",
+                  "example": "https://developer.vonage.com/api-errors#not-found"
+               },
+               "title": {
+                  "type": "string",
+                  "description": "Generic error message",
+                  "example": "Not Found"
+               },
+               "detail": {
+                  "type": "string",
+                  "description": "Additional information about the error",
+                  "example": "Waba was not found."
+               },
+               "instance": {
+                  "type": "string",
+                  "description": "Internal Trace ID",
+                  "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf"
+               }
+            }
+         },
+         "TemplateNotFound": {
+            "description": "Template Not Found",
+            "type": "object",
+            "required": [
+               "type",
+               "title",
+               "details",
+               "instance"
+            ],
+            "properties": {
+               "type": {
+                  "type": "string",
+                  "description": "Link to error / remediation options",
+                  "example": "https://developer.vonage.com/api-errors#not-found"
+               },
+               "title": {
+                  "type": "string",
+                  "description": "Generic error message",
+                  "example": "Not Found"
+               },
+               "detail": {
+                  "type": "string",
+                  "description": "Additional information about the error",
+                  "example": "Template was not found."
+               },
+               "instance": {
+                  "type": "string",
+                  "description": "Internal Trace ID",
+                  "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf"
+               }
+            }
+         }
+      }
+   },
+   "x-errors": {
+      "1000": {
+         "description": "Throttled - You have exceeded the submission capacity allowed on this account. Please wait and retry"
+      },
+      "1030": {
+         "description": "Internal error  -  There was an error processing your request in the Platform."
+      }
+   }
+}

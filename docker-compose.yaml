@@ -26,13 +26,13 @@ services:
     container_name: ccs-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ccs_larmaria_db
+      POSTGRES_DB: ccs_sanofi_db
       POSTGRES_USER: ccs_user
       POSTGRES_PASSWORD: ccs_password
     ports:
       - "5432:5432"
     volumes:
-      - postgres_larmaria_data:/var/lib/postgresql/data
+      - postgres_sanofi_data:/var/lib/postgresql/data
     networks:
       - ccs-network
 
@@ -48,7 +48,7 @@ services:
       - ccs-network
 
 volumes:
-  postgres_larmaria_data:
+  postgres_sanofi_data:
   redis_data:
 
 networks:

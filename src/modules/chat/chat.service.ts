@@ -91,7 +91,7 @@ export class ChatService {
 
                 if (sendResult.success) {
                     // Handle both Otima and Evolution response formats
-                    platformResponse = sendResult.platformResponse || sendResult.otimaResponse || sendResult.evolutionResponse || sendResult;
+                    platformResponse = sendResult.platformResponse || sendResult.otimaResponse || sendResult.vonageResponse || sendResult.evolutionResponse || sendResult;
                     platformMessageId = sendResult.messageId;
                     sendSuccess = true;
                     this.logger.log(`Message sent successfully via ${customerData.platform}. Platform Message ID: ${sendResult.messageId}`);
@@ -494,7 +494,7 @@ export class ChatService {
 
         if (sendResult.success) {
           // Handle both Otima and Evolution response formats
-          platformResponse = sendResult.platformResponse || sendResult.otimaResponse || sendResult.evolutionResponse || sendResult;
+          platformResponse = sendResult.platformResponse || sendResult.otimaResponse || sendResult.vonageResponse || sendResult.evolutionResponse || sendResult;
           platformMessageId = sendResult.messageId;
           sendSuccess = true;
           this.logger.log(`System message sent successfully via ${customerData.platform}. Platform Message ID: ${sendResult.messageId}`);

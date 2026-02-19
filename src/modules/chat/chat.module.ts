@@ -5,6 +5,7 @@ import { ChatService } from './chat.service';
 import { MessagesModule } from '../messages/messages.module';
 import { EvolutionModule } from '../whatsapp/evolution/evolution.module';
 import { OtimaModule } from '../whatsapp/otima/otima.module';
+import { VonageModule } from '../whatsapp/vonage/vonage.module';
 import { QueueModule } from '../customer-queue/queue.module';
 import { UserModule } from '../user';
 import { CustomerModule } from '../customer/customer.module';
@@ -12,6 +13,7 @@ import { HistoryModule } from '../history/history.module';
 import { TemplatesModule } from '../templates/templates.module';
 import { SocketModule } from '../socket/socket.module';
 import { ChatOtimaService } from './services/chat.otima.service';
+import { ChatVonageService } from './services/chat.vonage.service';
 import { PlatformChatServiceFactory } from './services/platform-chat.service.factory';
 import { EvolutionMessageMapperService } from '../whatsapp/evolution/evolution-mapper';
 import { OtimaMessageMapperService } from '../whatsapp/otima/otima-mapper';
@@ -25,6 +27,7 @@ export class ChatModule {
         ConfigModule,
         MessagesModule,
         OtimaModule,
+        VonageModule,
         QueueModule,
         UserModule,
         CustomerModule,
@@ -36,6 +39,7 @@ export class ChatModule {
       providers: [
         ChatService,
         ChatOtimaService,
+        ChatVonageService,
         PlatformChatServiceFactory,
       ],
       exports: [ChatService, PlatformChatServiceFactory],
@@ -49,6 +53,7 @@ export class ChatModule {
         ConfigModule,
         MessagesModule,
         OtimaModule,
+        VonageModule,
         QueueModule,
         UserModule,
         CustomerModule,
@@ -60,6 +65,7 @@ export class ChatModule {
       providers: [
         ChatService,
         ChatOtimaService,
+        ChatVonageService,
         PlatformChatServiceFactory,
         {
           provide: 'EVOLUTION_MAPPER',

@@ -13,7 +13,11 @@ export async function up(knex: Knex): Promise<void> {
     table.enum('direction', ['inbound', 'outbound']).notNullable().defaultTo('inbound');
     table.timestamp('startedAt').notNullable(); // When the interaction started
     table.timestamp('attendedAt'); // When the customer was attended (nullable)
-    table.timestamp('finishedAt'); // When the interaction finished (nullable)
+    table.timestamp('finishedAt'); // When the interaction   finished (nullable)
+    table.enum('origin', ['whatsapp', 'chatweb', 'other']).notNullable().defaultTo('whatsapp'); // Where the chat started (whatsapp, chatweb, etc.)
+    table.enum('destiny', ['bot', 'human', 'other']).notNullable().defaultTo('bot'); // Who finished the journey (bot, human, etc.)
+    table.string('segment', 255).nullable(); // Customer segment
+    table.integer('review').nullable(); // Customer reviews
     table.timestamp('createdAt').defaultTo(knex.fn.now());
     table.timestamp('updatedAt').defaultTo(knex.fn.now());
 
@@ -29,6 +33,9 @@ export async function up(knex: Knex): Promise<void> {
     table.index(['finishedAt']);
     table.index(['userId', 'customerId']); // Composite index for user-customer interactions
     table.index(['sessionId', 'platform']); // Composite index for session-platform queries
+    table.index(['origin', 'destiny']); // Composite index for common queries
+    table.index(['segment']);
+    table.index(['review']);
   });
 }
 

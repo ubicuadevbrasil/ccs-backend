@@ -11,6 +11,7 @@ import { TabulationModule } from './modules/tabulation';
 import { HistoryModule } from './modules/history';
 import { QueueModule } from './modules/customer-queue';
 import { OtimaModule } from './modules/whatsapp/otima/otima.module';
+import { VonageModule } from './modules/whatsapp/vonage/vonage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { ChatModule } from './modules/chat/chat.module';
@@ -32,6 +33,7 @@ import { TemplatesModule } from './modules/templates/templates.module';
     HistoryModule,
     QueueModule,
     OtimaModule,
+    VonageModule,
     MessagesModule,
     ChatModule.forRootAsync(),
     DashboardModule,
